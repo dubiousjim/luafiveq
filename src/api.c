@@ -4,7 +4,6 @@
 
 #include "fiveq.h"
 
-
 #include <string.h>
 
 /*
@@ -16,9 +15,11 @@
  * If fails (some intervening value isn't a table), returns the problematic 
  * part of fields and returns stack unaltered.
  *
- * bool luaL_getsubtable(L, idx, fields) in 5.2.0 does this shallowly, returns existing
+ * bool luaL_getsubtable(L, idx, fields) in 5.2.0 does this shallowly, returns
+ * existing
  */
-extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char *fields, int szhint, int *existing) {
+extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char
+        *fields, int szhint, int *existing) {
     const char *e;
     if (idx) lua_pushvalue(L, idx);
     if (existing) *existing = 1;
@@ -30,7 +31,8 @@ extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char *fields,
         lua_pushlstring(L, fields, e - fields);
         lua_rawget(L, -2); /* or lua_gettable to honor __index */
         if (lua_isnil(L, -1)) {
-            /* no such field, create a new table at stack[+2] and assign it to stack[+1][fields[0:e]] */
+            /* no such field, create a new table at stack[+2] and assign it to
+             * stack[+1][fields[0:e]] */
             if (existing) *existing = 0;
             lua_pop(L, 1);  /* remove nil at stack[+2] */
             lua_createtable(L, 0, (*e == '.' ? 1 : szhint));
@@ -57,7 +59,8 @@ extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char *fields,
  * If fails (some intervening value isn't a table), returns the problematic 
  * part of fields and returns stack unaltered.
  */
-extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char *fields) {
+extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char
+        *fields) {
     const char *e;
     if (idx) lua_pushvalue(L, idx);
     do {
@@ -94,7 +97,8 @@ extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char *fields)
  * If fails (some intervening value isn't a table), returns the problematic 
  * part of fields and leaves value on stack.
  */
-extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char *fields) {
+extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
+        *fields) {
     const char *e;
     lua_pushvalue(L, idx);
     do {
@@ -107,7 +111,8 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char *fields)
         if (lua_isnil(L, -1)) {
             lua_pop(L, 1);  /* remove nil at stack[+2] */
             if (*e == '.') {
-                /* no such field, create a new table at stack[+2] and assign it to stack[+1][fields[0:e]] */
+                /* no such field, create a new table at stack[+2] and assign it
+                 * to stack[+1][fields[0:e]] */
                 lua_createtable(L, 0, 1);
                 lua_pushlstring(L, fields, e - fields);
                 lua_pushvalue(L, -2);
@@ -206,7 +211,8 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
 }
 
 
-#if LUA_VERSION_NUM == 501 || defined(LUA_FIVEQ_PLUS) || !defined(LUA_COMPAT_MODULE)
+#if LUA_VERSION_NUM == 501 || defined(LUA_FIVEQ_PLUS) || \
+    !defined(LUA_COMPAT_MODULE)
 
 static int libsize (const luaL_Reg *l) {
   int size = 0;
@@ -225,7 +231,8 @@ static int libsize (const luaL_Reg *l) {
  */
 extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint,
   int level, const char *caller) {
-    luaQ_getdeeptable(L, LUA_REGISTRYINDEX, "_LOADED", 1, NULL);  /* get _LOADED table */
+    /* get _LOADED table */
+    luaQ_getdeeptable(L, LUA_REGISTRYINDEX, "_LOADED", 1, NULL);
     lua_getfield(L, -1, modname);  /* get _LOADED[modname] */
     if (!lua_istable(L, -1)) {  /* not found? */
         lua_pop(L, 1);  /* remove previous result */
@@ -284,7 +291,9 @@ extern void luaL_requiref (lua_State *L, const char *libname,
 #endif
 
 
-# if defined(LUA_FIVEQ_PLUS) || (LUA_VERSION_NUM == 501 && !defined(LUA_COMPAT_OPENLIB)) || (LUA_VERSION_NUM == 502 && !defined(LUA_COMPAT_MODULE))
+# if defined(LUA_FIVEQ_PLUS) || (LUA_VERSION_NUM == 501 && \
+        !defined(LUA_COMPAT_OPENLIB)) || (LUA_VERSION_NUM == 502 && \
+        !defined(LUA_COMPAT_MODULE))
 /*
  * If "libname", pushmodule to find existing module or write to 
  * caller's/global environment, else assumes there's already a table 
@@ -292,13 +301,15 @@ extern void luaL_requiref (lua_State *L, const char *libname,
  * Merges functions from luaL_Reg* into that table with luaL_setfuncs,
  * leaving that table on top of stack.
  */
-extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, int nup) {
+extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
+        int nup) {
 #  if LUA_VERSION_NUM == 502
     luaL_checkversion(L);
 #  endif
     if (libname) {
 #  if defined(LUA_FIVEQ_PLUS)
-        /* check whether lib already exists, writing to caller's environment if not */
+        /* check whether lib already exists, writing to caller's environment if
+         * not */
         int level = 2;
         if (0x3 & ((size_t) l)) {
             level += 0x3 & ((size_t) l);
@@ -306,7 +317,8 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
         }
         luaQ_pushmodule(L, libname, libsize(l), level, NULL);
 #  else
-        /* check whether lib already exists, writing to global environment if not */
+        /* check whether lib already exists, writing to global environment if
+         * not */
         luaQ_pushmodule(L, libname, libsize(l), 0, NULL);
 #  endif
         lua_insert(L, -(nup + 1));  /* move library table to below upvalues */
@@ -318,7 +330,8 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
 }
 # elif LUA_VERSION_NUM == 501
 #  undef luaL_openlib
-extern void luaI_openlib (lua_State *L, const char *libname, const luaL_Reg *l, int nup) {
+extern void luaI_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
+        int nup) {
   if (l)
     luaL_openlib(L, libname, l, nup);
   else {
@@ -405,7 +418,8 @@ extern int lua_compare (lua_State *L, int idx1, int idx2, int op) {
       int t2 = lua_type(L, idx2);
       if (t1 == t2 && (t1 == LUA_TNUMBER || t1 == LUA_TSTRING)) {
         i = !lua_lessthan(L, idx2, idx1);
-      } else if (luaL_getmetafield(L, idx1, "__le") || luaL_getmetafield(L, idx2, "__le")) {
+      } else if (luaL_getmetafield(L, idx1, "__le") || luaL_getmetafield(L,
+                  idx2, "__le")) {
         lua_pushvalue(L, idx1);
         lua_pushvalue(L, idx2);
         lua_call(L, 2, 1);
@@ -457,32 +471,38 @@ extern void lua_arith (lua_State *L, int op) {
   } else {
     switch (op) {
       case LUA_OPADD:
-        if (luaL_getmetafield(L, -2, "__add") || luaL_getmetafield(L, -1, "__add")) {
+        if (luaL_getmetafield(L, -2, "__add") || luaL_getmetafield(L, -1,
+                    "__add")) {
           lua_insert(L, -3);
           lua_call(L, 2, 1);
       } else break;
       case LUA_OPSUB:
-        if (luaL_getmetafield(L, -2, "__sub") || luaL_getmetafield(L, -1, "__sub")) {
+        if (luaL_getmetafield(L, -2, "__sub") || luaL_getmetafield(L, -1,
+                    "__sub")) {
           lua_insert(L, -3);
           lua_call(L, 2, 1);
       } else break;
       case LUA_OPMUL:
-        if (luaL_getmetafield(L, -2, "__mul") || luaL_getmetafield(L, -1, "__mul")) {
+        if (luaL_getmetafield(L, -2, "__mul") || luaL_getmetafield(L, -1,
+                    "__mul")) {
           lua_insert(L, -3);
           lua_call(L, 2, 1);
       } else break;
       case LUA_OPDIV:
-        if (luaL_getmetafield(L, -2, "__div") || luaL_getmetafield(L, -1, "__div")) {
+        if (luaL_getmetafield(L, -2, "__div") || luaL_getmetafield(L, -1,
+                    "__div")) {
           lua_insert(L, -3);
           lua_call(L, 2, 1);
       } else break;
       case LUA_OPMOD:
-        if (luaL_getmetafield(L, -2, "__mod") || luaL_getmetafield(L, -1, "__mod")) {
+        if (luaL_getmetafield(L, -2, "__mod") || luaL_getmetafield(L, -1,
+                    "__mod")) {
           lua_insert(L, -3);
           lua_call(L, 2, 1);
       } else break;
       case LUA_OPPOW:
-        if (luaL_getmetafield(L, -2, "__pow") || luaL_getmetafield(L, -1, "__pow")) {
+        if (luaL_getmetafield(L, -2, "__pow") || luaL_getmetafield(L, -1,
+                    "__pow")) {
           lua_insert(L, -3);
           lua_call(L, 2, 1);
       } else break;
@@ -494,8 +514,10 @@ extern void lua_arith (lua_State *L, int op) {
       default: api_check(L, 0, "invalid option");
     }
     int idx = numeric1 ? -2 : -1;
-    // alternatively, use luaL_error formatting, but then give up automatic function name lookup
-    lua_pushfstring(L, "attempt to perform arithmetic on a %s value", lua_typename(L, lua_type(L, idx)));
+    // alternatively, use luaL_error formatting, but then give up automatic
+    // function name lookup
+    lua_pushfstring(L, "attempt to perform arithmetic on a %s value",
+            lua_typename(L, lua_type(L, idx)));
     luaL_argerror(L, (op == LUA_OPUNM) ? 1 : 3 + idx, lua_tostring(L, -1));
   }
 }
@@ -512,7 +534,8 @@ extern lua_Unsigned luaL_checkunsigned (lua_State *L, int arg) {
 }
 
 /* define luaL_opt(L,f,n,d)	(lua_isnoneornil(L,(n)) ? (d) : f(L,(n))) */
-extern lua_Unsigned luaL_optunsigned (lua_State *L, int narg, lua_Unsigned def) {
+extern lua_Unsigned luaL_optunsigned (lua_State *L, int narg, lua_Unsigned def)
+{
   return luaL_opt(L, luaL_checkunsigned, narg, def);
 }
 
