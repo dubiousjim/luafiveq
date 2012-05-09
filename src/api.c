@@ -283,19 +283,8 @@ extern void luaL_requiref (lua_State *L, const char *libname,
 }
 #endif
 
-# if LUA_VERSION_NUM == 501 && defined(LUA_COMPAT_OPENLIB)
-#  undef luaL_openlib
-extern void luaI_openlib (lua_State *L, const char *libname, const luaL_Reg *l, int nup) {
-  if (l)
-    luaL_openlib(L, libname, l, nup);
-  else {
-    const luaL_Reg empty[] = {
-      {NULL, NULL}
-    };
-    luaL_openlib(L, libname, empty, nup);
-  }
-}
-# elif LUA_VERSION_NUM == 501 || (LUA_VERSION_NUM == 502 && ( !defined(LUA_COMPAT_MODULE) || defined(LUA_FIVEQ_PLUS) ))
+
+# if defined(LUA_FIVEQ_PLUS) || (LUA_VERSION_NUM == 501 && !defined(LUA_COMPAT_OPENLIB)) || (LUA_VERSION_NUM == 502 && !defined(LUA_COMPAT_MODULE))
 /*
  * If "libname", pushmodule to find existing module or write to 
  * caller's/global environment, else assumes there's already a table 
@@ -322,7 +311,18 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
     else
         lua_pop(L, nup);  /* remove upvalues */
 }
-
+# elif LUA_VERSION_NUM == 501
+#  undef luaL_openlib
+extern void luaI_openlib (lua_State *L, const char *libname, const luaL_Reg *l, int nup) {
+  if (l)
+    luaL_openlib(L, libname, l, nup);
+  else {
+    const luaL_Reg empty[] = {
+      {NULL, NULL}
+    };
+    luaL_openlib(L, libname, empty, nup);
+  }
+}
 # endif
 
 
