@@ -1,38 +1,6 @@
 /*
  * fiveq.c: elements of Lua 5.2's libraries backported to lua 5.1.4, and
  * vice-versa
- * 
- * sets _FIVEQ to true or "plus"
- *
- * in Lua 5.1.4
- * ------------
- * 1. "xpcall"(func, errfilter, [...])
- * 2. string.rep(s, count, [sep])
- * 3. table.pack -- if PLUS, using '#' instead of 'n'
- * 4. if PLUS, unpack honors '#' and __len
- * 5. global unpack aliased as table.unpack
- * 6. math.log(n, [base]), with efficient math.log(n, 2)
- * 7. if PLUS, math.trunc
- * 8. debug.getuservalue and debug.setuservalue
- * 9. package.loaders aliased as package.searchers
- * 10. if PLUS, replacement newproxy with same interface as for Lua 5.2
- * 11. loads pairs.c, io.c, bitlib.c
- * 12. if PLUS, loads module.c, iter.c, err.c, metafield.c, hash.c, struct.c
- *
- * in Lua 5.2.0
- * ------------
- * 1. global load aliased as loadstring
- * 2. table.maxn
- * 3. if PLUS, table.pack uses '#' instead of 'n'
- * 4. if PLUS, table.unpack honors '#' and __len
- * 5. table.unpack aliased as global unpack
- * 6. math.log10
- * 7. if PLUS, more efficient math.log(n, 2)
- * 8. if PLUS, math.trunc
- * 9. debug.getfenv and debug.setfenv provided (for userdata only)
- * 10. newproxy, also aliased as debug.newproxy
- * 11. package.searchers aliased as package.loaders
- * 12. if PLUS, loads module.c, iter.c, err.c, metafield.c, hash.c, struct.c
  */
 
 
