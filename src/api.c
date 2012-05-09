@@ -253,13 +253,14 @@ extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint) {
 
 /*
  * Stripped-down 'require'.
- * Call as: luaL_requiref(L, "lib", luaopen_lib, write to _G?)
+ * Call as: luaL_requiref(L, "libname", luaopen_lib, assign in _G?)
  * Leaves single return value of luaopen_lib (or nil) at stack[+1.
- * Note this will *always* run luaopen_lib and overwrite REG._LOADED.lib.
- * Assigns to stack[idx].lib, or _G.lib if idx==1, or nowhere if idx==0.
+ * Note this will *always* run luaopen_lib and overwrite REG._LOADED[libname].
+ * Assigns to stack[gidx][libname], or _G[libname] if gidx==1,
+ * or nowhere if gidx==0.
  */
 extern void luaL_requiref (lua_State *L, const char *libname,
-                               lua_CFunction luaopen_lib, int global_idx) {
+                               lua_CFunction luaopen_lib, int gidx) {
   lua_pushcfunction(L, luaopen_lib);
   lua_pushstring(L, libname);  /* argument to open function */
   lua_call(L, 1, 1);  /* open module */
@@ -267,17 +268,17 @@ extern void luaL_requiref (lua_State *L, const char *libname,
   lua_pushvalue(L, -2);  /* make copy of module (call result) */
   lua_setfield(L, -2, libname);  /* _LOADED[libname] = module */
   lua_pop(L, 1);  /* remove _LOADED table */
-  if (global_idx != 0) {
-    if (global_idx == 1)
+  if (gidx != 0) {
+    if (gidx == 1)
       /* for compatibility with 5.2.0 version */
       lua_pushglobaltable(L);
     else
-      /* when global_idx is other than 0 or 1, we write to stack[global_idx] */
-      lua_pushvalue(L, global_idx);
+      /* when gidx is other than 0 or 1, we write to stack[gidx] */
+      lua_pushvalue(L, gidx);
     lua_pushvalue(L, -2);  /* copy of 'mod' */
     lua_setfield(L, -2, libname);  /* _G[libname] = module */
     lua_pop(L, 1);  /* remove _G table */
-    // stack[+1] = open_lib("lib")
+    // stack[+1] = open_lib("libname")
   }
 }
 #endif
