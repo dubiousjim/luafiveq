@@ -101,12 +101,17 @@ static int math_trunc (lua_State *L) {
 static int table_pack (lua_State *L) {
   int n = lua_gettop(L);  /* number of elements to pack */
 # ifdef LUA_FIVEQ_PLUS
-  lua_createtable(L, n, 1);  /* create result table */
-  // lua_createtable(L, n, 2);  /* create result table */
+#  if 0
+  lua_createtable(L, n, 2);  /* create result table */
   lua_pushinteger(L, n);
   lua_setfield(L, -2, "#");  /* t['#'] = number of elements */
-  // lua_pushinteger(L, n);
-  // lua_setfield(L, -2, "n");  /* t['n'] also = number of elements */
+  lua_pushinteger(L, n);
+  lua_setfield(L, -2, "n");  /* t['n'] also = number of elements */
+#  else
+  lua_createtable(L, n, 1);  /* create result table */
+  lua_pushinteger(L, n);
+  lua_setfield(L, -2, "#");  /* t['#'] = number of elements */
+#  endif
 # else
   lua_createtable(L, n, 1);  /* create result table */
   lua_pushinteger(L, n);
@@ -135,11 +140,13 @@ static int table_unpack (lua_State *L) {
     if (lua_type(L, -1) == LUA_TNUMBER)
       e = lua_tointeger(L, -1);
     else {
-      // lua_pop(L, 1);
-      // lua_getfield(L, 1, "n");
-      // if (lua_type(L, -1) == LUA_TNUMBER)
-      //   e = lua_tointeger(L, -1);
-      // else
+#  if 0
+      lua_pop(L, 1);
+      lua_getfield(L, 1, "n");
+      if (lua_type(L, -1) == LUA_TNUMBER)
+        e = lua_tointeger(L, -1);
+      else
+#  endif
 # else
     lua_getfield(L, 1, "n");
     if (lua_type(L, -1) == LUA_TNUMBER)
