@@ -357,10 +357,10 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luao
 
 #define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
 
-#define lua_objlen(L,idx) lua_rawlen(L, (idx))
-#define lua_strlen(L,idx) lua_rawlen(L, (idx))
-/* void lua_len(L, idx) honors __len */
-/* int luaL_len(L, idx) effectively does luaL_checkint on lua_len(L, idx), leaves raw len on stack and returns it converted to int */
+#define lua_objlen(L,i) lua_rawlen(L, (i))
+#define lua_strlen(L,i) lua_rawlen(L, (i))
+/* void lua_len(L, i) honors __len */
+/* int luaL_len(L, i) effectively does luaL_checkint on lua_len(L, i), leaves raw len on stack and returns it converted to int */
 
 #define lua_equal(L,idx1,idx2)		lua_compare(L,(idx1),(idx2),LUA_OPEQ)
 #define lua_lessthan(L,idx1,idx2)	lua_compare(L,(idx1),(idx2),LUA_OPLT)
