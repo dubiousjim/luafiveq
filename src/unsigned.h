@@ -68,7 +68,12 @@ typedef LUA_UNSIGNED lua_Unsigned;
 #if defined(MS_ASMTRICK)        /* { */
 /* trick with Microsoft assembler for X86 */
 
-// commented out first two FIXME
+#if defined(lua_number2int)
+#undef lua_number2int
+#endif
+#if defined(lua_number2integer)
+#undef lua_number2integer
+#endif
 #define lua_number2int(i,n)  __asm {__asm fld n   __asm fistp i}
 #define lua_number2integer(i,n)		lua_number2int(i, n)
 #define lua_number2unsigned(i,n)  \
@@ -93,7 +98,12 @@ union luai_Cast2 { double l_d; LUA_INT32 l_p[2]; };
     volatile union luai_Cast2 u; u.l_d = (n) + 6755399441055744.0; \
     (i) = (t)u.l_p[LUA_IEEEENDIAN]; }
 
-// commented out first two FIXME
+#if defined(lua_number2int)
+#undef lua_number2int
+#endif
+#if defined(lua_number2integer)
+#undef lua_number2integer
+#endif
 #define lua_number2int(i,n)		lua_number2int32(i, n, int)
 #define lua_number2integer(i,n)		lua_number2int32(i, n, lua_Integer)
 #define lua_number2unsigned(i,n)        lua_number2int32(i, n, lua_Unsigned)
@@ -103,7 +113,6 @@ union luai_Cast2 { double l_d; LUA_INT32 l_p[2]; };
 
 /* the following definitions always work, but may be slow */
 
-// commented out first two blocks FIXME
 #if !defined(lua_number2int)
 #define lua_number2int(i,n)	((i)=(int)(n))
 #endif
