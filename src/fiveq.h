@@ -358,6 +358,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luao
 #define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
 
 #define lua_objlen(L,idx) lua_rawlen(L, (idx))
+#define lua_strlen(L,idx) lua_rawlen(L, (idx))
 /* void lua_len(L, idx) honors __len */
 /* int luaL_len(L, idx) effectively does luaL_checkint on lua_len(L, idx), leaves raw len on stack and returns it converted to int */
 
@@ -365,6 +366,27 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luao
 #define lua_lessthan(L,idx1,idx2)	lua_compare(L,(idx1),(idx2),LUA_OPLT)
 
 extern int luaL_typerror (lua_State *L, int narg, const char *tname);
+
+/* pre-5.1 stuff */
+
+#define luaL_getn(L,i)    ((int)lua_rawlen(L, (i)))
+#define luaL_setn(L,i,j)  ((void)0)  /* no op! */
+
+#define luaL_reg	luaL_Reg
+#define lua_open()	luaL_newstate()
+#define lua_getregistry(L)	lua_pushvalue(L, LUA_REGISTRYINDEX)
+#define lua_getgccount(L)	lua_gc(L, LUA_GCCOUNT, 0)
+#define lua_Chunkreader		lua_Reader
+#define lua_Chunkwriter		lua_Writer
+#define luaL_putchar(B,c)	luaL_addchar(B,c)
+
+#define lua_ref(L,lock) ((lock) ? luaL_ref(L, LUA_REGISTRYINDEX) : \
+(lua_pushstring(L, "unlocked references are obsolete"), lua_error(L), 0))
+
+#define lua_unref(L,ref)        luaL_unref(L, LUA_REGISTRYINDEX, (ref))
+#define lua_getref(L,ref)       lua_rawgeti(L, LUA_REGISTRYINDEX, (ref))
+
+
 
 # ifdef LUA_FIVEQ_PLUS
 /* we replace 5.2.0's requiref with a version that will write to stack[global_idx] when global_idx is other than 0 or 1 */
