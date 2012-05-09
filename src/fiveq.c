@@ -267,7 +267,6 @@ static int luaB_xpcall (lua_State *L) {
 }
 
 
-/*
 static int luaB_rawlen (lua_State *L) {
   int t = lua_type(L, 1);
   luaL_argcheck(L, t == LUA_TTABLE || t == LUA_TSTRING, 1,
@@ -275,7 +274,6 @@ static int luaB_rawlen (lua_State *L) {
   lua_pushinteger(L, lua_rawlen(L, 1));
   return 1;
 }
- */
 
 
 /* --- adapted from lua-5.2.0's lstrlib.c --- */
@@ -332,8 +330,13 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
 
   lua_register(L, "xpcall", luaB_xpcall);  /* export to _G */
+
   /* rawlen(string or table) is exported by the tablelen patch */
-  /* lua_register(L, "rawlen", luaB_rawlen); */
+  lua_getglobal(L, "rawlen");
+  if (lua_isnil(L, -1)) {
+      lua_register(L, "rawlen", luaB_rawlen);
+  }
+  lua_pop(L, 1);
 
   require(L, LUA_STRLIBNAME, luaopen_string);
   luaQ_register(L, -1, "rep", str_rep);  /* export to string library */
