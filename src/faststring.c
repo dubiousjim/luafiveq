@@ -1,13 +1,16 @@
 /*
- * Faster string routines
+ * Fast string routines
  *
- *  Half of the time when doing string search and replace we do not require the
- *  regular expression functionality that comes with the string.gsub function. I
- *  have done a benchmark test with this new function and found it to be overall
- *  more than twice faster than gsub. The speed difference can be easily seen when
- *  doing search and replace on field values of thousands of records.
- *
+ * starts(str, prefix, ...)
+ *      returns first prefix that str begins with, else false (no regex)
+ * ends(str, suffix, ...)
+ *      returns first suffix that str ends with, else false (no regex)
+ * gsubplain(str, target, replacement, [howmay])
+ *      like gsub, but target is not processed for regex
+ *      returns newstr, plus a count of how many replacements were made
+ *      adapted from http://lua-users.org/wiki/StringReplace by Sam Lie
  */
+
 
 #include <string.h>
 
@@ -40,6 +43,16 @@ static const char *lmemfind (const char *s1, size_t l1,
     return NULL;  /* not found */
   }
 }
+
+/*
+ *  Adapted from http://lua-users.org/wiki/StringReplace
+ *  Original author Sam Lie writes:
+ *  Half of the time when doing string search and replace we do not require the
+ *  regular expression functionality that comes with the string.gsub function. I
+ *  have done a benchmark test with this new function and found it to be overall
+ *  more than twice faster than gsub. The speed difference can be easily seen when
+ *  doing search and replace on field values of thousands of records. 
+ */
 
 static int str_replace(lua_State *L) {
     size_t l1, l2, l3;
