@@ -34,7 +34,7 @@
 
 /* ===== begin modifications to lbitlib.c ===== */
 
-#include "fivetwo.h"
+#include "fiveq.h"
 
 /* also in api.c, but not exported */
 static void pushunsigned (lua_State *L, lua_Unsigned u) {
@@ -231,7 +231,7 @@ static const luaL_Reg bitlib[] = {
 };
 
 
-extern int luaopen_fivetwo_bitlib (lua_State *L) {
+extern int luaopen_fiveq_bitlib (lua_State *L) {
     /* luaL_openlib(L, "bitlib", bitlib, 0); */
     luaL_newlib(L, bitlib);
     return 1;

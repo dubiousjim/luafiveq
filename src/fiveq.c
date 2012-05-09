@@ -1,7 +1,7 @@
 /*
- * fivetwo.c: elements of Lua 5.2's libraries backported to lua 5.1.4, and vice-versa
+ * fiveq.c: elements of Lua 5.2's libraries backported to lua 5.1.4, and vice-versa
  * 
- * sets _FIVETWO to true or "plus"
+ * sets _FIVEQ to true or "plus"
  *
  * in Lua 5.1.4
  * ------------
@@ -39,7 +39,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "fivetwo.h"
+#include "fiveq.h"
 
 
 /* --- adapted from lua-5.2.0's lmathlib.c --- */
@@ -100,7 +100,7 @@ static int math_trunc (lua_State *L) {
 
 static int table_pack (lua_State *L) {
   int n = lua_gettop(L);  /* number of elements to pack */
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
   lua_createtable(L, n, 1);  /* create result table */
   // lua_createtable(L, n, 2);  /* create result table */
   lua_pushinteger(L, n);
@@ -130,7 +130,7 @@ static int table_unpack (lua_State *L) {
   luaL_checktype(L, 1, LUA_TTABLE);
   i = luaL_optint(L, 2, 1);
   if (lua_isnoneornil(L, 3)) {
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
     lua_getfield(L, 1, "#");
     if (lua_type(L, -1) == LUA_TNUMBER)
       e = lua_tointeger(L, -1);
@@ -163,11 +163,11 @@ static int table_unpack (lua_State *L) {
   return n;
 }
 
-#ifdef LUA_FIVETWO_PLUS
+#ifdef LUA_FIVEQ_PLUS
 extern int getfenv(lua_State *L) {
     int level = luaL_checkint(L, 1);
     if (level > 0) {
-        lua52_getfenv(L, level, NULL);
+        luaQ_getfenv(L, level, NULL);
     }
     else {
         luaL_argcheck(L, level == 0, 1, "negative level");
@@ -226,12 +226,12 @@ static int newproxy (lua_State *L) {
 
 
 
-extern int luaopen_fivetwo_module (lua_State *L);
-extern int luaopen_fivetwo_iter (lua_State *L);
-extern int luaopen_fivetwo_error (lua_State *L);
-extern int luaopen_fivetwo_metafield (lua_State *L);
-extern int luaopen_fivetwo_hash (lua_State *L);
-extern int luaopen_fivetwo_struct (lua_State *L);
+extern int luaopen_fiveq_module (lua_State *L);
+extern int luaopen_fiveq_iter (lua_State *L);
+extern int luaopen_fiveq_error (lua_State *L);
+extern int luaopen_fiveq_metafield (lua_State *L);
+extern int luaopen_fiveq_hash (lua_State *L);
+extern int luaopen_fiveq_struct (lua_State *L);
 
 
 /* ----------- for 5.1.4 ---------- */
@@ -317,11 +317,11 @@ static int db_setuservalue (lua_State *L) {
   return 1;
 }
 
-extern int luaopen_fivetwo_pairs (lua_State *L);
-extern int luaopen_fivetwo_io (lua_State *L);
-extern int luaopen_fivetwo_bitlib (lua_State *L);
+extern int luaopen_fiveq_pairs (lua_State *L);
+extern int luaopen_fiveq_io (lua_State *L);
+extern int luaopen_fiveq_bitlib (lua_State *L);
 
-extern int luaopen_fivetwo (lua_State *L) {
+extern int luaopen_fiveq (lua_State *L) {
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
 
   lua_register(L, "xpcall", luaB_xpcall);  /* export to _G */
@@ -329,12 +329,12 @@ extern int luaopen_fivetwo (lua_State *L) {
   /* lua_register(L, "rawlen", luaB_rawlen); */
 
   require(L, LUA_STRLIBNAME, luaopen_string);
-  lua52_register(L, -1, "rep", str_rep);  /* export to string library */
+  luaQ_register(L, -1, "rep", str_rep);  /* export to string library */
   lua_pop(L, 1);  /* pop string library */
 
   require(L, LUA_TABLIBNAME, luaopen_table);
-  lua52_register(L, -1, "pack", table_pack);  /* export to table library */
-# ifdef LUA_FIVETWO_PLUS
+  luaQ_register(L, -1, "pack", table_pack);  /* export to table library */
+# ifdef LUA_FIVEQ_PLUS
   lua_pushcfunction(L, table_unpack);
   lua_pushvalue(L, -1);  /* duplicate */
   lua_setglobal(L, "unpack");  /* with one copy, overwrite _G.unpack */
@@ -345,17 +345,17 @@ extern int luaopen_fivetwo (lua_State *L) {
   lua_pop(L, 1);  /* pop table library */
 
   require(L,  LUA_MATHLIBNAME, luaopen_math);
-  lua52_register(L, -1, "log", math_log);  /* export to math library */
-# ifdef LUA_FIVETWO_PLUS
-  lua52_register(L, -1, "trunc", math_trunc);  /* export to math library */
+  luaQ_register(L, -1, "log", math_log);  /* export to math library */
+# ifdef LUA_FIVEQ_PLUS
+  luaQ_register(L, -1, "trunc", math_trunc);  /* export to math library */
 # endif
   lua_pop(L, 1);  /* pop math library */
 
   require(L,  LUA_DBLIBNAME, luaopen_debug);
-  lua52_register(L, -1, "getuservalue", db_getuservalue);  /* export to debug library */
-  lua52_register(L, -1, "setuservalue", db_setuservalue);  /* export to debug library */
+  luaQ_register(L, -1, "getuservalue", db_getuservalue);  /* export to debug library */
+  luaQ_register(L, -1, "setuservalue", db_setuservalue);  /* export to debug library */
 
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
   /* newproxy needs a weaktable as upvalue */
   lua_createtable(L, 0, 1);  /* new table w */
   lua_pushvalue(L, -1);  /* w will be its own metatable */
@@ -378,8 +378,8 @@ extern int luaopen_fivetwo (lua_State *L) {
   lua_pop(L, 1);  /* pop REG._LOADED */
 
   /* redefines ipairs and pairs, returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_pairs);
-  lua_pushstring(L, "fivetwo.pairs");
+  lua_pushcfunction(L, luaopen_fiveq_pairs);
+  lua_pushstring(L, "fiveq.pairs");
   lua_call(L, 1, 0); 
   
   /* redefines lines, read, write in file metatable
@@ -387,44 +387,44 @@ extern int luaopen_fivetwo (lua_State *L) {
      redefines popen's "__close"
      redefines os.execute
      returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_io);
-  lua_pushstring(L, "fivetwo.io");
+  lua_pushcfunction(L, luaopen_fiveq_io);
+  lua_pushstring(L, "fiveq.io");
   lua_call(L, 1, 0);
 
-  luaL_requiref(L, "bit32", luaopen_fivetwo_bitlib, 1);
+  luaL_requiref(L, "bit32", luaopen_fiveq_bitlib, 1);
 
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
 
   /* defines require, module, package.seeall, package.strict; returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_module);
-  lua_pushstring(L, "fivetwo.module");
+  lua_pushcfunction(L, luaopen_fiveq_module);
+  lua_pushstring(L, "fiveq.module");
   lua_call(L, 1, 0); 
 
   /* defines iter; returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_iter);
-  lua_pushstring(L, "fivetwo.iter");
+  lua_pushcfunction(L, luaopen_fiveq_iter);
+  lua_pushstring(L, "fiveq.iter");
   lua_call(L, 1, 0); 
 
   /* defines error functions in _G; returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_error);
+  lua_pushcfunction(L, luaopen_fiveq_error);
   lua_pushstring(L, "err");
   lua_call(L, 1, 0); 
 
   /* defines debug.getmetafield; returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_metafield);
-  lua_pushstring(L, "fivetwo.metafield");
+  lua_pushcfunction(L, luaopen_fiveq_metafield);
+  lua_pushstring(L, "fiveq.metafield");
   lua_call(L, 1, 0); 
 
-  luaL_requiref(L, "hash", luaopen_fivetwo_hash, 1);
-  luaL_requiref(L, "struct", luaopen_fivetwo_struct, 1);
+  luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
+  luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
   lua_pushstring(L, "plus");
-  lua_setglobal(L, "_FIVETWO");
+  lua_setglobal(L, "_FIVEQ");
 
 # else
 
   lua_pushboolean(L, 1);
-  lua_setglobal(L, "_FIVETWO");
+  lua_setglobal(L, "_FIVEQ");
 
 # endif
 
@@ -479,7 +479,7 @@ static int db_setuservalue (lua_State *L) {
 }
 
 
-extern int luaopen_fivetwo (lua_State *L) {
+extern int luaopen_fiveq (lua_State *L) {
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
   
   lua_getglobal(L, "load");
@@ -489,8 +489,8 @@ extern int luaopen_fivetwo (lua_State *L) {
   lua_pushcfunction(L, table_maxn);
   lua_setfield(L, -2, "maxn");  /* export to table library */
 
-# ifdef LUA_FIVETWO_PLUS
-  lua52_register(L, -1, "pack", table_pack);  /* export to table library */
+# ifdef LUA_FIVEQ_PLUS
+  luaQ_register(L, -1, "pack", table_pack);  /* export to table library */
   lua_pushcfunction(L, table_unpack);
   lua_pushvalue(L, -1);
   lua_setfield(L, -3, "unpack");  /* export to table library */
@@ -501,10 +501,10 @@ extern int luaopen_fivetwo (lua_State *L) {
   lua_pop(L, 1);  /* pop table library */
 
   require(L, LUA_MATHLIBNAME, luaopen_math);
-  lua52_register(L, -1, "log10", math_log10);  /* export to math library */
-# ifdef LUA_FIVETWO_PLUS
-  lua52_register(L, -1, "log", math_log);  /* export to math library */
-  lua52_register(L, -1, "trunc", math_trunc);  /* export to math library */
+  luaQ_register(L, -1, "log10", math_log10);  /* export to math library */
+# ifdef LUA_FIVEQ_PLUS
+  luaQ_register(L, -1, "log", math_log);  /* export to math library */
+  luaQ_register(L, -1, "trunc", math_trunc);  /* export to math library */
 # endif
   lua_pop(L, 1);  /* pop math library */
 
@@ -518,7 +518,7 @@ extern int luaopen_fivetwo (lua_State *L) {
   lua_getfield(L, -1, "setuservalue");  /* get debug.setuservalue */
   lua_setfield(L, -2, "setfenv");  /* export alias to debug library */
 
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
   lua_register(L, "getfenv", getfenv);
 # endif
 
@@ -542,38 +542,38 @@ extern int luaopen_fivetwo (lua_State *L) {
 
   lua_pop(L, 1);  /* pop REG._LOADED */
 
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
 
   /* defines require, module, package.seeall, package.strict; returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_module);
-  lua_pushstring(L, "fivetwo.module");
+  lua_pushcfunction(L, luaopen_fiveq_module);
+  lua_pushstring(L, "fiveq.module");
   lua_call(L, 1, 0); 
 
   /* defines iter, returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_iter);
-  lua_pushstring(L, "fivetwo.iter");
+  lua_pushcfunction(L, luaopen_fiveq_iter);
+  lua_pushstring(L, "fiveq.iter");
   lua_call(L, 1, 0); 
 
   /* defines error functions in _G, returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_error);
+  lua_pushcfunction(L, luaopen_fiveq_error);
   lua_pushstring(L, "err");
   lua_call(L, 1, 0); 
 
   /* defines debug.getmetafield, returns 0 */
-  lua_pushcfunction(L, luaopen_fivetwo_metafield);
-  lua_pushstring(L, "fivetwo.metafield");
+  lua_pushcfunction(L, luaopen_fiveq_metafield);
+  lua_pushstring(L, "fiveq.metafield");
   lua_call(L, 1, 0); 
 
-  luaL_requiref(L, "hash", luaopen_fivetwo_hash, 1);
-  luaL_requiref(L, "struct", luaopen_fivetwo_struct, 1);
+  luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
+  luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
   lua_pushstring(L, "plus");
-  lua_setglobal(L, "_FIVETWO");
+  lua_setglobal(L, "_FIVEQ");
 
 # else
 
   lua_pushboolean(L, 1);
-  lua_setglobal(L, "_FIVETWO");
+  lua_setglobal(L, "_FIVEQ");
 
 # endif
 

@@ -9,7 +9,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "fivetwo.h"
+#include "fiveq.h"
 
 
 /* --- copied from lbaselib.c --- */
@@ -78,7 +78,7 @@ static int luaB_pairs (lua_State *L) {
 }
 
 
-extern int luaopen_fivetwo_pairs (lua_State *L) {
+extern int luaopen_fiveq_pairs (lua_State *L) {
     lua_pushcfunction(L, ipairsaux);  /* ipairs needs ipairsaux as upvalue */
     lua_pushcclosure(L, luaB_ipairs, 1);
     lua_setglobal(L, "ipairs");

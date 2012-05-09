@@ -18,7 +18,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "fivetwo.h"
+#include "fiveq.h"
 #include "unsigned.h"
 
 // #define _WITH_DPRINTF
@@ -257,7 +257,7 @@ static const luaL_Reg hlib[] = {
   {NULL, NULL}
 };
 
-extern int luaopen_fivetwo_hash (lua_State *L) {
+extern int luaopen_fiveq_hash (lua_State *L) {
     lua_newtable(L);
     // luaL_setfuncs(L, hlib, 0); // or luaL_openlib(L, NULL, hlib, 0);
     luaL_openlib(L, "hash", hlib, 0);

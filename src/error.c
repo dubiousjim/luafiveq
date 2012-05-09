@@ -1,5 +1,5 @@
 /* 
- * error.c: part of fivetwoplus libraries
+ * error.c: part of fiveqplus libraries
  *
  * 1.  error(fmt, [level], [...])
  * 2.  assert(bool, [fmt], [...])
@@ -34,8 +34,8 @@
 #include <lualib.h>
 #include <string.h>
 
-#define LUA_FIVETWO_PLUS
-#include "fivetwo.h"
+#define LUA_FIVEQ_PLUS
+#include "fiveq.h"
 
 
 /****** these functions derived from lauxlib.c *********/
@@ -487,8 +487,8 @@ static const luaL_Reg R[] =
         { NULL,		NULL	  }
 };
 
-extern int luaopen_fivetwo_error (lua_State *L) {
-    lua52_checklib(L, LUA_STRLIBNAME);
+extern int luaopen_fiveq_error (lua_State *L) {
+    luaQ_checklib(L, LUA_STRLIBNAME);
     lua_getfield(L, -1, "format");
     lua_pushvalue(L, -1);
     lua_pushvalue(L, -1);

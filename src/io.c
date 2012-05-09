@@ -19,7 +19,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "fivetwo.h"
+#include "fiveq.h"
 
 
 /* --- adapted from loslib.c and lauxlib.c --- */
@@ -409,12 +409,12 @@ static const luaL_Reg flib[] = {
   {NULL, NULL}
 };
 
-#ifndef LUA_FIVETWO_PLUS
-extern void lua52_checklib (lua_State *L, const char *libname);
+#ifndef LUA_FIVEQ_PLUS
+extern void luaQ_checklib (lua_State *L, const char *libname);
 #endif
 
-extern int luaopen_fivetwo_io (lua_State *L) {
-  lua52_checklib(L, LUA_IOLIBNAME);
+extern int luaopen_fiveq_io (lua_State *L) {
+  luaQ_checklib(L, LUA_IOLIBNAME);
   luaL_getmetatable(L, LUA_FILEHANDLE);
   if (lua_isnil(L, -1))
     return luaL_error(L, "can't open %s metatable", LUA_FILEHANDLE);
@@ -426,9 +426,9 @@ extern int luaopen_fivetwo_io (lua_State *L) {
   luaL_setfuncs(L, iolib, 0);  /* replacement library methods */
   lua_getfield(L, -1, "popen");
   lua_getfenv(L, -1);
-  lua52_register(L, -1, "__close", io_pclose); /* replace the popen().__close method */
+  luaQ_register(L, -1, "__close", io_pclose); /* replace the popen().__close method */
   lua_pop(L, 3);
-  lua52_checklib(L, LUA_OSLIBNAME);
-  lua52_register(L, -1, "execute", os_execute); /* replace os.execute method */
+  luaQ_checklib(L, LUA_OSLIBNAME);
+  luaQ_register(L, -1, "execute", os_execute); /* replace os.execute method */
   return 0;
 }

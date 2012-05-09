@@ -1,5 +1,5 @@
 /*
- * fivetwo.h: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
+ * fiveq.h: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
  * includes lua.h, lauxlib.h, unsigned.h
  *
  * Notes and Limitations
@@ -27,16 +27,16 @@
  *
  * haven't backported 5.2.0's LUA_RIDX_MAINTHREAD LUA_RIDX_GLOBALS
  *
- * none of these are present in 5.2.0: lua_getfenv, lua_setfenv, LUA_ENVIRONINDEX, LUA_GLOBALSINDEX; however, when LUA_FIVETWO_PLUS is defined, we export:
- *   extern void lua52_getfenv (lua_State *L, int level, const char *fname);
- *   extern void lua52_setfenv (lua_State *L, int level, const char *fname);
+ * none of these are present in 5.2.0: lua_getfenv, lua_setfenv, LUA_ENVIRONINDEX, LUA_GLOBALSINDEX; however, when LUA_FIVEQ_PLUS is defined, we export:
+ *   extern void luaQ_getfenv (lua_State *L, int level, const char *fname);
+ *   extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
  *
  * in 5.2.0, a __gc element needs to be present in a metatable *before* lua_setmetatable
- * the version of newproxy we provide in 5.2.0's fivetwo.so accepts the __gc function as a parameter in place of `true`
+ * the version of newproxy we provide in 5.2.0's fiveq.so accepts the __gc function as a parameter in place of `true`
  *
  *
  *
- * The lua52_XXX interfaces are only exported when LUA_FIVETWO_PLUS is defined
+ * The luaQ_XXX interfaces are only exported when LUA_FIVEQ_PLUS is defined
  * 
  * List of interfaces provided to 5.1.4:
  *
@@ -69,22 +69,22 @@
  *   luaL_setmetatable
  *
  *   luaL_getsubtable
- *   lua52_getdeeptable(L, idx, "field.field", szhint, &existing) --  like luaL_findtable from lauxlib.c
- *   lua52_getdeepvalue(L, idx, "field.field")
- *   lua52_setdeepvalue(L, idx, "field.field")
- *   lua52_getfenv(L, level, "called function")
- *   lua52_setfenv(L, level, "called function")
+ *   luaQ_getdeeptable(L, idx, "field.field", szhint, &existing) --  like luaL_findtable from lauxlib.c
+ *   luaQ_getdeepvalue(L, idx, "field.field")
+ *   luaQ_setdeepvalue(L, idx, "field.field")
+ *   luaQ_getfenv(L, level, "called function")
+ *   luaQ_setfenv(L, level, "called function")
  *
- *   lua52_register(L,idx,"name",funct)
+ *   luaQ_register(L,idx,"name",funct)
  *   luaL_setfuncs
  *   luaL_newlibtable
  *   luaL_newlib
  *   luaL_openlib -- if PLUS, registers in caller's env instead of _G
  *   luaL_register -- shortcut wrt luaL_openlib
- *   lua52_pushmodule(L, "library", szhint, level, "called function")
- *   luaL_pushmodule -- shortcut wrt lua52_pushmodule
+ *   luaQ_pushmodule(L, "library", szhint, level, "called function")
+ *   luaL_pushmodule -- shortcut wrt luaQ_pushmodule
  *   luaL_requiref -- can write to stack[global_idx] instead of _G
- *   lua52_checklib(L, "lib")
+ *   luaQ_checklib(L, "lib")
  *
  *
  * List of interfaces provided to 5.2.0:
@@ -94,26 +94,26 @@
  *   lua_lessthan
  *   luaL_typerror
  *   lua_cpcall
- *   lua52_getdeeptable(L, idx, "field.field", szhint, &existing) --  like luaL_findtable from lauxlib.c
- *   lua52_getdeepvalue(L, idx, "field.field")
- *   lua52_setdeepvalue(L, idx, "field.field")
- *   lua52_getfenv(L, level, "called function") -- walks locals and upvalues until it finds _ENV
- *   lua52_setfenv(L, level, "called function") -- sets upvalue(1)
+ *   luaQ_getdeeptable(L, idx, "field.field", szhint, &existing) --  like luaL_findtable from lauxlib.c
+ *   luaQ_getdeepvalue(L, idx, "field.field")
+ *   luaQ_setdeepvalue(L, idx, "field.field")
+ *   luaQ_getfenv(L, level, "called function") -- walks locals and upvalues until it finds _ENV
+ *   luaQ_setfenv(L, level, "called function") -- sets upvalue(1)
  *
- *   lua52_register(L,idx,"name",funct)
+ *   luaQ_register(L,idx,"name",funct)
  *   luaL_openlib -- if PLUS, registers in caller's env instead of _G
  *   luaL_register
- *   lua52_pushmodule(L, "library", szhint, level, "called function")
+ *   luaQ_pushmodule(L, "library", szhint, level, "called function")
  *   luaL_pushmodule
  *   luaL_requiref -- if PLUS, can write to stack[global_idx] instead of _G
- *   lua52_checklib(L, "lib")
+ *   luaQ_checklib(L, "lib")
  *
  *
  * 
  * Summary of library mgmt interfaces:
  *
  *   lua_register(L, "lib", funct) ~~> pushcfunction(L, funct), lua_setglobal(L, "lib")
- *   lua52_register(L, idx, "lib", funct) ~~> pushcfunction(L, funct), setfield(L, idx, "lib")
+ *   luaQ_register(L, idx, "lib", funct) ~~> pushcfunction(L, funct), setfield(L, idx, "lib")
  *
  *   luaL_setfuncs(L, luaL_Reg*, nup)
  *       ~~> merge functions (sharing nup upvalues) into table underneath upvalues
@@ -126,21 +126,21 @@
  *   luaL_register(L, "lib", luaL_Reg*)
  *
  *   luaL_pushmodule(L, "lib.lib", szhint) ~~> pushmodule only in global env
- *   lua52_pushmodule(L, "lib.lib", szhint, level, NULL)
+ *   luaQ_pushmodule(L, "lib.lib", szhint, level, NULL)
  *       ~~> find/create _LOADED[fields], deeply looking/creating it in env at call stack `level` (or global if 0) if it's not already there 
  *
  *   luaL_requiref(L, "lib", luaopen_lib, global_idx)
  *       ~~> always runs luaopen_lib and overwrite REG._LOADED.lib with single return value (or nil)
  *           assign return value to stack[idx].lib, or _G.lib if idx==1, or nowhere if idx==0
  *
- *   lua52_checklib(L, "lib") ~~> push REG._LOADED.lib to stack
+ *   luaQ_checklib(L, "lib") ~~> push REG._LOADED.lib to stack
  */
 
 
 
 
-#ifndef FIVETWO_API_H
-#define FIVETWO_API_H
+#ifndef FIVEQ_API_H
+#define FIVEQ_API_H
 
 /* <luaconf.h> -- uses <limits>,<stddef> */
 /* <lua.h> -- uses luaconf,<stddef>,<stdarg> */
@@ -150,15 +150,15 @@
 /* <lualib.h> -- uses lua, provides LUA_FILEHANDLE,LUA_{CO,TAB,IO,OS,STR,MATH,DB,LOAD}LIBNAME, luaopen_foo, luaL_openlibs, lua_assert ~~> nop */
 
 
-#define lua52_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
+#define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
 
-# ifdef LUA_FIVETWO_PLUS
-extern const char *lua52_getdeeptable (lua_State *L, int idx, const char *fields, int szhint, int *existing);
-extern const char *lua52_getdeepvalue (lua_State *L, int idx, const char *fields);
-extern const char *lua52_setdeepvalue (lua_State *L, int idx, const char *fields);
-extern void lua52_getfenv (lua_State *L, int level, const char *fname);
-extern void lua52_setfenv (lua_State *L, int level, const char *fname);
-extern void lua52_checklib (lua_State *L, const char *libname);
+# ifdef LUA_FIVEQ_PLUS
+extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char *fields, int szhint, int *existing);
+extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char *fields);
+extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char *fields);
+extern void luaQ_getfenv (lua_State *L, int level, const char *fname);
+extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
+extern void luaQ_checklib (lua_State *L, const char *libname);
 # endif
 
 
@@ -310,9 +310,9 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
 #define luaL_register(L,n,l)	(luaL_openlib(L,(n),(l),0))
 
 
-# ifdef LUA_FIVETWO_PLUS
-#  define luaL_pushmodule(L, modname, szhint)  lua52_pushmodule(L, (modname), (szhint), 0, NULL)
-extern void lua52_pushmodule (lua_State *L, const char *modname, int szhint, int level, const char *caller);
+# ifdef LUA_FIVEQ_PLUS
+#  define luaL_pushmodule(L, modname, szhint)  luaQ_pushmodule(L, (modname), (szhint), 0, NULL)
+extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint, int level, const char *caller);
 # else
 extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint);
 # endif
@@ -366,27 +366,27 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luao
 
 extern int luaL_typerror (lua_State *L, int narg, const char *tname);
 
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
 /* we replace 5.2.0's requiref with a version that will write to stack[global_idx] when global_idx is other than 0 or 1 */
-#  define luaL_requiref lua52_requiref
+#  define luaL_requiref luaQ_requiref
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luaopen_lib, int global_idx);
 # endif
 
 # ifndef LUA_COMPAT_MODULE
 #  define luaL_register(L,n,l)	(luaL_openlib(L,(n),(l),0))
 extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, int nup);
-# elif defined(LUA_FIVETWO_PLUS)
+# elif defined(LUA_FIVEQ_PLUS)
 /* luaL_openlib has already been defined, but we shadow it */
 #  define luaL_openlib luaI_openlib
 # endif
 
-# ifdef LUA_FIVETWO_PLUS
+# ifdef LUA_FIVEQ_PLUS
 /* 
  * if LUA_COMPAT_MODULE, luaL_pushmodule will already have been defined;
  * but it's harmless to shadow it with this macro (behavior is exactly the same).
  */ 
-#  define luaL_pushmodule(L, modname, szhint)  lua52_pushmodule(L, (modname), (szhint), 0, NULL)
-extern void lua52_pushmodule (lua_State *L, const char *modname, int szhint, int level, const char *caller);
+#  define luaL_pushmodule(L, modname, szhint)  luaQ_pushmodule(L, (modname), (szhint), 0, NULL)
+extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint, int level, const char *caller);
 # elif !(defined LUA_COMPAT_MODULE)
 extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint);
 # endif

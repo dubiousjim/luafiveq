@@ -1,5 +1,5 @@
 /* 
- * metafield.c: part of fivetwoplus libraries
+ * metafield.c: part of fiveqplus libraries
  *
  * 1. debug.getmetafield(table or userdata, fieldname): ignores __metatable
  *
@@ -11,8 +11,8 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#define LUA_FIVETWO_PLUS
-#include "fivetwo.h"
+#define LUA_FIVEQ_PLUS
+#include "fiveq.h"
 
 
 static const char *const fieldnames[] = { "__len","__reversed","__copy","__eq","__index","__tostring",NULL };
@@ -45,8 +45,8 @@ static int db_getmetafield (lua_State *L) {
 }
 
 
-extern int luaopen_fivetwo_metafield (lua_State *L) {
-    lua52_checklib(L, LUA_DBLIBNAME);
-    lua52_register(L, -1, "getmetafield", db_getmetafield);
+extern int luaopen_fiveq_metafield (lua_State *L) {
+    luaQ_checklib(L, LUA_DBLIBNAME);
+    luaQ_register(L, -1, "getmetafield", db_getmetafield);
     return 0;
 }

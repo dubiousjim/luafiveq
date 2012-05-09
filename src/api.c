@@ -2,7 +2,7 @@
  * api.c: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
  */
 
-#include "fivetwo.h"
+#include "fiveq.h"
 
 
 #include <string.h>
@@ -18,7 +18,7 @@
  *
  * bool luaL_getsubtable(L, idx, fields) in 5.2.0 does this shallowly, returns existing
  */
-extern const char *lua52_getdeeptable (lua_State *L, int idx, const char *fields, int szhint, int *existing) {
+extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char *fields, int szhint, int *existing) {
     const char *e;
     if (idx) lua_pushvalue(L, idx);
     if (existing) *existing = 1;
@@ -57,7 +57,7 @@ extern const char *lua52_getdeeptable (lua_State *L, int idx, const char *fields
  * If fails (some intervening value isn't a table), returns the problematic 
  * part of fields and returns stack unaltered.
  */
-extern const char *lua52_getdeepvalue (lua_State *L, int idx, const char *fields) {
+extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char *fields) {
     const char *e;
     if (idx) lua_pushvalue(L, idx);
     do {
@@ -94,7 +94,7 @@ extern const char *lua52_getdeepvalue (lua_State *L, int idx, const char *fields
  * If fails (some intervening value isn't a table), returns the problematic 
  * part of fields and leaves value on stack.
  */
-extern const char *lua52_setdeepvalue (lua_State *L, int idx, const char *fields) {
+extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char *fields) {
     const char *e;
     lua_pushvalue(L, idx);
     do {
@@ -140,7 +140,7 @@ extern const char *lua52_setdeepvalue (lua_State *L, int idx, const char *fields
  * If fname is NULL, doesn't complain about caller being a C function.
  * Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
  */
-extern void lua52_getfenv (lua_State *L, int level, const char *fname) {
+extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
   if (level) {
     lua_Debug ar;
     if (fname == NULL) {
@@ -190,7 +190,7 @@ extern void lua52_getfenv (lua_State *L, int level, const char *fname) {
  * Pops table from stack and assigns it as environment of function
  * at call stack `level`.
  */
-extern void lua52_setfenv (lua_State *L, int level, const char *fname) {
+extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
   lua_Debug ar;
   if (lua_getstack(L, level, &ar) == 0 ||
       lua_getinfo(L, "f", &ar) == 0 ||  /* get calling function */
@@ -206,7 +206,7 @@ extern void lua52_setfenv (lua_State *L, int level, const char *fname) {
 }
 
 
-#if LUA_VERSION_NUM == 501 || defined(LUA_FIVETWO_PLUS) || !defined(LUA_COMPAT_MODULE)
+#if LUA_VERSION_NUM == 501 || defined(LUA_FIVEQ_PLUS) || !defined(LUA_COMPAT_MODULE)
 
 static int libsize (const luaL_Reg *l) {
   int size = 0;
@@ -223,15 +223,15 @@ static int libsize (const luaL_Reg *l) {
  * fails if that function is a CFunction (and uses `caller` in the error 
  * message). If successful, module table is left on the stack.
  */
-extern void lua52_pushmodule (lua_State *L, const char *modname, int szhint,
+extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint,
   int level, const char *caller) {
-    lua52_getdeeptable(L, LUA_REGISTRYINDEX, "_LOADED", 1, NULL);  /* get _LOADED table */
+    luaQ_getdeeptable(L, LUA_REGISTRYINDEX, "_LOADED", 1, NULL);  /* get _LOADED table */
     lua_getfield(L, -1, modname);  /* get _LOADED[modname] */
     if (!lua_istable(L, -1)) {  /* not found? */
         lua_pop(L, 1);  /* remove previous result */
         /* try environment variable (and create one if it does not exist) */
-        lua52_getfenv(L, level, caller);
-        if (lua52_getdeeptable(L, 0, modname, szhint, NULL) != NULL)
+        luaQ_getfenv(L, level, caller);
+        if (luaQ_getdeeptable(L, 0, modname, szhint, NULL) != NULL)
             luaL_error(L, "name conflict for module " LUA_QS, modname);
         lua_pushvalue(L, -1);
         lua_setfield(L, -3, modname);  /* _LOADED[modname] = new table */
@@ -239,9 +239,9 @@ extern void lua52_pushmodule (lua_State *L, const char *modname, int szhint,
     lua_remove(L, -2);  /* remove _LOADED table */
 }
 
-# if !defined(LUA_FIVETWO_PLUS)
+# if !defined(LUA_FIVEQ_PLUS)
 extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint) {
-    lua52_pushmodule(L, modname, szhint, 0, NULL);
+    luaQ_pushmodule(L, modname, szhint, 0, NULL);
 }
 # endif
 
@@ -249,7 +249,7 @@ extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint) {
 
 
 
-#if LUA_VERSION_NUM == 501 || defined(LUA_FIVETWO_PLUS)
+#if LUA_VERSION_NUM == 501 || defined(LUA_FIVEQ_PLUS)
 
 /*
  * Stripped-down 'require'.
@@ -294,7 +294,7 @@ extern void luaI_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
     luaL_openlib(L, libname, empty, nup);
   }
 }
-# elif LUA_VERSION_NUM == 501 || (LUA_VERSION_NUM == 502 && ( !defined(LUA_COMPAT_MODULE) || defined(LUA_FIVETWO_PLUS) ))
+# elif LUA_VERSION_NUM == 501 || (LUA_VERSION_NUM == 502 && ( !defined(LUA_COMPAT_MODULE) || defined(LUA_FIVEQ_PLUS) ))
 /*
  * If "libname", pushmodule to find existing module or write to 
  * caller's/global environment, else assumes there's already a table 
@@ -307,12 +307,12 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
     luaL_checkversion(L);
 #  endif
     if (libname) {
-#  if defined(LUA_FIVETWO_PLUS)
+#  if defined(LUA_FIVEQ_PLUS)
         /* check whether lib already exists, writing to caller's environment if not */
-        lua52_pushmodule(L, libname, libsize(l), 3, NULL);
+        luaQ_pushmodule(L, libname, libsize(l), 3, NULL);
 #  else
         /* check whether lib already exists, writing to global environment if not */
-        lua52_pushmodule(L, libname, libsize(l), 0, NULL);
+        luaQ_pushmodule(L, libname, libsize(l), 0, NULL);
 #  endif
         lua_insert(L, -(nup + 1));  /* move library table to below upvalues */
     }
@@ -624,7 +624,7 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname) {
 /*
  * Asserts that `libname` has already been loaded and pushes it to stack.
  */
-extern void lua52_checklib (lua_State *L, const char *libname) {
+extern void luaQ_checklib (lua_State *L, const char *libname) {
     lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
     lua_getfield(L, -1, libname);
     if (lua_isnil(L, -1))

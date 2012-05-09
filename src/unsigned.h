@@ -1,10 +1,10 @@
 /*
  * unsigned.h: elements of Lua 5.2's API backported to Lua 5.1.4, and vice-versa
- * used by bitlib.c, hash.c, and fivetwo.c
+ * used by bitlib.c, hash.c, and fiveq.c
  */
 
-#ifndef FIVETWO_UNSIGNED_H
-#define FIVETWO_UNSIGNED_H
+#ifndef FIVEQ_UNSIGNED_H
+#define FIVEQ_UNSIGNED_H
 
 /* ----- adapted from lua-5.2.0-beta luaconf.h: ----- */
 

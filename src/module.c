@@ -1,5 +1,5 @@
 /*
- * module.c for fivetwoplus
+ * module.c for fiveqplus
  * adapted from Lua sources, and http://lua-users.org/wiki/ModuleDefinition
  *
  * Existing behavior for `require`:
@@ -48,7 +48,7 @@
 /* Summary of library mgmt interfaces:
  *
  *   lua_register(L, "lib", funct) ~~> pushcfunction(L, funct), lua_setglobal(L, "lib")
- *   lua52_register(L, idx, "lib", funct) ~~> pushcfunction(L, funct), setfield(L, idx, "lib")
+ *   luaQ_register(L, idx, "lib", funct) ~~> pushcfunction(L, funct), setfield(L, idx, "lib")
  *
  *   luaL_setfuncs(L, luaL_Reg*, nup)
  *       ~~> merge functions (sharing nup upvalues) into table underneath upvalues
@@ -61,14 +61,14 @@
  *   luaL_register(L, "lib", luaL_Reg*)
  *
  *   luaL_pushmodule(L, "lib.lib", szhint) ~~> pushmodule only in global env
- *   lua52_pushmodule(L, "lib.lib", szhint, level, NULL)
+ *   luaQ_pushmodule(L, "lib.lib", szhint, level, NULL)
  *       ~~> find/create _LOADED[fields], deeply looking/creating it in env at call stack `level` (or global if 0) if it's not already there 
  *
  *   luaL_requiref(L, "lib", luaopen_lib, global_idx)
  *       ~~> always runs luaopen_lib and overwrite REG._LOADED.lib with single return value (or nil)
  *           assign return value to stack[idx].lib, or _G.lib if idx==1, or nowhere if idx==0
  *
- *   lua52_checklib(L, "lib") ~~> push REG._LOADED.lib to stack
+ *   luaQ_checklib(L, "lib") ~~> push REG._LOADED.lib to stack
  */
 
 
@@ -88,15 +88,15 @@ extern int luaopen_foo (lua_State *L) {
      * this asserts that "string" is already loaded and doesn't
      * write anything to _G or _ENV
      */
-    lua52_checklib(L, LUA_STRLIBNAME);
+    luaQ_checklib(L, LUA_STRLIBNAME);
 
     /* alternatively */
     lua_newtable(L);
 
     /* version 1: merges these into stack[-1] */
-    lua52_register(L, -1, "alpha", alpha);
-    lua52_register(L, -1, "beta", beta);
-    lua52_register(L, -1, "gamma", gamma);
+    luaQ_register(L, -1, "alpha", alpha);
+    luaQ_register(L, -1, "beta", beta);
+    luaQ_register(L, -1, "gamma", gamma);
 
     /* same as version 2 */
     luaL_setfuncs(L, R, 0);
@@ -117,8 +117,8 @@ extern int luaopen_foo (lua_State *L) {
 #include <lauxlib.h>
 #include <lualib.h>
 
-#define LUA_FIVETWO_PLUS
-#include "fivetwo.h"
+#define LUA_FIVEQ_PLUS
+#include "fiveq.h"
 
 
 /*
@@ -221,7 +221,7 @@ static int ll_require_plus (lua_State *L) {
         luaL_error(L, "module " LUA_QS " doesn't export a table", modname);
     const char *k;
     if (!lua_istable(L, 2))
-        lua52_getfenv(L, 1, "require");
+        luaQ_getfenv(L, 1, "require");
     else if (top > 2) {
         lua_pushvalue(L, 2);
         lua_remove(L, 2);
@@ -252,9 +252,9 @@ static int ll_require_plus (lua_State *L) {
     for (i=2; i <= top; i++) {
         // stack[2..top]=keys, stack[+1]=_LOADED[name], stack[+2]=tbl
         k = luaL_checkstring(L, i);
-        if (lua52_getdeepvalue(L, -2, k) != NULL)
+        if (luaQ_getdeepvalue(L, -2, k) != NULL)
             luaL_error(L, "module " LUA_QS " doesn't provide " LUA_QS, modname, k);
-        bad = lua52_setdeepvalue(L, -2, k); 
+        bad = luaQ_setdeepvalue(L, -2, k); 
         if (bad != NULL)
             luaL_error(L, "couldn't set " LUA_QS, bad);
     }
@@ -277,7 +277,7 @@ static const int sentinel_ = 0;
 static int ll_module (lua_State *L) {
   const char *modname = luaL_checkstring(L, 1);
   int lastdecorator = lua_gettop(L);
-  lua52_pushmodule(L, modname, 1, 4, "module");  /* get/create module table */
+  luaQ_pushmodule(L, modname, 1, 4, "module");  /* get/create module table */
   /* does module table already have a _NAME field? */
   lua_getfield(L, -1, "_NAME");
   if (!lua_isnil(L, -1))
@@ -299,11 +299,11 @@ static int ll_module (lua_State *L) {
     /* ------------------------------ */
   }
   /* temporarily set module[sentinel]=caller's _ENV for use by seeall decorator */
-  lua52_getfenv(L, 1, "module");
+  luaQ_getfenv(L, 1, "module");
   lua_setfield(L, -2, sentinel);
   /* set caller's fenv to module table */
   lua_pushvalue(L, -1);
-  lua52_setfenv(L, 1, "module");
+  luaQ_setfenv(L, 1, "module");
   /* ---- dooptions(L, lastdecorator); ---- */
   int i;
   for (i = 2; i <= lastdecorator; i++) {
@@ -352,7 +352,7 @@ static int ll_seeall (lua_State *L) {
   lua_pushvalue(L, 1);
   lua_setfield(L, 3, "__newindex"); /* meta.__newindex = module */
   lua_setmetatable(L, 2);
-  lua52_setfenv(L, 2, "seeall"); /* make proxy the caller's _ENV */
+  luaQ_setfenv(L, 2, "seeall"); /* make proxy the caller's _ENV */
   return 0;
 }
 
@@ -447,7 +447,7 @@ static int ll_strict_newindex (lua_State *L) {
 static int ll_strict (lua_State *L) {
     luaL_checktype(L, 1, LUA_TTABLE);
     lua_settop(L, 1);
-    lua52_getfenv(L, 2, "strict");
+    luaQ_getfenv(L, 2, "strict");
     if (!lua_getmetatable(L, 2)) {
         lua_createtable(L, 0, 2); /* create new metatable */
         lua_pushvalue(L, -1);
@@ -474,13 +474,13 @@ static int ll_strict (lua_State *L) {
 }
 
 
-extern int luaopen_fivetwo_module (lua_State *L) {
+extern int luaopen_fiveq_module (lua_State *L) {
     /* export to _G */
     lua_register(L, "module", ll_module);
 
-    lua52_checklib(L, LUA_LOADLIBNAME);
-    lua52_register(L, -1, "seeall", ll_seeall);
-    lua52_register(L, -1, "strict", ll_strict);
+    luaQ_checklib(L, LUA_LOADLIBNAME);
+    luaQ_register(L, -1, "seeall", ll_seeall);
+    luaQ_register(L, -1, "strict", ll_strict);
 
     /*
     lua_getglobal(L, "require");

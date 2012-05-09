@@ -15,7 +15,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "fivetwo.h"
+#include "fiveq.h"
 
 
 /* ----- from lstrlib.c ----- */
@@ -162,7 +162,7 @@ static const luaL_Reg R[] =
 };
 
 extern int luaopen_faststring (lua_State *L) {
-    lua52_checklib(L, LUA_STRLIBNAME);
+    luaQ_checklib(L, LUA_STRLIBNAME);
     luaL_setfuncs(L, R, 0);
     return 0;
 }

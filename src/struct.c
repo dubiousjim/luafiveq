@@ -9,8 +9,8 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#define LUA_FIVETWO_PLUS
-#include "fivetwo.h"
+#define LUA_FIVEQ_PLUS
+#include "fiveq.h"
 
 #ifndef LLONG_MAX
 #define LLONG_MAX    9223372036854775807LL
@@ -430,7 +430,7 @@ static const struct luaL_Reg R[] = {
 };
 
 
-LUALIB_API int luaopen_fivetwo_struct (lua_State *L) {
+LUALIB_API int luaopen_fiveq_struct (lua_State *L) {
   luaL_register(L, "struct", R);
   return 1;
 }
