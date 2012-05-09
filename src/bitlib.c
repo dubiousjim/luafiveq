@@ -1,5 +1,5 @@
 /*
- * This is the bit32 library (lbitlib.c) from lua 5.2.0-beta,
+ * This is the bit32 library (lbitlib.c) from lua 5.2.0,
  * backported to lua 5.1.4.
  *
  * version 5.2.0-backport2

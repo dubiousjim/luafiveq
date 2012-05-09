@@ -190,7 +190,7 @@ static void require(lua_State *L, const char *modname, lua_CFunction openf) {
   lua_getfield(L, -1, modname);
   if (lua_isnil(L, -1)) {
     lua_pop(L, 1);
-    luaL_requiref(L, modname, openf, 0);
+    luaL_requiref(L, modname, openf, 0); /* gidx == 0, we don't want to assign the library in _G or anywhere else */
     if (lua_isnil(L, -1)) {
       luaL_error(L, "can't open " LUA_QS " library", modname);
     }
@@ -415,16 +415,17 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.iter");
   lua_call(L, 1, 0); 
 
-  /* defines error functions in _G; returns 0 */
-  lua_pushcfunction(L, luaopen_fiveq_error);
-  lua_pushstring(L, "err");
-  lua_call(L, 1, 0); 
-
   /* defines debug.getmetafield; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_metafield);
   lua_pushstring(L, "fiveq.metafield");
   lua_call(L, 1, 0); 
 
+  /* defines error functions and err lib in _G; returns 0 */
+  lua_pushcfunction(L, luaopen_fiveq_error);
+  lua_pushstring(L, "err");
+  lua_call(L, 1, 0); 
+
+  /* since these return 1, we can use luaL_requiref to assign the value globally */
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
@@ -564,16 +565,17 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.iter");
   lua_call(L, 1, 0); 
 
-  /* defines error functions in _G, returns 0 */
-  lua_pushcfunction(L, luaopen_fiveq_error);
-  lua_pushstring(L, "err");
-  lua_call(L, 1, 0); 
-
   /* defines debug.getmetafield, returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_metafield);
   lua_pushstring(L, "fiveq.metafield");
   lua_call(L, 1, 0); 
 
+  /* defines error functions and err lib in _G; returns 0 */
+  lua_pushcfunction(L, luaopen_fiveq_error);
+  lua_pushstring(L, "err");
+  lua_call(L, 1, 0); 
+
+  /* since these return 1, we can use luaL_requiref to assign the value globally */
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 

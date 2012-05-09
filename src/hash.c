@@ -25,7 +25,7 @@
 // #include <stdio.h>
 
 
-/* ----- adapted from lua-5.2.0-beta llimits.h: ----- */
+/* ----- adapted from lua-5.2.0 llimits.h: ----- */
 
 /*
 ** luai_hashnum is a macro to hash a lua_Number value into an integer.
