@@ -12,15 +12,21 @@
 #include <lua.h>
 /* <lauxlib.h> -- uses lua,<stddef>,<stdio> */
 #include <lauxlib.h>
-/* <lualib.h> -- uses lua, provides LUA_FILEHANDLE,LUA_{CO,TAB,IO,OS,STR,MATH,DB,LOAD}LIBNAME, luaopen_foo, luaL_openlibs, lua_assert ~~> nop */
+/* <lualib.h> -- uses lua, provides
+ * LUA_FILEHANDLE,LUA_{CO,TAB,IO,OS,STR,MATH,DB,LOAD}LIBNAME, luaopen_foo,
+ * luaL_openlibs, lua_assert ~~> nop */
 
 
 # ifdef LUA_FIVEQ_PLUS
-#define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
+#define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), \
+        lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
 
-extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char *fields, int szhint, int *existing);
-extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char *fields);
-extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char *fields);
+extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char
+        *fields, int szhint, int *existing);
+extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char
+        *fields);
+extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
+        *fields);
 extern void luaQ_getfenv (lua_State *L, int level, const char *fname);
 extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
 extern void luaQ_checklib (lua_State *L, const char *libname);
@@ -50,19 +56,26 @@ extern void luaQ_checklib (lua_State *L, const char *libname);
 
 /* ----- adapted from lua-5.2.0 lapi.c: ----- */
 
-#define lua_absindex(L,idx)	((idx) > 0 || (idx) <= LUA_REGISTRYINDEX ? (idx) : lua_gettop(L) + (idx) + 1)
+#define lua_absindex(L,idx)	((idx) > 0 || (idx) <= LUA_REGISTRYINDEX ? \
+        (idx) : lua_gettop(L) + (idx) + 1)
 
 #define lua_copy(L,from,to)   (lua_pushvalue(L, (from)), lua_replace(L, (to)))
 
-#define lua_getuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == LUA_TUSERDATA, "userdata expected"), lua_getfenv(L, (idx)))
+#define lua_getuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) ==
+            LUA_TUSERDATA, "userdata expected"), lua_getfenv(L, (idx)))
             
-/* the 5.2.0 version can also assign nil, but setfenv and this macro only assign tables */
-#define lua_setuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == LUA_TUSERDATA, "userdata expected"), (void)lua_setfenv(L, (idx)))
+/* the 5.2.0 version can also assign nil, but setfenv and this macro only
+ * assign tables */
+#define lua_setuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
+            LUA_TUSERDATA, "userdata expected"), (void)lua_setfenv(L, (idx)))
 
 
-#define lua_rawgetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, "table expected"), lua_pushlightuserdata(L, (p)), lua_rawget(L, (idx))) 
+#define lua_rawgetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
+    "table expected"), lua_pushlightuserdata(L, (p)), lua_rawget(L, (idx))) 
 
-#define lua_rawsetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, "table expected"), lua_pushlightuserdata(L, (p)), lua_insert(L, -2), lua_rawset(L, (idx)))
+#define lua_rawsetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
+    "table expected"), lua_pushlightuserdata(L, (p)), lua_insert(L, -2), \
+    lua_rawset(L, (idx)))
 
 
 extern lua_Number lua_tonumberx (lua_State *L, int idx, int *isnum);
@@ -131,9 +144,11 @@ extern int luaL_len (lua_State *L, int idx);
 
 
 /*
- * bool lua_getmetatable (lua_State *L, int idx); ~~> true, stack[+1]; or false, stack[unchanged]
+ * bool lua_getmetatable (lua_State *L, int idx); ~~> true, stack[+1]; or
+ * false, stack[unchanged]
  *
- * int luaL_getmetafield (lua_State *L, int idx, const char *field); ~~> true, stack[+1]=field; or false, stack[unchanged]
+ * int luaL_getmetafield (lua_State *L, int idx, const char *field); ~~> true,
+ * stack[+1]=field; or false, stack[unchanged]
  */
 
 /*
@@ -144,7 +159,8 @@ extern int luaL_getsubtable (lua_State *L, int idx, const char *field);
 
 
 /*
- * luaL_newmetatable(L, "type"); ~~> true, stack[+1] if allocated; or false, stack[+1]
+ * luaL_newmetatable(L, "type"); ~~> true, stack[+1] if allocated; or false,
+ * stack[+1]
  *
  * void *luaL_checkudata(L, idx, "type");
  *
@@ -164,10 +180,12 @@ extern void luaL_setmetatable (lua_State *L, const char *tname);
 #  undef luaI_openlib
 #  define luaL_openlib luaI_openlib
 # endif
-extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, int nup);
+extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
+        int nup);
 
 /* 
- * we want luaL_register to use the possibly-enhanced version of luaL_openlib we define here
+ * we want luaL_register to use the possibly-enhanced version of luaL_openlib
+ * we define here
  * since we are now always exporting luaL_openlib, we can shadow the existing
  * definition of luaL_register with a macro.
  */
@@ -176,18 +194,22 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
 
 
 # ifdef LUA_FIVEQ_PLUS
-#  define luaL_pushmodule(L, modname, szhint)  luaQ_pushmodule(L, (modname), (szhint), 0, NULL)
-extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint, int level, const char *caller);
+#  define luaL_pushmodule(L, modname, szhint)  luaQ_pushmodule(L, (modname), \
+        (szhint), 0, NULL)
+extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint, int
+        level, const char *caller);
 # else
 extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint);
 # endif
 
 extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
 
-#define luaL_newlibtable(L,l)   lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+#define luaL_newlibtable(L,l)   lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) \
+        - 1)
 #define luaL_newlib(L,l)	(luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
 
-extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luaopen_lib, int gidx);
+extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
+        luaopen_lib, int gidx);
 
 
 /* ----------- for 5.2.0 ---------- */
@@ -220,12 +242,14 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luao
 #define api_check(l,e,msg)	luai_apicheck(l,(e) && msg)
 
 
-#define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
+#define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), \
+        lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
 
 #define lua_objlen(L,i) lua_rawlen(L, (i))
 #define lua_strlen(L,i) lua_rawlen(L, (i))
 /* void lua_len(L, i) honors __len */
-/* int luaL_len(L, i) effectively does luaL_checkint on lua_len(L, i), leaves raw len on stack and returns it converted to int */
+/* int luaL_len(L, i) effectively does luaL_checkint on lua_len(L, i), leaves
+ * raw len on stack and returns it converted to int */
 
 #define lua_equal(L,idx1,idx2)		lua_compare(L,(idx1),(idx2),LUA_OPEQ)
 #define lua_lessthan(L,idx1,idx2)	lua_compare(L,(idx1),(idx2),LUA_OPLT)
@@ -254,14 +278,17 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname);
 
 
 # ifdef LUA_FIVEQ_PLUS
-/* we replace 5.2.0's requiref with a version that will write to stack[gidx] when gidx is other than 0 or 1 */
+/* we replace 5.2.0's requiref with a version that will write to stack[gidx]
+ * when gidx is other than 0 or 1 */
 #  define luaL_requiref luaQ_requiref
-extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luaopen_lib, int gidx);
+extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
+        luaopen_lib, int gidx);
 # endif
 
 # ifndef LUA_COMPAT_MODULE
 #  define luaL_register(L,n,l)	(luaL_openlib(L,(n),(l),0))
-extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, int nup);
+extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
+        int nup);
 # elif defined(LUA_FIVEQ_PLUS)
 /* luaL_openlib has already been defined, but we shadow it */
 #  define luaL_openlib luaI_openlib
@@ -270,10 +297,13 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
 # ifdef LUA_FIVEQ_PLUS
 /* 
  * if LUA_COMPAT_MODULE, luaL_pushmodule will already have been defined;
- * but it's harmless to shadow it with this macro (behavior is exactly the same).
+ * but it's harmless to shadow it with this macro (behavior is exactly the
+ * same).
  */ 
-#  define luaL_pushmodule(L, modname, szhint)  luaQ_pushmodule(L, (modname), (szhint), 0, NULL)
-extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint, int level, const char *caller);
+#  define luaL_pushmodule(L, modname, szhint)  luaQ_pushmodule(L, (modname), \
+        (szhint), 0, NULL)
+extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint, int
+        level, const char *caller);
 # elif !(defined LUA_COMPAT_MODULE)
 extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint);
 # endif
