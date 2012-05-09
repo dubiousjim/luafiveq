@@ -299,7 +299,12 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l, 
     if (libname) {
 #  if defined(LUA_FIVEQ_PLUS)
         /* check whether lib already exists, writing to caller's environment if not */
-        luaQ_pushmodule(L, libname, libsize(l), 2, NULL);
+        int level = 2;
+        if (0x3 & ((size_t) l)) {
+            level += 0x3 & ((size_t) l);
+            l = (const luaL_Reg *)(2 - level + ((size_t) l));
+        }
+        luaQ_pushmodule(L, libname, libsize(l), level, NULL);
 #  else
         /* check whether lib already exists, writing to global environment if not */
         luaQ_pushmodule(L, libname, libsize(l), 0, NULL);

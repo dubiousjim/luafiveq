@@ -504,6 +504,30 @@ extern int luaopen_fiveq_err (lua_State *L) {
     /* lua_pushglobaltable(L); */
     /* luaL_setfuncs(L, R, 0); */
 
+    /* lua_newtable(L);
     luaL_openlib(L, "err", R, 0);
     return 0;
 }
+
+
+luaL_newlib
+
+[-0, +1, m]
+
+int luaL_newlib (lua_State *L, const luaL_Reg *l);
+
+Creates a new table and registers there the functions in list l. It is implemented as the following macro:
+
+     (luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
+
+luaL_newlibtable
+This function is new.
+
+[-0, +1, m]
+
+int luaL_newlibtable (lua_State *L, const luaL_Reg l[]);
+
+Creates a new table with a size optimized to store all entries in the array l (but does not actually store them). It is intended to be used in conjunction with luaL_setfuncs (see luaL_newlib).
+
+It is implemented as a macro. The array l must be the actual array, not a pointer to it. 
+
