@@ -1,5 +1,6 @@
 /*
- * fiveq.c: elements of Lua 5.2's libraries backported to lua 5.1.4, and vice-versa
+ * fiveq.c: elements of Lua 5.2's libraries backported to lua 5.1.4, and
+ * vice-versa
  * 
  * sets _FIVEQ to true or "plus"
  *
@@ -193,7 +194,8 @@ static void require(lua_State *L, const char *modname, lua_CFunction openf) {
   lua_getfield(L, -1, modname);
   if (lua_isnil(L, -1)) {
     lua_pop(L, 1);
-    luaL_requiref(L, modname, openf, 0); /* gidx == 0, we don't want to assign the library in _G or anywhere else */
+    /* gidx == 0, we don't want to assign the library in _G or anywhere else */
+    luaL_requiref(L, modname, openf, 0);
     if (lua_isnil(L, -1)) {
       luaL_error(L, "can't open " LUA_QS " library", modname);
     }
@@ -245,7 +247,8 @@ extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
 
 #ifndef LUA_FIVEQ_PLUS
-#define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
+#define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), \
+        lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
 #endif
 
 
@@ -370,8 +373,9 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pop(L, 1);  /* pop math library */
 
   require(L,  LUA_DBLIBNAME, luaopen_debug);
-  luaQ_register(L, -1, "getuservalue", db_getuservalue);  /* export to debug library */
-  luaQ_register(L, -1, "setuservalue", db_setuservalue);  /* export to debug library */
+  /* export to debug library */
+  luaQ_register(L, -1, "getuservalue", db_getuservalue);
+  luaQ_register(L, -1, "setuservalue", db_setuservalue);
 
 # ifdef LUA_FIVEQ_PLUS
   /* newproxy needs a weaktable as upvalue */
@@ -438,7 +442,8 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "err");
   lua_call(L, 1, 0); 
 
-  /* since these return 1, we can use luaL_requiref to assign the value globally */
+  /* since these return 1, we can use luaL_requiref to assign the value
+   * globally */
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
@@ -593,7 +598,8 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "err");
   lua_call(L, 1, 0); 
 
-  /* since these return 1, we can use luaL_requiref to assign the value globally */
+  /* since these return 1, we can use luaL_requiref to assign the value
+   * globally */
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
