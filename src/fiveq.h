@@ -150,9 +150,9 @@
 /* <lualib.h> -- uses lua, provides LUA_FILEHANDLE,LUA_{CO,TAB,IO,OS,STR,MATH,DB,LOAD}LIBNAME, luaopen_foo, luaL_openlibs, lua_assert ~~> nop */
 
 
+# ifdef LUA_FIVEQ_PLUS
 #define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
 
-# ifdef LUA_FIVEQ_PLUS
 extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char *fields, int szhint, int *existing);
 extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char *fields);
 extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char *fields);

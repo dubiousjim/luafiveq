@@ -241,6 +241,10 @@ extern int luaopen_fiveq_faststring (lua_State *L);
 extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
 
+#ifndef LUA_FIVEQ_PLUS
+#define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
+#endif
+
 
 /* ----------- for 5.1.4 ---------- */
 #if LUA_VERSION_NUM == 501

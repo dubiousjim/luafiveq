@@ -411,6 +411,8 @@ static const luaL_Reg flib[] = {
 
 #ifndef LUA_FIVEQ_PLUS
 extern void luaQ_checklib (lua_State *L, const char *libname);
+
+#define luaQ_register(L,idx,name,f)  (lua_pushcfunction(L, (f)), lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
 #endif
 
 extern int luaopen_fiveq_io (lua_State *L) {
