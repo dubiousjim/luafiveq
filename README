@@ -38,13 +38,14 @@ it is possible to go quite far towards that target.
 
 Sample use cases:
 
-1. Suppose you want to work in Lua 5.2, but use an older Lua C library that
-hasn't yet been updated. Just (a) build and install fiveq for Lua 5.2. (b)
-Add the line:
+1. Suppose you have an older Lua C library that hasn't yet been ported to
+Lua 5.2, but you want to make it available to end-users who do have Lua 5.2
+installed. The packager just needs to (a) build and install fiveq for Lua 5.2.
+(b) Add the line:
 
     #include "fiveq.h"
 
-to your library's source. And (c) change the library's Makefile from something
+to the C library's source. And (c) change the library's Makefile from something
 like this:
 
     foo.o: foo.c
@@ -82,17 +83,17 @@ versions of Lua?
 If you link against fiveq, you can rely on Lua 5.2's backwards-compatibility
 options always being available, regardless of how Lua was compiled.
 Additionally, you're not forced to write your library against the older Lua 5.1
-API. If you prefer, you can instead target the 5.2 API, and just follow the
-instructions under use case 2 to make it build with Lua 5.1. (You just have to
-keep an eye out for the few places where we can't backport Lua
+API. If you prefer, you can instead write against the 5.2 API, and just follow
+the instructions under use case 2 to make it build with Lua 5.1. (You just have
+to keep an eye out for the few places where we can't backport Lua
 5.2's functionality to Lua 5.1.)
 
 If you prefer to explicitly manage the conditional compilation yourself, just
 have a look at the relevant bits of fiveq's source and emulate it.
 
 
-4. A different use case is where you want to use a library whose source language
-is Lua, but which targets a different version of Lua than you're using. For
+4. A different use case is where you want to use a library *written in Lua*,
+but which targets a different version of Lua than you're using. For
 such uses, the end user *does* need to have the fiveq libraries available
 on her machine, compiled with the version of Lua she's using. If foo.lua is
 written for the other version of Lua, she just needs to make sure she does:
@@ -107,10 +108,9 @@ The fiveq library exposes as much as possible the union of the Lua 5.1 and Lua
 5.2 APIs. This won't work 100%, but it comes close.
 
 
-5. Or, as with use case 3, suppose you're writing new code, but this time in
-Lua, and you want to your code to be usable with either version of Lua. Then
-consider adding fiveq as a dependency, and just writing (mostly) against the
-Lua 5.2 API.
+5. Or, as with use case 3, suppose *you're* writing new Lua code, and you want
+to your code to be usable with either version of Lua. Then consider adding
+fiveq as a dependency, and just writing (mostly) against the Lua 5.2 API.
 
 
 
@@ -119,14 +119,14 @@ Using fiveqplus
 
 Fiveqplus provides a superset of the functionality of fiveq. It adds in a
 few general-purpose extensions to the API that other C and Lua authors may want
-to standardize on.
+to standardize on. (Some of these are already used internally by fiveq.)
 
-To use fiveqplus for C code, merely add the line:
+To use fiveqplus in your Lua C libraries, merely add the line:
 
     #include "fiveq.h"
 
 to your source, as above. But now define an extra macro when compiling your
-object code, and use the fiveqplus.a library instead of fiveq.a:
+object code, and link against the fiveqplus.a library instead of fiveq.a:
 
     foo.o: foo.c
         ${CC} -DLUA_FIVEQ_PLUS ${CFLAGS} -o $@ -c $<
@@ -134,13 +134,13 @@ object code, and use the fiveqplus.a library instead of fiveq.a:
     foo.so: foo.o
         ${CC} ${LDFLAGS} -o $^ -L ${LIBDIR} -lfiveqplus
 
-Or if you like, you can add the macro to your source:
+If you like, you can add the macro to your source instead:
 
     #define LUA_FIVEQ_PLUS
     #include "fiveq.h"
 
 
-To use fiveqplus for Lua code, merely change your:
+To use fiveqplus in your Lua code, merely change your:
 
     require "fiveq"
 
