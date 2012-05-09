@@ -1,0 +1,56 @@
+PREFIX= /usr/local
+# Lua version number
+# (according to Lua 5.1 definition:
+# first version digit * 100 + second version digit
+# e.g. Lua 5.0.2 => 500, Lua 5.1 => 501, Lua 5.1.1 => 501)
+LUA_VERSION_NUM?= 501
+
+.if ${LUA_VERSION_NUM} == 501
+# pkg-config lua-5.1 --variable=includedir
+LUA_INCDIR=      ${PREFIX}/include/lua51
+# pkg-config lua-5.1 --variable=libdir
+LUA_LIBDIR=      ${PREFIX}/lib/lua51
+# pkg-config lua-5.1 --variable=INSTALL_CMOD
+LUA_MODLIBDIR=   ${PREFIX}/lib/lua/5.1
+# pkg-config lua-5.1 --variable=INSTALL_LMOD
+LUA_MODSHAREDIR= ${PREFIX}/share/lua/5.1
+LUA_BIN= ${PREFIX}/bin/lua-5.1
+.else
+LUA_INCDIR=      ${PREFIX}/include/lua52
+LUA_LIBDIR=      ${PREFIX}/lib/lua52
+LUA_MODLIBDIR=   ${PREFIX}/lib/lua/5.2
+LUA_MODSHAREDIR= ${PREFIX}/share/lua/5.2
+LUA_BIN= ${PREFIX}/bin/lua-5.2
+.endif
+
+# pkg-config lua-5.1 --cflags
+CPPFLAGS= -I${LUA_INCDIR} -I.
+# pkg-config lua-5.1 --libs
+LDLIBS= -L${LUA_LIBDIR} -llua -lm
+
+# CFLAGS= -O2 -pipe ${WARNINGS} ${CPPFLAGS} -fpic ${FLAGS}
+CFLAGS= -O -g -pipe ${WARNINGS} ${CPPFLAGS} -fpic ${FLAGS}
+
+# OS dependent
+LDFLAGS= -O -fpic ${FLAGS}
+#LDFLAGS= -bundle -undefined dynamic_lookup
+
+
+WARNINGS= -Wall -Wextra -std=c99 -pedantic \
+      -Wpointer-arith -Wcast-qual -Wcast-align -Wstrict-overflow=4 \
+      -Waggregate-return -Wbad-function-cast \
+      -Wswitch-default -Wswitch-enum \
+      -Wwrite-strings -Wformat=2 \
+      -Wshadow -Wuninitialized -Winit-self \
+      -Wstrict-prototypes -Wold-style-definition \
+      -Werror-implicit-function-declaration \
+      -Wredundant-decls \
+      -Wnested-externs \
+      -Wundef -Wmissing-include-dirs \
+      -Wno-unused-function
+
+.ifdef STRICT
+WARNINGS+=  -Wconversion -Wmissing-prototypes -Wmissing-declarations \
+            -Wunreachable-code -Wunused-function -Wfloat-equal
+.endif
+
