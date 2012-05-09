@@ -1,0 +1,66 @@
+HINTS
+=====
+
+In Lua 5.2, coroutine.running() returns (thread, false) when called from main thread, instead of nil
+
+ * in 5.1.4, load(func, [chunkname="=(load)"]) only accepts functions, which are expected to return string pieces on each call
+ * in 5.2.0, it also accepts strings, and accepts an additional mode parameter (defaults to "bt") and env parameter
+ * in 5.2.0, package.loadlib(path, "entry") permits entry="*", meaning: only link this library, don't return an entry function
+ * patterns in 5.2.0 may contain \0 ( ~~> %z ) and %g
+
+ * in 5.2.0, a __gc element needs to be present in a metatable *before*
+   lua_setmetatable
+
+ * the version of newproxy we provide in 5.2.0's fiveglue.so accepts the __gc
+   function as a parameter in place of `true`
+
+TODO
+
+
+PATCHES
+=======
+
+FIXME
+
+If you'd like your version of Lua 5.1 to act even more like Lua 5.2, but for
+some reason aren't able to upgrade, consider building Lua 5.1 with the following
+patches applied:
+
+    Yieldable for loops
+
+    __lt, __le metamethods for diff types
+
+    Tables honor __len
+
+    string.format honors __tostring for %s
+
+    os.exit([exitcode], [lua_close?])
+        - the lua application calls lua_close before returning;
+          by default, os.exit skips that.
+
+    Custom error object
+        - Uncaught error handler in standard Lua interpreter calls tostring()
+          on error object.  This ensures that a call stack is displayed even
+          for non-string error objects.  It also allows use of the __tostring
+          hook for human-readable error messages.
+
+        - Base library error() will set the _WHERE field of any table error
+          object to the value of luaL_where().  Uncaught error handler in the
+          standard Lua interpreter will use this, so that for custom error
+          object the error location is shown in the call stack.  This is a bit
+          of a hack and implies that any thrown table should be a unique
+          instance of the error (since it will be mutated).  Rather than this
+          scheme, the ideal solution would be to have the Lua core manage the
+          location separate from the error object.
+
+This last patch is also extremely useful:
+
+    Advanced readline support
+        - Completion of keywords and global variable names.
+        - Recursive and metatable-aware completion of variable names.
+        - Context sensitive delimiter completion.
+        - Save/restore of the history to/from a file (LUA_HISTORY env variable).
+        - Setting a limit for the size of the history (LUA_HISTSIZE env
+          variable).
+        - Setting the app name to allow for $if lua ... $endif in ~/.inputrc.
+
