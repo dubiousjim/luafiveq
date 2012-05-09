@@ -16,7 +16,7 @@
  * 9. package.loaders aliased as package.searchers
  * 10. if PLUS, replacement newproxy with same interface as for Lua 5.2
  * 11. loads pairs.c, io.c, bitlib.c
- * 12. if PLUS, loads module.c, iter.c, error.c, metafield.c, hash.c, struct.c
+ * 12. if PLUS, loads module.c, iter.c, err.c, metafield.c, hash.c, struct.c
  *
  * in Lua 5.2.0
  * ------------
@@ -31,7 +31,7 @@
  * 9. debug.getfenv and debug.setfenv provided (for userdata only)
  * 10. newproxy, also aliased as debug.newproxy
  * 11. package.searchers aliased as package.loaders
- * 12. if PLUS, loads module.c, iter.c, error.c, metafield.c, hash.c, struct.c
+ * 12. if PLUS, loads module.c, iter.c, err.c, metafield.c, hash.c, struct.c
  */
 
 
@@ -235,7 +235,7 @@ static int newproxy (lua_State *L) {
 
 extern int luaopen_fiveq_module (lua_State *L);
 extern int luaopen_fiveq_iter (lua_State *L);
-extern int luaopen_fiveq_error (lua_State *L);
+extern int luaopen_fiveq_err (lua_State *L);
 extern int luaopen_fiveq_metafield (lua_State *L);
 extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
@@ -421,7 +421,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_call(L, 1, 0); 
 
   /* defines error functions and err lib in _G; returns 0 */
-  lua_pushcfunction(L, luaopen_fiveq_error);
+  lua_pushcfunction(L, luaopen_fiveq_err);
   lua_pushstring(L, "err");
   lua_call(L, 1, 0); 
 
@@ -571,7 +571,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_call(L, 1, 0); 
 
   /* defines error functions and err lib in _G; returns 0 */
-  lua_pushcfunction(L, luaopen_fiveq_error);
+  lua_pushcfunction(L, luaopen_fiveq_err);
   lua_pushstring(L, "err");
   lua_call(L, 1, 0); 
 
