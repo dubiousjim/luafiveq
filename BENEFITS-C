@@ -1,0 +1,352 @@
+BENEFITS-C
+==========
+
+What do I get when I #include "fiveq.h" and link against fiveq.a?
+-----------------------------------------------------------------------
+
+Fiveq backports most of Lua 5.2's C API to Lua 5.1.4, and vice-versa, with
+the following limitations.
+
+Some functions have a different signature in 5.2.0; if your code depends
+on the differences you'll need to add conditional compilation directives like:
+
+        #if LUA_VERSION_NUM == 501
+        ...
+        #elif LUA_VERSION_NUM == 502 
+        ...
+        #endif
+
+These functions include:
+
+    1. All three of:
+
+       *   lua_pushlstring(L, string, len)
+       *   lua_pushstring(L, nulterminated_string)
+       *   the macro lua_pushliteral(L, "string")
+
+       in Lua 5.2.0 return a const char *, pointing to Lua's internal copy
+       of the string, instead of void.
+
+    2. lua_resume(L, lua_State *from, int narg) expects an addtional `from`
+       parameter in Lua 5.2.0, which should be NULL or the thread doing the call.
+
+    3. lua_load expects an additional `mode` parameter, which can be any of "t",
+       "b", "bt" or NULL (which is treated as "bt")
+
+Another difference is:
+
+    4. In 5.1.4's lua_getstack(L, level, &ar), the `level` argument also
+       increments for Lua tail calls; in 5.2.0 it doesn't.
+
+These have not been backported to Lua 5.1.4:
+
+    5. LUA_RIDX_MAINTHREAD, LUA_RIDX_GLOBALS
+    6. luaL_buffinitsize, luaL_prepbuffsize
+    7. lua_version, luaL_checkversion
+    8. luaL_traceback
+
+These have not been forward-ported to Lua 5.2.0:
+
+    9. LUA_ENVIRONINDEX, LUA_GLOBALSINDEX
+   10. lua_getfenv, lua_setfenv
+
+However, when LUA_FIVEQ_PLUS is defined, we do export:
+
+     extern void luaQ_getfenv (lua_State *L, int level, const char *fname);
+     extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
+
+which provide most(TODO ???) of the functionality of lua_getfenv and lua_setfenv.
+
+Here is the complete list of interfaces that are provided to Lua 5.1.4:
+
+ *   lua_pushglobaltable
+ *   lua_absindex
+ *   lua_copy
+ *
+ *   lua_tonumberx
+ *   lua_tointegerx
+ *   typedef lua_Unsigned
+ *   lua_number2unsigned
+ *   lua_unsigned2number
+ *   lua_tounsignedx
+ *   lua_tounsigned
+ *   luaL_checkunsigned
+ *   luaL_optunsigned
+ *   lua_compare
+ *   lua_arith
+ *
+ *   lua_rawlen
+ *   lua_len
+ *   luaL_len
+ *   luaL_tolstring
+ *
+ *   lua_getuservalue
+ *   lua_setuservalue
+ *   lua_rawgetp
+ *   lua_rawsetp
+ *   luaL_testudata
+ *   luaL_setmetatable
+ *
+ *   luaL_getsubtable -- see also luaQ_getdeeptable, below
+ *
+ *   luaL_newlibtable
+ *   luaL_newlib
+ *   luaL_requiref -- calls luaopen_foo and saves result in _G or optionally on
+ *                   stack; see below
+ *   luaL_setfuncs -- separates out part of luaL_register
+ *   luaL_openlib -- generalizes luaL_register; already exposed if Lua was
+                     compiled with LUA_COMPAT_OPENLIB
+ *   luaL_pushmodule -- separates out part of `module`, see below for description
+
+
+Here is the complete list of interfaces that are provided to Lua 5.2.0:
+
+ *   luaL_typerror
+ *   lua_objlen -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+ *   lua_strlen -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+ *   lua_equal -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+ *   lua_lessthan -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+ *   lua_cpcall -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+ *
+ *   luaL_openlib -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
+ *                   (or LUA_COMPAT_ALL, which implies it)
+ *   luaL_register -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
+ *   luaL_pushmodule -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
+
+as well as these dinosaurs (there's still some old code around, even on
+www.keplerproject.org, and sometimes only the trivial compatibility #defines
+from Lua 5.1 are needed to keep it working):
+
+ *   luaL_getn -- just aliases lua_rawlen
+ *   luaL_setn -- noop
+ *   luaL_reg
+ *   lua_open
+ *   lua_getregistry
+ *   lua_getgccount
+ *   lua_Chunkreader
+ *   lua_Chunkwriter
+ *   luaL_putchar
+ *   lua_ref
+ *   lua_unref
+ *   lua_getref
+
+
+
+What do I get when I instead link againt fiveqplus.a?
+--------------------------------------------------------
+
+Note that if you're going to link against fiveqplus.a, you need to make sure
+LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
+
+
+ *   luaQ_register(L, idx, name, f) is macro for
+            (lua_pushcfunction(L, (f)),
+             lua_setfield(L,(((idx)<0) ? (idx)-1 : (idx)),(name)))
+        Contrast lua_register, which instead registers f as _G[name]
+
+
+ *   void luaL_requiref(L, libname, lua_CFunction luaopen_libname, int gidx)
+        Runs luaopen_libname (with libname as stack argument) and saves the
+        return value to package.loaded[libname] and optionally also to
+        _G[libname].
+        Lua 5.2's native version uses gidx just as a boolean.
+        In the version provided to Lua 5.1, and to Lua 5.2 if LUA_FIVEQ_PLUS,
+        gidx is treated the same way if it's 0 or 1; but if it has another value,
+        that is used as an index into the stack. In that case, the value returned
+        from calling luaopen_libname is stored in stack[gidx][libname], that is
+        to the table at index gidx in the stack, rather than _G. As with the
+        native version, a copy of that value is also left on the stack, and
+        saved in package.loaded[libname].
+        The behavior when gidx is neither 0 nor 1 makes luaL_requiref do for the
+        return value of luaopen_libname what luaQ_register does for
+        a lua_CFunction.
+
+
+ *   void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *A,
+     int nup)
+        Generalizes luaL_register to allow upvalues, as luaL_setfuncs does. Is
+        already exposed in Lua 5.1 if compiled with LUA_COMPAT_OPENLIB, and in
+        Lua 5.2 if compiled with LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which
+        implies it).
+        When called with libname == NULL, simply registers the functions in A
+        to the table on top of stack (below nup upvalues). If nup is not zero,
+        all functions are created sharing those upvalues from the top of stack.
+        At the end, all upvalues have been popped from stack but table is left.
+        If libname != NULL, creates a new table, assigns it to the global
+        libname and also as package.loaded[libname], and registers the
+        functions in A there instead. If there is already a table in
+        package.loaded[libname], or at the global libname, reuses that table
+        instead of creating a new one. In either case, all upvalues will have
+        been popped from stack, and the table used will have been pushed.
+
+        In fiveq, this function is always available regardless of how Lua
+        was compiled. We approximate the behavior of Lua 5.2's version, which
+        is only slightly different from Lua 5.1's, with these differences:
+          * permits A to be NULL
+          * checks that enough stack space exists to copy the upvalues
+        On Lua 5.2, this function (whether provided by fiveq or natively)
+        starts with a call to luaL_checkversion, which is not available on Lua
+        5.1.
+
+        In fiveqplus, we change this function to look for and register table
+        libname in the caller's environment, which may differ from the global
+        environment.
+
+
+ *   luaL_register is a shorthand for luaL_openlib with 0 upvalues.
+        In fiveqplus, it inherits luaL_openlib's changed behavior.
+
+
+ *   void luaQ_checklib(L, "libname")
+        Asserts that Lua has already loaded library libname, and
+        pushes it to the stack. If the assertion fails, raises an error.
+
+
+ *   const char *luaQ_getdeeptable(L, idx, "field.field", szhint, &existing)
+        Based on luaL_findtable from lauxlib.c.
+        Tries to "deeply" get the table value at stack[idx][fields]: that is,
+        fields can contain multiple keys separated by "." Constrast
+        luaL_getsubtable which only searches "shallowly" (always treats its
+        field argument as a single key).
+        Creates any intervening tables as necessary (but won't overwrite any
+        existing non-tables); and if necessary also creates the target table.
+        If the function succeeds, it returns NULL and the retrieved or new
+        table will have been pushed onto the stack. If existing is non-NULL,
+        writes a boolean to it indicating whether the returned table was
+        pre-existing.
+        If the function fails (because some existing intervening value isn't a
+        table), returns a pointer to the problematic parts of fields and an
+        unaltered stack.
+
+
+ *   const char *luaQ_getdeepvalue(L, idx, "field.field")
+        Like luaQ_getdeepvalue, tries to "deeply" get the value at
+        stack[idx][fields] (fields can contain multiple keys separated
+        by "."). However, this function *won't* create any intervening
+        tables; and doesn't require the target value to be a table.
+        If successful, returns NULL and the retrieved value (which may
+        be nil) will have been pushed onto the stack.
+        If it fails (because some intervening table is missing or isn't
+        a table), returns a pointer to the problematic parts of fields and
+        an unaltered stack.
+
+
+ *   const char *luaQ_setdeepvalue(L, idx, "field.field")
+        Tries to "deeply" set stack[idx][fields] to the value at the top
+        of the stack (fields can contain multiple keys separated by
+        "."). Creates any intervening tables as necessary (but won't
+        overwrite any existing non-tables).
+        If successful, returns NULL and will have popped value from the stack.
+        If it fails (because some existing intervening value isn't a table),
+        returns a pointer to the problematic parts of fields and an
+        unaltered stack.
+
+
+ *   void luaQ_pushmodule(L, "libname", int szhint, int level, "caller")
+        A new part of the Lua 5.2 API is:
+            void luaL_pushmodule (L, "libname", int szhint);
+        This separates out part of the logic used in the implementation of
+        "module". It's only built if Lua 5.2 is compiled with
+        LUA_COMPAT_MODULE. There is no difference in the functionality of this
+        bit of code in the two versions.
+        fiveq exposes the code for all Lua versions, and fiveqplus
+        exposes a generalization of it as luaQ_pushmodule.
+        The two functions share this behavior:
+        They first look for package.loaded[libname] (treating libname as a single
+        key).
+        If that fails, and the function is luaL_pushmodule or it's
+        luaQ_pushmodule with level == 0, they will look "deeply" for a table
+        named libname in the global environment (here libname can contain
+        multiple keys separated by "."). When doing so, they will create any
+        intervening tables as necessary, and will write the retrieved or new
+        table to package.loaded[libname], as well as leaving it on the stack.
+        luaQ_pushmodule can also be called with level > 0. In that case,
+        it instead looks in the local environment of the function at that call
+        stack level. (If that function is a CFunction and caller is non-NULL,
+        it will fail using caller in the error message; if caller is NULL, it
+        will allow the use of CFunction environments.)
+
+
+
+Why are there so many different ways to expose my lua_CFunction to Lua?
+-----------------------------------------------------------------------
+
+I feel your pain. It's already hard to keep track of the differences between:
+
+    * lua_register
+    * luaL_register
+    * luaL_openlib
+    * luaL_setfuncs
+    * luaL_requiref
+    * luaL_pushmodule
+
+and then there are the Lua functions "require" and "module"; and finally
+fiveqplus adds:
+
+    * luaQ_register
+    * luaQ_pushmodule
+
+Here are some notes to sort out the differences. All of the C functions below return void.
+
+
+    lua_register(L, "funcname", f): assigns the lua_CFunction f (with no
+        upvalues) to the key "funcname" in the global environment
+
+
+    luaQ_register(L, idx, "funcname", f): like lua_register, but instead
+        assigns f to the key "funcname" in the table at stack[idx]     
+
+    
+    luaL_requiref(L, "libname", luaopen_libname, gidx):
+        calls luaopen_libname and optionally does for its return value what
+        lua/luaQ_register do for the explicitly-specified lua_CFunction f
+        
+        * libname may be NULL, but this has no special effect...?
+        * when gidx == 0: just ...? we don't assign the return value anywhere
+        * when gidx == 1: save the return value to the key "libname" in the
+            global environment
+        * when fiveqplus, and gidx is neither 0 nor 1: save the return
+            value to the key "libname" in the table at stack[gidx]
+
+
+    luaL_setfuncs(L, luaL_Reg *A, int nup);
+        part of the implementation of luaL_openlib and luaL_register
+        merges functions from A, with nup shared upvalues, into the
+        table immediately below the upvalues on the top of the stack.
+
+
+    luaL_openlib(L, "libname", luaL_Reg *A, int nup);
+        * libname == NULL: simply calls luaL_setfuncs ...?
+        * libname != NULL: uses a new or existing table from
+            package.loaded[libname] or _G[libname]
+        * when fiveqplus and libname != NULL: uses _ENV[libname]
+            in place of _G[libname], where _ENV is the caller's
+            environment
+
+
+    luaL_register(L, "libname", luaL_Reg *A);
+        specializes luaL_openlib to case where there are no upvalues
+
+
+    luaQ_pushmodule(L, "libname", szhint, int level, "caller");
+        looks shallowly for "libname" in package.loaded, then
+        "deeply" for it in the global environment (or in the table
+        at stack level if that's > 0; if "caller" is non-NULL,
+        that caller must be a Lua function).
+        Creates intervening tables as necessary, saves the table
+        in package.loaded, and leaves it on stack.
+
+
+    luaL_pushmodule(L, "libname", szhint);
+       part of the implementation of `module`
+       specializes luaQ_pushmodule to case where level == 0.
+
+
+    the Lua function "require":
+        ...
+
+
+    the Lua function "module":
+        ...
+
+

@@ -1,0 +1,1034 @@
+BENEFITS-LUA
+============
+
+
+What do I get when I require "fiveq"?
+----------------------------------------
+
+When you require "fiveq" in Lua 5.1, the following functions are modified:
+
+    pairs and ipairs:
+        will honor the __pairs and __ipairs metamethods
+
+    os.execute and io.popen:
+       os.execute and the close method of the object returned by io.popen will
+       return a triple, as in Lua 5.2. The first value is true if the close was
+       successful, else nil. The second value is "exit" if the process executed
+       normally, else "signal". The third value is the exit code or signal that
+       terminated the process.
+
+       Additionally, os.execute() with no arguments returns true if a shell is
+       available, else false.
+
+    io.open:
+        will sanitize its mode string
+
+    io.read and file:read:
+        will accept an "*L" argument
+
+    io.lines and file:lines:
+        will pass their arguments through to read (defaults to "*l")
+
+    file:write:
+        will return file
+
+    xpcall
+        accepts more than two arguments, like pcall and xpcall in Lua 5.2
+
+    string.rep
+        accepts an optional separator argument
+
+    math.log
+        accepts an optional base argument, uses efficient algorithm for base 2
+
+The following functions are added:
+
+    rawlen:
+        returns length of table or string, ignoring any __len metamethods;
+        in unpatched Lua 5.1.4, __len is always ignored anyway for these, so
+        this function gives the same result as #tbl or #str
+
+    table.pack
+        has same behavior as Lua 5.2's
+
+    table.unpack
+        alias for global unpack
+
+    package.searchers:
+        alias for package.loaders
+
+    debug.getuservalue
+        returns nil if argument isn't a userdatum
+
+    debug.setuservalue
+        raises error if arguments aren't a full userdatum and either nil or a
+        table
+
+Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
+
+Finally, the global _FIVEQ is set to true.
+
+
+
+When you require "fiveq" in Lua 5.2, no functions are modified. The following
+functions are added:
+
+    loadstring:
+        alias for load
+        (this is already exposed if you compiled Lua with LUA_COMPAT_LOADSTRING)
+
+    unpack:
+        alias for table.unpack
+        (this is already exposed if you compiled Lua with LUA_COMPAT_UNPACK)
+
+    table.maxn
+        (this is already exposed if you compiled Lua with LUA_COMPAT_MAXN)
+
+    math.log10
+        (this is already exposed if you compiled Lua with LUA_COMPAT_LOG10)
+
+    package.loaders:
+        alias for package.searchers
+        (this is already exposed if you compiled Lua with LUA_COMPAT_LOADERS)
+
+    newproxy(arg) and debug.newproxy(arg)
+        returns a new userdatum
+        if arg is false: with no metatable
+        if arg is an existing userdatum created by newproxy: use its metatable
+        if arg is (literally) true: with a new empty metatable
+        if arg is a function: with a new metatable using arg as __gc
+
+    debug.getfenv
+        only available for userdata
+
+    debug.setfenv
+        only available for userdata
+
+Additionally, the global _FIVEQ is set to true.
+
+
+
+What do I get when I instead require "fiveqplus"?
+---------------------------------------------------
+
+You get all the modifications and additions from fiveq, with the following
+changes:
+
+    The global _FIVEQ is set to "plus" rather than true.
+
+    an additional function math.trunc is provided
+
+    Lua 5.2's math.log is replaced by a version that uses an efficient
+        algorithm for base 2 (this is already used for fiveq in Lua 5.1)
+
+    two additional functions are added to the string library:
+            string.starts(str, prefix, ...)
+            string.ends(str, suffix, ...)
+        returns the first of the prefixes (or suffixes) with which str begins
+        (or ends), or false if none of them match. The prefixes (or suffixes)
+        are interpreted literally; regex is not honored.
+        The same behavior can be achieved in pure Lua, but these routines
+        are efficiently coded in C.
+
+    a third additional function is added to the string library:
+            string.gsubplain(str, target, replacement, [howmany])
+        this works just like gsub, except that target is interpreted
+        literally; regex is not honored. Returns a copy of string with
+        up to howmany replacements made, plus a count of the actual
+        number of replacements.
+        For large strings, and in cases where regex is not needed, this function
+        is substantially faster than gsub.
+        Adapted from http://lua-users.org/wiki/StringReplace by Sam Lie.
+
+    Lua 5.1's newproxy and debug.newproxy are replaced by a version with the
+        same interface as is used for fiveq in Lua 5.2
+
+
+    an additional global function iter is provided that works somewhat
+        like pairs and ipairs, but returns iteration sequences with only
+        a single column: that is, only a single value at each step, like the
+        sequences generated by io.lines.
+
+        It's used as follows:
+            iter(obj, [factory])
+        will first check obj for a __iter metamethod, which should return a
+        function and optionally two further values, just as __pairs and
+        __ipairs do. The function should generate a single-columned
+        iteration sequence when called with those values. (Nothing is done
+        here to enforce only a single column, though.)
+
+        If obj has no __iter metamethod, what will instead be returned is a
+        specially-wrapped version of the function and values returned by
+        factory(obj). The wrapper clips whatever iteration sequence those
+        generate to a single column.
+
+        If factory is omitted, it defaults to pairs.
+
+        For example, the program:
+
+            for k, v1, v2 in iter {one=1, two=2, three=3} do
+                print(k, v1, v2)
+            end
+
+        might produce the output:
+
+            two   nil nil 
+            one   nil nil
+            three nil nil
+
+        With explicit for-loops, the same effect can be achieved by just
+        omitting or ignoring variables for all but the first member in the
+        sequence. However, there are other situations where one wants to
+        pass a sequence-generating function and values to higher-order
+        functions, and there it can be useful to clip iteration sequences
+        to a single column.
+
+        Additionally, some data structures are more naturally iterated over
+        using single-column sequences. For example, I prefer to write my queues
+        and sets with __iter rather than __ipairs metamethods. (__ipairs
+        implies a kind of stability with respect to the index, and the
+        possibility for random access, that the iterations I'm exposing do
+        not supply.)
+
+        io.lines and file:lines() can be thought of as a specific application
+        of iter(..). (But we don't in fact add an __iter metamethod to the
+        metatable for files.)
+
+
+    an additional function debug.getmetafield is provided that works like this:
+
+            debug.getmetafield(obj, "field")
+
+        if obj is a table or userdata with a metatable, and the metatable has
+        key "field", this will return the value associated with that key. A
+        special whitelist of fields are handled even if obj's metatable was
+        made opaque (by giving it a __metatable metamethod). Currently
+        the whitelist is:
+            __len
+            __reversed
+            __copy
+            __eq
+            __index
+            __tostring
+ 
+
+    in Lua 5.2, an additional global function getfenv is provided, that
+        works like the global function of the same name in Lua 5.1. When called
+        with argument 0, it returns the global table _G (even if it's not
+        available through any local binding). When called with an argument n >
+        0, it returns the environment of the function at stack level n.
+        The function calling getfenv is at stack level 1.
+        FIXME
+        uses luaQ_getfenv(L, n, NULL)
+        Lua 5.1 also permits calling with a function object, does this?
+
+
+    table.pack saves the number of elements using key '#' instead of 'n'.
+
+    unpack and table.unpack look for the number of elements at key '#', and if
+        that's not present, fall back to querying the object's length in a way
+        that honors __len metamethods
+
+    (If you don't like these two changes, just change two `#ifdef 0` in
+        api.c to `#ifdef 1`.)
+
+
+    error is modified so as to accept more than two arguments. Its first
+        argument is used together with the third and subsequent arguments
+        to construct an error message using string.format. Its second
+        argument continues to specify the stack level to which to attribute the
+        error, with level 1 being the function that calls error. Use 0
+        to suppress the addition of any error position.
+
+
+    assert is modified so as to accept more than two arguments. If its first
+        argument is true-like, all arguments are returned; else its second
+        argument is used together with the third and subsequent arguments to
+        construct an error message using string.format. 
+
+
+    an additional global function check is provided; this is somewhat akin
+        to assert. One difference is that check inserts a new second argument
+        that identifies the position of the checked object in an argument list. 
+        If check's first argument is true-like, then that argument (and it
+        alone) is returned, else the third argument is used as a format string
+        together with all subsequent arguments. For example:
+
+            > function example(arg) local x = check(arg, 1, "foo %s", "bar") end
+            > example(false)
+            stdin:1: bad argument #1 to 'example' (foo bar)
+            stack traceback:
+                [C]: in function 'check'
+                stdin:1: in function 'example'
+                stdin:1: in main chunk
+                [C]: ?
+
+    an additional library err is provided with more specific error/checking
+        functions to complement error, assert, and check. See description of
+        ## err library ## below.
+
+
+    an additional library hash is provided; see description of
+        ## hash library ## below
+
+
+    an additional library struct is provided; see description of
+        ## struct library ## below
+
+
+    all the additional libraries (err, hash, struct, and on Lua 5.1, bit32)
+        are bound to names in the environment table of the function that
+        required "fiveqplus", which needn't be the same as the global
+        environment. The other changes fiveqplus provides, however,
+        such as the enhancements to error and the new string functions,
+        are all exposed globally.
+
+
+    an enhanced module system is provided, comprised of the functions
+        require, module, package.seeall, and package.strict. The first
+        replaces the original require function, and the second and third
+        replace the corresponding original functions in Lua 5.1.
+        (They are also present in Lua 5.2 if compiled with LUA_COMPAT_MODULE.)
+        See discussion of ## module system ## below.
+
+
+
+Err library
+-----------
+
+For reference, we reproduce the signatures of error, assert, and check in
+fiveqplus:
+
+    error(fmt, level, args ...)
+    assert(test, fmt, args ...)
+    check(test, arg#, fmt, args ...)
+
+The err library adds the following:
+
+    err.istype(obj, types ...)
+        returns the first of the type arguments that obj satisfies, or false
+        if it satisfies none of them. The type arguments can be any of:
+            * the standard return values from type(obj): "nil", "table",
+              "boolean", and so on. Both full and light userdata satisfy
+              "userdata". For "string" and "number", obj merely has to be
+              convertible to the type. 
+            * "positive" if obj is convertible to a positive integer
+            * "natural" if obj is convertible to a non-negative integer
+            * "negative" if obj is convertible to a negative integer
+            * "string!" if obj is literally a string; whereas "string" merely
+              requires obj to be convertible to a string
+            * "number!" if obj is literally a number, not just convertible to
+              one
+            * "integer!" if obj is literally an integer-valued number
+              (plain "integer" is also available, but anything that satisfies
+              "number" also counts as convertible to an integer, by truncation)
+            * "positive!" if obj is literally a positive integer
+            * "natural!" if obj is literally a non-negative integer
+            * "negative!" if obj is literally a negative integer
+            * "callable" if obj is a function or has a function for its __call
+              metamethod
+            * "indexable" if obj is a table or has a table or function for
+              its __index metamethod
+            * "iterable" if obj is a table or has an __iter or __pairs
+              metamethod
+            * "iterator" if obj is a function: the idea is that
+              istype({}, "iterator") returns false but
+              istype(pairs({}, "iterator") returns true. The same effect
+              can be achieved with "function", but this documents the
+              programmer's intentions more clearly.
+            * any typeobject: obj will count as satisfying this type if either
+              obj's metatable or its __type metamethod equals the typeobject
+
+    err.checktype(obj, arg#, [expected index], types ...)
+        a hybrid of check and istype: if object satisfies any of the type
+        arguments, the first one it satisfies is returned. Else an error
+        is raised complaining that the function expected an object of type
+        so-and-so, but received one of type such-and-such. You can
+        explicitly specify the index of the type that was expected (the first
+        one having index 1); else 1 is assumed. Examples:
+
+        > function example(a, b, c) checktype(c ,3, "number", "string") end
+        > example(1, 2, false)
+        stdin:1: bad argument #3 to 'example' (number expected, got boolean)
+        stack traceback:
+            [C]: in function 'checktype'
+            stdin:1: in function 'example'
+            stdin:1: in main chunk
+            [C]: ?
+
+        > function example(a, b, c) checktype(c ,3, 2, "number", "string") end
+        > example(1, 2, false)
+        stdin:1: bad argument #3 to 'example' (string expected, got boolean)
+        stack traceback:
+            [C]: in function 'checktype'
+            stdin:1: in function 'example'
+            stdin:1: in main chunk
+            [C]: ?
+
+    err.checkopt(obj, arg#, type, [default])
+        asserts that obj satisfies the single type argument, or else is nil;
+        if the assertion fails, raises an error of the same format as checktype.
+        if the assertion succeeds and obj is nil, returns default; else
+        returns obj
+
+    err.checkany(obj, arg#)
+        asserts that obj is of any non-nil type; if the assertion fails,
+        raises an error of the same format as checktype. if the assertion
+        succeeds, returns obj
+
+    err.arenil(args, ...)
+            returns true if all its arguments are nil
+
+    err.checkrange(num, arg#, [min], max)
+    err.checkrange(num, arg#, [min], -max)
+        asserts that num is a number in the inclusive range min...max;
+        min defaults to 1. If max is negative, its absolute value is used,
+        and additionally, num is also permitted to be -1, -2, and so on.
+        A value of -1 for num is converted to max; -2 is converted to max-1;
+        and so on. Raises an error of the same format as checktype if the
+        range constraints are violated; else returns the (possibly converted)
+        num.
+
+    err.badtype(obj, arg#, "foo")
+        manually raises an error of the same format as checktype. Example:
+
+        > err.badtype({}, 100, "foo")
+        bad argument #100 to '?' (foo expected, got table)
+        stack traceback:
+            [C]: in function 'badtype'
+            stdin:1: in main chunk
+            [C]: ?
+
+    err.bad(arg#, "extra message")
+        manually raises an error of the same format as check(false, arg#, "extra
+        message"). Example:
+
+        > err.bad(100, "foo")
+        bad argument #100 to '?' (foo)
+        stack traceback:
+            [C]: in function 'bad'
+            stdin:1: in main chunk
+            [C]: ?
+
+
+
+Module system
+-------------
+
+TODO
+
+
+* 
+* Summary of library mgmt interfaces:
+*
+*   lua_register(L, "lib", funct) ~~> pushcfunction(L, funct), lua_setglobal(L, "lib")
+*   luaQ_register(L, idx, "lib", funct) ~~> pushcfunction(L, funct), setfield(L, idx, "lib")
+*
+*   luaL_setfuncs(L, luaL_Reg*, nup)
+*       ~~> merge functions (sharing nup upvalues) into table underneath upvalues
+*           pops upvalues but leaves table on stack
+*   luaL_newlib(L, luaL_Reg*) ~~> allocate table and luaL_setfuncs with 0 nup
+*   luaL_openlib(L, "lib", luaL_Reg*, nup)
+*       ~~> if "lib", pushmodule to find/create existing module in caller's/global env
+*           else assume there's already a table underneath upvalues;
+*           merge functions from luaL_Reg* into that table with luaL_setfuncs, leaving table on top of stack
+*   luaL_register(L, "lib", luaL_Reg*)
+*
+*   luaL_pushmodule(L, "lib.lib", szhint) ~~> pushmodule only in global env
+*   luaQ_pushmodule(L, "lib.lib", szhint, level, NULL)
+*       ~~> find/create _LOADED[fields], deeply looking/creating it in env at call stack `level` (or global if 0) if it's not already there 
+*
+*   luaL_requiref(L, "lib", luaopen_lib, global_idx)
+*       ~~> always runs luaopen_lib and overwrite REG._LOADED.lib with single return value (or nil)
+*           assign return value to stack[idx].lib, or _G.lib if idx==1, or nowhere if idx==0
+*
+*   luaQ_checklib(L, "lib") ~~> push REG._LOADED.lib to stack
+*/
+
+
+
+
+/*
+ * module.c for fiveqplus
+ * adapted from Lua sources, and http://lua-users.org/wiki/ModuleDefinition
+ *
+ * Existing behavior for `require`:
+ *   Return package.loaded[name] if it exists
+ *   Else find a loader from package.loaders/searchers:
+ *     (i) looks for thunk at package.preload[name]
+ *     (ii) looks for name.lua using package.path
+ *     (iii) looks for name.so using package.cpath
+ *     (iv) all-in-one loader looks for "a.b.c" underneath "a" and "a.b"
+ *   If found loader, calls it with (name,[filename])
+ *   If call returns non-nil, assign that value to package.loaded[name]
+ *   Else, if package.loaded[name] wasn't written to, we write `true` there
+ *   Return final value of package.loaded[name]
+ *
+ * `require "foo"` doesn't introduce any additional modifications to environment; though
+ * the library's luaopen_foo may have done so by calling luaL_openlib or luaL_register with a non-NULL "foo".
+ *
+ * Enhancements to `require`:
+ *   require "foo" -- original behavior
+ *   require("foo",tbl) -- merge all keys (that don't begin with "_") from
+ *                         the returned table into tbl
+ *   require("foo",[tbl],...) -- merge only the specified keys into tbl 
+ *                         or current environment
+ *
+ * 
+ * 5.1.4 behavior for `module`:
+ *   If module not already in package.loaded[name], we look for/create it in _G
+ *   Set module._M, module._NAME, module._PACKAGE
+ *   Set module as the new environment of the current function
+ *   Set module as the new value of package.loaded[name]
+ *
+ *
+ * Enhancements to `module(..., [decorators])`:
+ *   If module not already in package.loaded, we look for/create it in _ENV
+ *     of caller of the chunk that invokes module(...), instead of _G.
+ *   Also, we temporarily save the chunk's _ENV for possible use by package.seeall.
+ *
+ * Other enhancements:
+ *   Better package.seeall decorator
+ *   package.strict decorator
+ *
+ */
+
+#if 0
+
+/* Summary of library mgmt interfaces:
+ *
+ *   lua_register(L, "lib", funct) ~~> pushcfunction(L, funct), lua_setglobal(L, "lib")
+ *   luaQ_register(L, idx, "lib", funct) ~~> pushcfunction(L, funct), setfield(L, idx, "lib")
+ *
+ *   luaL_setfuncs(L, luaL_Reg*, nup)
+ *       ~~> merge functions (sharing nup upvalues) into table underneath upvalues
+ *           pops upvalues but leaves table on stack
+ *   luaL_newlib(L, luaL_Reg*) ~~> allocate table and luaL_setfuncs with 0 nup
+ *   luaL_openlib(L, "lib", luaL_Reg*, nup)
+ *       ~~> if "lib", pushmodule to find/create existing module in caller's/global env
+ *           else assume there's already a table underneath upvalues;
+ *           merge functions from luaL_Reg* into that table with luaL_setfuncs, leaving table on top of stack
+ *   luaL_register(L, "lib", luaL_Reg*)
+ *
+ *   luaL_pushmodule(L, "lib.lib", szhint) ~~> pushmodule only in global env
+ *   luaQ_pushmodule(L, "lib.lib", szhint, level, NULL)
+ *       ~~> find/create _LOADED[fields], deeply looking/creating it in env at call stack `level` (or global if 0) if it's not already there 
+ *
+ *   luaL_requiref(L, "lib", luaopen_lib, global_idx)
+ *       ~~> always runs luaopen_lib and overwrite REG._LOADED.lib with single return value (or nil)
+ *           assign return value to stack[idx].lib, or _G.lib if idx==1, or nowhere if idx==0
+ *
+ *   luaQ_checklib(L, "lib") ~~> push REG._LOADED.lib to stack
+ */
+
+
+ static const luaL_Reg R[] =
+    {
+            { "alpha",  alpha },
+            { "beta",   beta  },
+            { "gamma",  gamma },
+            { NULL,     NULL  }
+    };
+
+extern int luaopen_foo (lua_State *L) {
+    /*
+     * Unlike luaL_requiref, which always runs luaopen_string,
+     * and luaL_openlib(..."string"...), which generates 
+     * an empty _ENV.string if not already loaded,
+     * this asserts that "string" is already loaded and doesn't
+     * write anything to _G or _ENV
+     */
+    luaQ_checklib(L, LUA_STRLIBNAME);
+
+    /* alternatively */
+    lua_newtable(L);
+
+    /* version 1: merges these into stack[-1] */
+    luaQ_register(L, -1, "alpha", alpha);
+    luaQ_register(L, -1, "beta", beta);
+    luaQ_register(L, -1, "gamma", gamma);
+
+    /* same as version 2 */
+    luaL_setfuncs(L, R, 0);
+
+    /* same as version 3 */
+    luaL_openlib(L, NULL /* lib already on stack, don't fetch/create */, R, 0 /* upvalues */);
+
+    /* same as version 4 */
+    luaL_register(L, NULL, R);
+
+    return 0;
+    // or return 1;
+}
+
+#endif
+
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+
+#define LUA_FIVEQ_PLUS
+#include "fiveq.h"
+
+
+/*
+ * This behaves equivalently to Lua 5.2's require, which is mostly the same
+ * as Lua 5.1.4, except that 5.1.4 leaves package.loaded[name] alone if
+ * the library wrote anything there (even nil), and detects cyclic requires.
+ * Whereas 5.2.0 only leaves it alone if the library wrote non-nil there,
+ * and no longer detects cyclic requires. We accommodate the difference in
+ * signatures between 5.1.4 loaders/libraries (loaders return a single
+ * function, which is called with the library name) and 5.2.0 (loaders
+ * return a single function plus an arbitrary value, which is supplied as
+ * a second argument to the library).
+ *
+ * This function needs the global "package" table as upvalue(1) (in 5.1.4,
+ * it's the function's env). That's a strange design choice: package.loaded
+ * is already accessible as REG._LOADED. We only need additional access
+ * to package.searchers: but then why not make that table directly be the
+ * upvalue/env?
+ */
+
+static int ll_require (lua_State *L) {
+  int i;
+  const char *name = luaL_checkstring(L, 1);
+  lua_settop(L, 1);  /* _LOADED table will be at index 2 */
+  lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+  lua_getfield(L, -1, name);
+  if (lua_toboolean(L, -1)) {  /* is it there? */
+    return 1;  /* package is already loaded */
+  }
+  /* else must load package; iterate over available searchers */
+  lua_pop(L, 1);  /* remove 'getfield' result */
+  /* lua_getfield(L, LUA_ENVIRONINDEX, "loaders"); */
+#if LUA_VERSION_NUM == 501
+  lua_getfield(L, lua_upvalueindex(1), "loaders");  /* will be at index 3 */
+  if (!lua_istable(L, -1))
+    luaL_error(L, LUA_QL("package.loaders") " must be a table");
+#else
+  lua_getfield(L, lua_upvalueindex(1), "searchers");  /* will be at index 3 */
+  if (!lua_istable(L, -1))
+    luaL_error(L, LUA_QL("package.searchers") " must be a table");
+#endif
+  lua_pushliteral(L, "");  /* error message accumulator */
+  /*  iterate over available seachers to find a loader */
+  for (i=1; ; i++) {
+    lua_rawgeti(L, -2, i);  /* get a searcher */
+    if (lua_isnil(L, -1)) {
+      /* no more searchers */
+      luaL_error(L, "module " LUA_QS " not found:%s",
+                    name, lua_tostring(L, -2));
+    }
+    lua_pushstring(L, name);
+#if LUA_VERSION_NUM == 501
+    lua_call(L, 1, 1);  /* call it */
+#else
+    lua_call(L, 1, 2);  /* call it */
+#endif
+    if (lua_isfunction(L, 5))  /* did it find module? */
+      break;  /* module loaded successfully */
+    else if (lua_isstring(L, 5)) {  /* loader returned error message? */
+      lua_settop(L, 5);  /* remove any extra return values */
+      lua_concat(L, 2);  /* accumulate it */
+    }
+    else
+      lua_settop(L, 4);
+  }
+  lua_pushstring(L, name);  /* pass name as argument to module */
+  lua_insert(L, 6);  /* name is 1st argument (before search data) */
+#if LUA_VERSION_NUM == 501
+    lua_call(L, 1, 1);  /* run loaded module */
+#else
+    lua_call(L, 2, 1);  /* run loaded module */
+#endif
+  if (!lua_isnil(L, -1))  /* non-nil return? */
+    lua_setfield(L, 2, name);  /* _LOADED[name] = returned value */
+  lua_getfield(L, 2, name);
+  if (lua_isnil(L, -1)) {   /* module did not set a value? */
+    lua_pushboolean(L, 1);  /* use true as result */
+    lua_pushvalue(L, -1);  /* extra copy to be returned */
+    lua_setfield(L, 2, name);  /* _LOADED[name] = true */
+  }
+  return 1;
+}
+
+
+/* 
+ * This wrapper provides the enhancements to `require`.
+ * It needs ll_require as upvalue(1).
+ */
+static int ll_require_plus (lua_State *L) {
+    int top = lua_gettop(L);
+    // stack[1]=modname, stack[2..top]= [table], keys...
+    const char *modname = luaL_checkstring(L, 1);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_pushvalue(L, 1);
+    lua_call(L, 1, 1);
+    // stack[+1]=_LOADED[name]
+    if (top == 1)
+        return 1;
+    else if (!lua_istable(L, -1))
+        luaL_error(L, "module " LUA_QS " doesn't export a table", modname);
+    const char *k;
+    if (!lua_istable(L, 2))
+        luaQ_getfenv(L, 1, "require");
+    else if (top > 2) {
+        lua_pushvalue(L, 2);
+        lua_remove(L, 2);
+        top--;
+    }
+    else {
+        /* require("foo",tbl) */
+        lua_pushnil(L);  /* first key */
+        while (lua_next(L, 3) != 0) {
+            // stack[1]=modname, stack[2]=tbl, stack[+1]=_LOADED[name], stack[+2]=key, stack[+3]=value
+            if (lua_type(L, 4) == LUA_TSTRING) {
+                k = lua_tostring(L, 4);
+                if (*k == '_') {
+                    /* skip this value */
+                    lua_pop(L, 1);
+                    continue;
+                }
+            }
+            lua_pushvalue(L, 4);
+            lua_insert(L, 5);
+            lua_settable(L, 2);
+        }
+        return 1; /* return stack[+1] */
+    }
+    /* require("foo", [tbl], ...) */
+    const char *bad;
+    int i;
+    for (i=2; i <= top; i++) {
+        // stack[2..top]=keys, stack[+1]=_LOADED[name], stack[+2]=tbl
+        k = luaL_checkstring(L, i);
+        if (luaQ_getdeepvalue(L, -2, k) != NULL)
+            luaL_error(L, "module " LUA_QS " doesn't provide " LUA_QS, modname, k);
+        bad = luaQ_setdeepvalue(L, -2, k); 
+        if (bad != NULL)
+            luaL_error(L, "couldn't set " LUA_QS, bad);
+    }
+    lua_pop(L, 1);
+    return 1;
+}
+
+
+#include <string.h>
+
+static const int sentinel_ = 0;
+#define sentinel ((const void *)&sentinel_)
+
+/*
+ * Tweaks to module implementation.
+ * Default is to provide a clean environment, and module's public interface
+ * is the same as its _ENV.
+ * We register module in env of caller of chunk that invokes module, instead of _G.
+ */
+static int ll_module (lua_State *L) {
+  const char *modname = luaL_checkstring(L, 1);
+  int lastdecorator = lua_gettop(L);
+  luaQ_pushmodule(L, modname, 1, 4, "module");  /* get/create module table */
+  /* does module table already have a _NAME field? */
+  lua_getfield(L, -1, "_NAME");
+  if (!lua_isnil(L, -1))
+    lua_pop(L, 1);
+  else {  /* initialize it */
+    lua_pop(L, 1);
+    /* ---- modinit(L, modname); ---- */
+    const char *dot;
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "_M");  /* module._M = module */
+    lua_pushstring(L, modname);
+    lua_setfield(L, -2, "_NAME");
+    dot = strrchr(modname, '.');  /* look for last dot in module name */
+    if (dot == NULL) dot = modname;
+    else dot++;
+    /* set _PACKAGE as package name (full module name minus last part) */
+    lua_pushlstring(L, modname, dot - modname);
+    lua_setfield(L, -2, "_PACKAGE");
+    /* ------------------------------ */
+  }
+  /* temporarily set module[sentinel]=caller's _ENV for use by seeall decorator */
+  luaQ_getfenv(L, 1, "module");
+  lua_setfield(L, -2, sentinel);
+  /* set caller's fenv to module table */
+  lua_pushvalue(L, -1);
+  luaQ_setfenv(L, 1, "module");
+  /* ---- dooptions(L, lastdecorator); ---- */
+  int i;
+  for (i = 2; i <= lastdecorator; i++) {
+    if (lua_isfunction(L, i)) {  /* avoid 'calling' extra info. */
+      lua_pushvalue(L, i);  /* get option (a function) */
+      lua_pushvalue(L, -2);  /* module */
+      lua_call(L, 1, 0);
+    }
+  }
+  /* -------------------------------------- */
+  lua_pushnil(L);
+  lua_setfield(L, -2, sentinel);
+  return 1; // return module table
+}
+
+
+static int ll_seeall_index (lua_State *L) {
+    // stack[1]=proxy, stack[2]=k, upvalue(1)=_M, upvalue(2)=caller's _ENV
+    lua_settop(L, 2);
+    lua_pushvalue(L, 2);
+    lua_gettable(L, lua_upvalueindex(1));
+    if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        lua_gettable(L, lua_upvalueindex(2));
+    }
+    return 1;
+}
+
+
+/*
+ * Module decorator
+ * Expose caller's _ENV via a private _ENV for module
+ * Writes to the private enviroment get mirrored to the module's public interface
+ */
+static int ll_seeall (lua_State *L) {
+  // stack[1]=module
+  luaL_checktype(L, 1, LUA_TTABLE);
+  lua_settop(L, 1);
+  lua_newtable(L); /* create proxy */
+  lua_createtable(L, 0, 2); /* create its metatable */
+  lua_pushvalue(L, 1);
+  /* lua_pushvalue(L, LUA_GLOBALSINDEX); */
+  lua_getfield(L, 1, sentinel);
+  lua_pushcclosure(L, ll_seeall_index, 2);
+  lua_setfield(L, 3, "__index");  /* meta.__index = ll_seeall_index */
+  lua_pushvalue(L, 1);
+  lua_setfield(L, 3, "__newindex"); /* meta.__newindex = module */
+  lua_setmetatable(L, 2);
+  luaQ_setfenv(L, 2, "seeall"); /* make proxy the caller's _ENV */
+  return 0;
+}
+
+
+
+/*
+** retrieves the calling function and its 'what'
+*/
+static void getcaller (lua_State *L, int level) {
+  lua_Debug ar;
+  if (lua_getstack(L, level, &ar) == 0 ||
+      lua_getinfo(L, "fS", &ar) == 0)  /* get calling function */
+    luaL_error(L, "couldn't identify the calling function");
+  if (lua_iscfunction(L, -1) || ar.what == NULL)
+      lua_pushliteral(L, "C");
+  else
+      lua_pushstring(L, ar.what); // "Lua", "C", or "main"
+}
+
+
+static int ll_strict_index (lua_State *L) {
+    // stack[1]=tbl, stack[2]=k, upvalue(1)=former index, upvalue(2)=declared
+    /* new __index with upvalues= former index, declared */
+    lua_settop(L, 2);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    if (lua_type(L, 3) == LUA_TFUNCTION) {
+        lua_pushvalue(L, 1);
+        lua_pushvalue(L, 2);
+        lua_call(L, 2, 1);
+    }
+    else {
+        lua_pushvalue(L, 2);
+        lua_gettable(L, 3);
+        lua_remove(L, 3);
+    }
+    // stack[1]=tbl, stack[2]=k, stack[3]=former index[k]
+    if (!lua_isnil(L, 3))
+        return 1;
+    lua_pushvalue(L, 2);
+    lua_gettable(L, lua_upvalueindex(2));
+    // stack[1]=tbl, stack[2]=k, ... stack[4]=declared[k]
+    if (lua_isnil(L, -1)) {
+        getcaller(L, 2);
+        if (strcmp("C", lua_tostring(L, -1)) != 0)
+            luaL_error(L, "variable " LUA_QS " is not declared", lua_tostring(L, 2));
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
+
+static int ll_strict_newindex (lua_State *L) {
+    // stack[1]=tbl, stack[2]=k, stack[3]=v, upvalue(1)=former newindex, upvalue(2)=declared, upvalue(3)=toplevel of M, upvalue(4)=M
+    lua_settop(L, 3);
+    lua_pushvalue(L, 2);
+    lua_gettable(L, lua_upvalueindex(2));
+    if (lua_isnil(L, -1)) {
+        getcaller(L, 2);
+        if (!lua_rawequal(L, 5, lua_upvalueindex(3)) && strcmp(lua_tostring(L, -1), "C") != 0)
+            luaL_error(L, "assigning to undeclared variable " LUA_QS, lua_tostring(L, 2));
+        lua_pushvalue(L, 2);
+        lua_pushboolean(L, 1);
+        lua_settable(L, lua_upvalueindex(2)); /* declared[k]=true */
+    }
+    lua_settop(L, 3);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    switch (lua_type(L, -1)) {
+        case LUA_TFUNCTION : {
+            lua_insert(L, 1);
+            lua_call(L, 3, 0);
+            break;
+        }
+        case LUA_TNIL : {
+            lua_pop(L, 1);
+            lua_rawset(L, lua_upvalueindex(4)); /* M[k]=v */
+            break;
+        }
+        default : {
+            lua_replace(L, 1);
+            lua_settable(L, 1);
+        }
+    }
+    return 0;
+}
+
+
+/*
+ * Module decorator
+ * Catches reads/writes of undeclared globals
+ * Can write to undeclared globals only at module's toplevel
+ */
+static int ll_strict (lua_State *L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_settop(L, 1);
+    luaQ_getfenv(L, 2, "strict");
+    if (!lua_getmetatable(L, 2)) {
+        lua_createtable(L, 0, 2); /* create new metatable */
+        lua_pushvalue(L, -1);
+        lua_setmetatable(L, 2);
+    }
+    lua_getfield(L, 3, "__index");
+    if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        lua_getfield(L, 1, sentinel); /* previous __index defaults to module's ENV */
+    }
+    lua_newtable(L); /* create `declared` table */
+    lua_getfield(L, 3, "__newindex");
+    lua_pushvalue(L, -2);
+    getcaller(L, 3);
+    lua_pop(L, 1); /* discard 'what', leave M's toplevel function */
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, ll_strict_newindex, 4);
+    /* new __newindex with upvalues= former newindex, declared, toplevel of M, M */
+    lua_setfield(L, 3, "__newindex");
+    lua_pushcclosure(L, ll_strict_index, 2);
+    /* new __index with upvalues= former index, declared */
+    lua_setfield(L, 3, "__index");
+    return 0;
+}
+
+
+extern int luaopen_luaQ_module (lua_State *L) {
+    /* export to _G */
+    lua_register(L, "module", ll_module);
+
+    luaQ_checklib(L, LUA_LOADLIBNAME);
+    luaQ_register(L, -1, "seeall", ll_seeall);
+    luaQ_register(L, -1, "strict", ll_strict);
+
+    /*
+    lua_getglobal(L, "require");
+    if (lua_isnil(L, -1))
+      return luaL_error(L, "can't find " LUA_QL("require") " function");
+    */
+
+    /* make package library upvalue for ll_require */
+    lua_pushcclosure(L, ll_require, 1);
+    /*
+    lua_insert(L, -2); // move beneath package library
+    lua_setfenv(L, -2); // set package library as ll_require's fenv
+    */
+
+    /* make ll_require (with package upvalue) upvalue(1) for ll_require_plus */
+    lua_pushcclosure(L, ll_require_plus, 1);
+
+    /*
+    // stack[1]=name, stack[2]=_ENV, stack[3]=ll_require_plus
+    // formerly set _ENV as fenv for ll_require_plus -- why?
+    lua_pushvalue(L, 2);
+    lua_setfenv(L, -2);
+    */
+
+    lua_setglobal(L, "require");
+    return 0;
+}
+
+
+-----------------------------------------------------------------------
+
+
+Hash library
+------------
+TODO
+
+  /*
+   * Hashing library for Lua 5.1.4.
+   * Used by tuple.lua and multiset.lua.
+   * Exports:
+   *      hash.tuple(...)
+   *      hash.set(seed,value,[count=1]) ; doesn't check for duplicates
+   *      hash.unset(seed,value,[oldcount=1],[newcount=0])
+   *      hash.xor(string1, equallengthstring2)
+   *      hash.unbox(obj)   ; for gc-able objects, convert to lightuserdata
+   *                        ; for others, return unchanged
+   *      hash.pointer(obj) ; for gc-able objects and lightuserdata, return "%p"
+   *                        ; for others, return nil
+   */
+
+
+Struct library
+--------------
+TODO
+
+    require "struct" (based on Ierusalimschy's)
+
+    str = struct.pack (fmt, v1, v2, ...)
+    v1, v2, stop = struct.unpack (fmt, s, [start=1])
+    struct.size (fmt) -- fmt can't contain s or c0
+
+    Initially has native endianness and no alignment (!1).
+
+    ">"     use big endian
+    "<"     use little endian
+    "!"     use machine's native alignment
+    "!n"    set the current alignment to n (a power of 2)
+    " "     ignored
+    "x"     padding zero byte with no corresponding Lua value
+    "xn"    padding n bytes
+    "Xn"    padding n align (default to current or native, whichever is smaller)
+    "b/B"   a signed/unsigned char/byte
+    "h/H"   a signed/unsigned short (native size)
+    "l/L"   a signed/unsigned long (native size)
+    "i/I"   a signed/unsigned int (native size)
+    "in/In" a signed/unsigned int with n bytes (a power of 2)
+    "f"     a float (native size)
+    "d"     a double (native size)
+    "s"     a zero-terminated string
+    "cn"    a sequence of exactly n chars corresponding to a single Lua string. An absent n means 1. The string supplied for packing must have at least n characters; extra characters are ignored.
+    "c0"    this is like "cn", except that the n is given by other means: When packing, n is the actual length of the supplied string; when unpacking, n is the value of the previous unpacked value (which must be a number). In that case, this previous value is not returned. 
+    "("     stop capturing values
+    ")"     start capturing values
+    "="     current offset
+
+    struct Str {
+      char b;
+      int i[4];
+    }; // in Linux/gcc/x86 (little-endian, max align 4), use "<!4biiii"
+
+    // pack string Pascal-style
+    sp = struct.pack("Bc0", string.len(s), s)
+    s = struct.unpack("Bc0", sp)
+    -- the length (read by the element "B") is not returned. 
+
+    // pack a string in a fixed-width field with 10 characters padded with blanks:
+    x = struct.pack("c10", s .. string.rep(" ", 10))
+
+
+
+-----------------------------------------------------
