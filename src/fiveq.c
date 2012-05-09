@@ -94,12 +94,11 @@ static int table_pack (lua_State *L) {
     for (i = n; i >= 2; i--)  /* assign other elements */
       lua_rawseti(L, 1, i);
   }
-#  if 0
-  lua_pushinteger(L, n);
-  return 2;  /* return table and number of elements */
-#  else
+/* alternative idea: return table and number of elements
+ *   lua_pushinteger(L, n);
+ *   return 2;
+ */
   return 1;  /* return table */
-#  endif
 }
 
 static int table_unpack (lua_State *L) {
