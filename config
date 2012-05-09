@@ -54,3 +54,8 @@ WARNINGS+=  -Wconversion -Wmissing-prototypes -Wmissing-declarations \
             -Wunreachable-code -Wunused-function -Wfloat-equal
 .endif
 
+
+# -m64 specify for 64bit: int is 32 bits, long and pointer are 64 bits
+# -std=c89 [same as -ansi]; -std=c99
+# -pedantic or -Wpointer-arith
+# -Werror -Wconversion
