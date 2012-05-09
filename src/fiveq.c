@@ -237,6 +237,7 @@ extern int luaopen_fiveq_module (lua_State *L);
 extern int luaopen_fiveq_iter (lua_State *L);
 extern int luaopen_fiveq_err (lua_State *L);
 extern int luaopen_fiveq_metafield (lua_State *L);
+extern int luaopen_fiveq_faststring (lua_State *L);
 extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
 
@@ -420,6 +421,11 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.metafield");
   lua_call(L, 1, 0); 
 
+  /* defines faststring methods; returns 0 */
+  lua_pushcfunction(L, luaopen_fiveq_faststring);
+  lua_pushstring(L, "fiveq.faststring");
+  lua_call(L, 1, 0); 
+
   /* defines error functions and err lib in _G; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_err);
   lua_pushstring(L, "err");
@@ -568,6 +574,11 @@ extern int luaopen_fiveq (lua_State *L) {
   /* defines debug.getmetafield, returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_metafield);
   lua_pushstring(L, "fiveq.metafield");
+  lua_call(L, 1, 0); 
+
+  /* defines faststring methods; returns 0 */
+  lua_pushcfunction(L, luaopen_fiveq_faststring);
+  lua_pushstring(L, "fiveq.faststring");
   lua_call(L, 1, 0); 
 
   /* defines error functions and err lib in _G; returns 0 */

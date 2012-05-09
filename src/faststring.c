@@ -18,6 +18,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
+#define LUA_FIVEQ_PLUS
 #include "fiveq.h"
 
 
@@ -174,7 +175,7 @@ static const luaL_Reg R[] =
         { NULL,		NULL	}
 };
 
-extern int luaopen_faststring (lua_State *L) {
+extern int luaopen_fiveq_faststring (lua_State *L) {
     luaQ_checklib(L, LUA_STRLIBNAME);
     luaL_setfuncs(L, R, 0);
     return 0;
