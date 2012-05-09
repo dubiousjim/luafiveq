@@ -187,7 +187,7 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
 #define luaL_newlibtable(L,l)   lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
 #define luaL_newlib(L,l)	(luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
 
-extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luaopen_lib, int global_idx);
+extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luaopen_lib, int gidx);
 
 
 /* ----------- for 5.2.0 ---------- */
@@ -254,9 +254,9 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname);
 
 
 # ifdef LUA_FIVEQ_PLUS
-/* we replace 5.2.0's requiref with a version that will write to stack[global_idx] when global_idx is other than 0 or 1 */
+/* we replace 5.2.0's requiref with a version that will write to stack[gidx] when gidx is other than 0 or 1 */
 #  define luaL_requiref luaQ_requiref
-extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luaopen_lib, int global_idx);
+extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction luaopen_lib, int gidx);
 # endif
 
 # ifndef LUA_COMPAT_MODULE
