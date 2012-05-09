@@ -1,5 +1,5 @@
 /* 
- * error.c: part of fiveqplus libraries
+ * err.c: part of fiveqplus libraries
  *
  * 1.  error(fmt, [level], [...])
  * 2.  assert(bool, [fmt], [...])
@@ -487,7 +487,7 @@ static const luaL_Reg R[] =
         { NULL,		NULL	  }
 };
 
-extern int luaopen_fiveq_error (lua_State *L) {
+extern int luaopen_fiveq_err (lua_State *L) {
     luaQ_checklib(L, LUA_STRLIBNAME);
     lua_getfield(L, -1, "format");
     lua_pushvalue(L, -1);
