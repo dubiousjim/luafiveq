@@ -156,26 +156,6 @@ extern int getfenv(lua_State *L) {
 #endif
 
 
-/* expects REGISTRY[_LOADED] at top of stack */
-static void require(lua_State *L, const char *modname, lua_CFunction openf) {
-  lua_getfield(L, -1, modname);
-  if (lua_isnil(L, -1)) {
-    lua_pop(L, 1);
-    /* gidx == 0: we want the library in _LOADED but not in _G or anywhere else */
-    luaL_requiref(L, modname, openf, 0);
-    if (lua_isnil(L, -1)) {
-      luaL_error(L, "can't open " LUA_QS " library", modname);
-    }
-  }
-}
-
-/* registers one function in table at top of stack */
-static void set1func(lua_State *L, const char *funcname, lua_CFunction f) {
-    lua_pushcfunction(L, f);
-    lua_setfield(L, -2, funcname);
-}
-
-
 static int newproxy (lua_State *L) {
   lua_settop(L, 1);
   lua_newuserdata(L, 0);  /* create proxy */
@@ -210,12 +190,31 @@ static int newproxy (lua_State *L) {
 }
 
 
+/* expects REGISTRY[_LOADED] at top of stack */
+static void require(lua_State *L, const char *modname, lua_CFunction openf) {
+  lua_getfield(L, -1, modname);
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 1);
+    /* gidx == 0: we want the library in _LOADED but not in _G or anywhere else */
+    luaL_requiref(L, modname, openf, 0);
+    if (lua_isnil(L, -1)) {
+      luaL_error(L, "can't open " LUA_QS " library", modname);
+    }
+  }
+}
+
+/* registers one function in table at top of stack */
+static void set1func(lua_State *L, const char *funcname, lua_CFunction f) {
+    lua_pushcfunction(L, f);
+    lua_setfield(L, -2, funcname);
+}
+
 
 extern int luaopen_fiveq_module (lua_State *L);
 extern int luaopen_fiveq_iter (lua_State *L);
-extern int luaopen_fiveq_err (lua_State *L);
 extern int luaopen_fiveq_metafield (lua_State *L);
 extern int luaopen_fiveq_faststring (lua_State *L);
+extern int luaopen_fiveq_err (lua_State *L);
 extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
 
@@ -226,7 +225,7 @@ extern int luaopen_fiveq_struct (lua_State *L);
 
 /* --- adapted from lua-5.2.0's lbaselib.c --- */
 
-/* stack[1]=function, stack[2]=errfilter, stack[3+]=... */
+/* stack[1]=function, [2]=errfilter, [3]=args... */
 static int luaB_xpcall (lua_State *L) {
   int n = lua_gettop(L);
   luaL_argcheck(L, n >= 2, 2, "value expected");
@@ -405,8 +404,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.faststring");
   lua_call(L, 1, 0); 
 
-  /* since these return 1, we can use luaL_requiref to assign the value
-   * globally */
+  /* these return 1, we use luaL_requiref to assign the value globally */
   luaL_requiref(L, "err", luaopen_fiveq_err, 1);
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
@@ -557,8 +555,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.faststring");
   lua_call(L, 1, 0); 
 
-  /* since these return 1, we can use luaL_requiref to assign the value
-   * globally */
+  /* these return 1, we use luaL_requiref to assign the value globally */
   luaL_requiref(L, "err", luaopen_fiveq_err, 1);
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
