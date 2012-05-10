@@ -411,11 +411,6 @@ static const luaL_Reg flib[] = {
 
 #ifndef LUA_FIVEQ_PLUS
 extern void luaQ_checklib (lua_State *L, const char *libname);
-
-#define luaQ_register(L,idx,name,f)  do { lua_pushcfunction(L, (f)); \
-    if ((idx) == 1) lua_setglobal(L, (name)); \
-    else if ((idx) < 0) lua_setfield(L, (idx)-1, (name)); \
-    else lua_setfield(L, (idx), (name)); } while (0)
 #endif
 
 extern int luaopen_fiveq_io (lua_State *L) {
@@ -431,9 +426,11 @@ extern int luaopen_fiveq_io (lua_State *L) {
   luaL_setfuncs(L, iolib, 0);  /* replacement library methods */
   lua_getfield(L, -1, "popen");
   lua_getfenv(L, -1);
-  luaQ_register(L, -1, "__close", io_pclose); /* replace the popen().__close method */
+  lua_pushcfunction(L, io_pclose);
+  lua_setfield(L, -2, "__close"); /* replace the popen().__close method */
   lua_pop(L, 3);
   luaQ_checklib(L, LUA_OSLIBNAME);
-  luaQ_register(L, -1, "execute", os_execute); /* replace os.execute method */
+  lua_pushcfunction(L, os_execute);
+  lua_setfield(L, -2, "execute"); /* replace os.execute method */
   return 0;
 }
