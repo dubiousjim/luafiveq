@@ -341,7 +341,7 @@ return void.
         calls luaopen_libname and optionally does for its return value what
         luaQ/lua_register do for the explicitly-specified lua_CFunction f
         
-        * libname may be NULL, but this has no special effect...?
+        * libname may be NULL, but this has no special effect...? TODO
         * when gidx == 0: just ...? we don't assign the return value anywhere
         * when gidx == 1: save the return value to the key "libname" in the
             global environment
@@ -356,7 +356,7 @@ return void.
 
 
     luaL_openlib(L, "libname", luaL_Reg *A, int nup);
-        * libname == NULL: simply calls luaL_setfuncs ...?
+        * libname == NULL: simply calls luaL_setfuncs ...? TODO
         * libname != NULL: uses a new or existing table from
             package.loaded[libname] or _G[libname]
         * when fiveqplus and libname != NULL: uses _ENV[libname]
@@ -383,10 +383,10 @@ return void.
 
 
     the Lua function "require":
-        ...
+        ... TODO
 
 
     the Lua function "module":
-        ...
+        ... TODO
 
 
