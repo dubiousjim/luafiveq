@@ -44,9 +44,14 @@ static int db_getmetafield (lua_State *L) {
     return 1;
 }
 
+static const luaL_Reg mlib[] =
+{
+        { "getmetafield",  db_getmetafield },
+        { NULL,		NULL	}
+};
 
 extern int luaopen_fiveq_metafield (lua_State *L) {
     luaQ_checklib(L, LUA_DBLIBNAME);
-    luaQ_register(L, -1, "getmetafield", db_getmetafield);
+    luaL_setfuncs(L, mlib, 0);
     return 0;
 }
