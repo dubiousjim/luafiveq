@@ -167,7 +167,7 @@ static int str_ends(lua_State *L) {
     return 1;
 }
 
-static const luaL_Reg R[] =
+static const luaL_Reg slib[] =
 {
         { "gsubplain",  str_replace},
         { "starts",     str_starts},
@@ -177,6 +177,6 @@ static const luaL_Reg R[] =
 
 extern int luaopen_fiveq_faststring (lua_State *L) {
     luaQ_checklib(L, LUA_STRLIBNAME);
-    luaL_setfuncs(L, R, 0);
+    luaL_setfuncs(L, slib, 0);
     return 0;
 }
