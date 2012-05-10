@@ -363,7 +363,7 @@ static int ll_strict (lua_State *L) {
     return 0;
 }
 
-,
+
 static const luaL_Reg pkglib[] = {
   {"seeall", ll_seeall},
   {"strict", ll_strict},
