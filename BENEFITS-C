@@ -2,7 +2,7 @@ BENEFITS-C
 ==========
 
 What do I get when I #include "fiveq.h" and link against fiveq.a?
------------------------------------------------------------------------
+-----------------------------------------------------------------
 
 Fiveq backports most of Lua 5.2's C API to Lua 5.1.4, and vice-versa, with
 the following limitations.
@@ -28,7 +28,8 @@ These functions include:
        of the string, instead of void.
 
     2. lua_resume(L, lua_State *from, int narg) expects an addtional `from`
-       parameter in Lua 5.2.0, which should be NULL or the thread doing the call.
+       parameter in Lua 5.2.0, which should be NULL or the thread doing the
+       call.
 
     3. lua_load expects an additional `mode` parameter, which can be any of "t",
        "b", "bt" or NULL (which is treated as "bt")
@@ -96,7 +97,7 @@ Here is the complete list of interfaces that are provided to Lua 5.1.4:
  *   luaL_setfuncs -- separates out part of luaL_register
  *   luaL_openlib -- generalizes luaL_register; already exposed if Lua was
                      compiled with LUA_COMPAT_OPENLIB
- *   luaL_pushmodule -- separates out part of `module`, see below for description
+ *   luaL_pushmodule -- separates out part of `module`; see below
 
 
 Here is the complete list of interfaces that are provided to Lua 5.2.0:
@@ -110,8 +111,10 @@ Here is the complete list of interfaces that are provided to Lua 5.2.0:
  *
  *   luaL_openlib -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
  *                   (or LUA_COMPAT_ALL, which implies it)
- *   luaL_register -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
- *   luaL_pushmodule -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
+ *   luaL_register -- already exposed if Lua was compiled with
+ *                   LUA_COMPAT_MODULE
+ *   luaL_pushmodule -- already exposed if Lua was compiled with
+ *                   LUA_COMPAT_MODULE
 
 as well as these dinosaurs (there's still some old code around, even on
 www.keplerproject.org, and sometimes only the trivial compatibility #defines
@@ -194,7 +197,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
 
 
  *   luaL_register is a shorthand for luaL_openlib with 0 upvalues.
-        In fiveqplus, it inherits luaL_openlib's changed behavior.
+        In fiveqplus, it inherits luaL_openlib's "local" behavior.
 
 
  *   void luaQ_checklib(L, "libname")
