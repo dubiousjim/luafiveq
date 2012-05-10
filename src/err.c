@@ -474,7 +474,7 @@ static int checkrange (lua_State *L) {
 }
 
 
-static const luaL_Reg R[] =
+static const luaL_Reg elib[] =
 {
         { "istype",     istype    },
         { "arenil",     arenil    },
@@ -500,16 +500,12 @@ extern int luaopen_fiveq_err (lua_State *L) {
     lua_setglobal(L, "check");
     lua_pop(L, 1);  /* pop string library */
 
-    /* export functions to _G */
-    /* lua_pushglobaltable(L); */
-    /* luaL_setfuncs(L, R, 0); */
-
-    /* lua_newtable(L);
-    luaL_openlib(L, "err", R, 0);
-    return 0;
+    luaL_newlib(L, elib);
+    return 1;
 }
 
 
+/*
 luaL_newlib
 
 [-0, +1, m]
@@ -530,4 +526,4 @@ int luaL_newlibtable (lua_State *L, const luaL_Reg l[]);
 Creates a new table with a size optimized to store all entries in the array l (but does not actually store them). It is intended to be used in conjunction with luaL_setfuncs (see luaL_newlib).
 
 It is implemented as a macro. The array l must be the actual array, not a pointer to it. 
-
+*/
