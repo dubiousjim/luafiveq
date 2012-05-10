@@ -121,3 +121,23 @@ extern void luaL_setmetatable (lua_State *L, const char *tname);
  * raw len on stack and returns it converted to int */
 
 
+/*
+ * Shallowly ensure that stack[idx][field] is a table and push it onto stack.
+ *   ~~> true, stack[+1] if already existed; or false, stack[+1] if allocated
+ */
+extern int luaL_getsubtable (lua_State *L, int idx, const char *field) {
+
+
+/* 
+ * Like luaL_checkudata, but returns NULL instead of error when non-matching.
+ */
+extern void *luaL_testudata (lua_State *L, int ud, const char *tname) {
+
+
+/* 
+ * Assign REG[tname] as metatable for stack[-1].
+ */
+extern void luaL_setmetatable (lua_State *L, const char *tname) {
+
+
+
