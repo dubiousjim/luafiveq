@@ -328,7 +328,7 @@ The err library adds the following:
               metamethod
             * "iterator" if obj is a function: the idea is that
               istype({}, "iterator") returns false but
-              istype(pairs({}, "iterator") returns true. The same effect
+              istype(pairs({}), "iterator") returns true. The same effect
               can be achieved with "function", but this documents the
               programmer's intentions more clearly.
             * any typeobject: obj will count as satisfying this type if either
