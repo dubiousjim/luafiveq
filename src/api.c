@@ -21,7 +21,7 @@
 extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char
         *fields, int szhint, int *existing) {
     const char *e;
-    if (idx) lua_pushvalue(L, idx);
+    lua_pushvalue(L, idx);
     if (existing) *existing = 1;
     do {
         /* point e to the next '.' in fields, or the terminal \0 */
@@ -62,7 +62,7 @@ extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char
 extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char
         *fields) {
     const char *e;
-    if (idx) lua_pushvalue(L, idx);
+    lua_pushvalue(L, idx);
     do {
         /* point e to the next '.' in fields, or the terminal \0 */
         e = strchr(fields, '.');
@@ -235,13 +235,17 @@ extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint,
     luaQ_getdeeptable(L, LUA_REGISTRYINDEX, "_LOADED", 1, NULL);
     lua_getfield(L, -1, modname);  /* get _LOADED[modname] */
     if (!lua_istable(L, -1)) {  /* not found? */
+        // stack[top+1]=_LOADED, [+2]=_LOADED[modname]
         lua_pop(L, 1);  /* remove previous result */
         /* try environment variable (and create one if it does not exist) */
         luaQ_getfenv(L, level, caller);
-        if (luaQ_getdeeptable(L, 0, modname, szhint, NULL) != NULL)
+        // stack[top+1]=_LOADED, [+2]=caller
+        if (luaQ_getdeeptable(L, -1, modname, szhint, NULL) != NULL)
             luaL_error(L, "name conflict for module " LUA_QS, modname);
+        // stack[top+1]=_LOADED, [+2]=caller, [+3]=possibly new caller[modname]
         lua_pushvalue(L, -1);
         lua_setfield(L, -3, modname);  /* _LOADED[modname] = new table */
+        lua_remove(L, -2); /* remove caller table */
     }
     lua_remove(L, -2);  /* remove _LOADED table */
 }
