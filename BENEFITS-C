@@ -51,12 +51,17 @@ These have not been forward-ported to Lua 5.2.0:
     9. LUA_ENVIRONINDEX, LUA_GLOBALSINDEX
    10. lua_getfenv, lua_setfenv
 
-However, when LUA_FIVEQ_PLUS is defined, we do export:
+However, lua_getuservalue and lua_setuservalue do offer part of the functionality
+of lua_getfenv and lua_setfenv. And when LUA_FIVEQ_PLUS is defined, we also
+export:
 
      extern void luaQ_getfenv (lua_State *L, int level, const char *fname);
      extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
 
-which provide most(TODO ???) of the functionality of lua_getfenv and lua_setfenv.
+which provide a different part of the functionality; see below.
+
+
+
 
 Here is the complete list of interfaces that are provided to Lua 5.1.4:
 
@@ -268,7 +273,23 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         unaltered stack.
 
 
-TODO
+ *   void luaQ_getfenv (lua_State *L, int level, const char *caller)
+        Retrieves the environment table of the function at call stack
+        level. If caller is NULL, permits the function at that level
+        to be a C function.
+        Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
+        In 5.2, walks locals and upvalues from that stack level upwards
+        until it finds _ENV.
+        If level == 0, returns the global table instead.
+
+
+ *   void luaQ_setfenv (lua_State *L, int level, const char *fname)
+        Pops table from stack and assigns it as environment of function
+        at call stack `level`. If caller is NULL, permits the function
+        at that level to be a C function.
+        Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
+        In Lua 5.2, fails silently if the specified function doesn't already
+        have an upvalue(1).
 
 
 
