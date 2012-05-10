@@ -175,7 +175,7 @@ meaning. Other positive (and negative) values are treated as stack indices.
         idx on the stack. If idx is 1, instead uses the global environment,
         just like lua_register. (In Lua 5.1.4, you can get the same effect
         by using LUA_GLOBALSINDEX for idx.)
-
+        
 
  *   void luaL_requiref(L, libname, lua_CFunction luaopen_libname, int gidx)
         Runs luaopen_libname (with libname as stack argument) and saves the
@@ -249,6 +249,7 @@ meaning. Other positive (and negative) values are treated as stack indices.
         If the function fails (because some existing intervening value isn't a
         table), returns a pointer to the problematic parts of fields and an
         unaltered stack.
+        If idx == 0, uses the table at the top of the stack. FIXME
 
 
  *   const char *luaQ_getdeepvalue(L, idx, "field.field")
@@ -261,6 +262,7 @@ meaning. Other positive (and negative) values are treated as stack indices.
         If it fails (because some intervening table is missing or isn't
         a table), returns a pointer to the problematic parts of fields and
         an unaltered stack.
+        If idx == 0, uses the table at the top of the stack. FIXME
 
 
  *   const char *luaQ_setdeepvalue(L, idx, "field.field")
@@ -272,6 +274,7 @@ meaning. Other positive (and negative) values are treated as stack indices.
         If it fails (because some existing intervening value isn't a table),
         returns a pointer to the problematic parts of fields and an
         unaltered stack.
+        Won't accept idx == 0. FIXME.
 
 
  *   void luaQ_pushmodule(L, "libname", int szhint, int level, "caller")
@@ -284,8 +287,8 @@ meaning. Other positive (and negative) values are treated as stack indices.
         fiveq exposes the code for all Lua versions, and fiveqplus
         exposes a generalization of it as luaQ_pushmodule.
         The two functions share this behavior:
-        They first look for package.loaded[libname] (treating libname as a single
-        key).
+        They first look for package.loaded[libname] (treating libname as a
+        single key).
         If that fails, and the function is luaL_pushmodule or it's
         luaQ_pushmodule with level == 0, they will look "deeply" for a table
         named libname in the global environment (here libname can contain
@@ -326,9 +329,9 @@ return void.
         no upvalues) to the key "funcname" in the table at stack[idx]. If
         idx is 0, instead uses the global environment.
 
-
+    
     lua_register(L, "funcname", f):
-        specializes luaQ_register to the case where idx == 0
+        specializes luaQ_register to the case where idx == 0 
 
 
     luaL_requiref(L, "libname", luaopen_libname, gidx):
