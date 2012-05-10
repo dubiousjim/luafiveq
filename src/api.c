@@ -8,15 +8,6 @@
 
 /*
  * Based on luaL_findtable from lauxlib.c.
- * Tries to deeply get the table value at idx[fields],
- * creating intervening tables as necessary.
- * If successful, returns NULL, and pushes retrieved or new table onto stack
- * (sets existing to true/false if it's non-NULL).
- * If fails (some intervening value isn't a table), returns the problematic 
- * part of fields and returns stack unaltered.
- *
- * bool luaL_getsubtable(L, idx, fields) in 5.2.0 does this shallowly, returns
- * existing
  */
 extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char
         *fields, int szhint, int *existing) {
@@ -53,12 +44,6 @@ extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char
 }
 
 
-/*
- * Tries to deeply get the value at idx[fields], without creating any tables.
- * If successful, returns NULL, and pushes retrieved value or nil onto stack.
- * If fails (some intervening value isn't a table), returns the problematic 
- * part of fields and returns stack unaltered.
- */
 extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char
         *fields) {
     const char *e;
@@ -90,13 +75,6 @@ extern const char *luaQ_getdeepvalue (lua_State *L, int idx, const char
 }
 
 
-/*
- * Tries to deeply set idx[fields] to the value at top of stack,
- * creating intervening tables as necessary.
- * If successful, returns NULL and pops value from top of stack.
- * If fails (some intervening value isn't a table), returns the problematic 
- * part of fields and leaves value on stack.
- */
 extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
         *fields) {
     const char *e;
@@ -140,11 +118,6 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
 }
 
 
-/*
- * Retrieves the environment table of calling function.
- * If fname is NULL, doesn't complain about caller being a C function.
- * Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
- */
 extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
   if (level) {
     lua_Debug ar;
@@ -191,12 +164,6 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
 }
 
 
-/*
- * Pops table from stack and assigns it as environment of function
- * at call stack `level`.
- * In Lua 5.2, fails silently if that function doesn't already have
- * an upvalue(1).
- */
 extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
   lua_Debug ar;
   if (lua_getstack(L, level, &ar) == 0 ||
@@ -222,15 +189,7 @@ static int libsize (const luaL_Reg *l) {
   return size;
 }
 
-/*
- * Find or create a module table with a given name. The function first 
- * looks for _LOADED[fields], and if that fails, looks (deeply) for an 
- * environment variable at fields, creating tables as necessary, and 
- * writes to _LOADED[fields]. Uses global environment if level==0, else 
- * the env of the function at call stack `level`. If `caller` is non-NULL, 
- * fails if that function is a CFunction (and uses `caller` in the error 
- * message). If successful, module table is left on the stack.
- */
+
 extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint,
   int level, const char *caller) {
     /* get _LOADED table */
@@ -264,14 +223,6 @@ extern void luaL_pushmodule (lua_State *L, const char *modname, int szhint) {
 
 #if LUA_VERSION_NUM == 501 || defined(LUA_FIVEQ_PLUS)
 
-/*
- * Stripped-down 'require'.
- * Call as: luaL_requiref(L, "libname", luaopen_lib, assign in _G?)
- * Leaves single return value of luaopen_lib (or nil) at stack[+1.
- * Note this will *always* run luaopen_lib and overwrite REG._LOADED[libname].
- * Assigns to stack[gidx][libname], or _G[libname] if gidx==1,
- * or nowhere if gidx==0.
- */
 extern void luaL_requiref (lua_State *L, const char *libname,
                                lua_CFunction luaopen_lib, int gidx) {
   lua_pushcfunction(L, luaopen_lib);
@@ -300,13 +251,6 @@ extern void luaL_requiref (lua_State *L, const char *libname,
 # if defined(LUA_FIVEQ_PLUS) || (LUA_VERSION_NUM == 501 && \
         !defined(LUA_COMPAT_OPENLIB)) || (LUA_VERSION_NUM == 502 && \
         !defined(LUA_COMPAT_MODULE))
-/*
- * If "libname", pushmodule to find existing module or write to 
- * caller's/global environment, else assumes there's already a table 
- * underneath upvalues.
- * Merges functions from luaL_Reg* into that table with luaL_setfuncs,
- * leaving that table on top of stack.
- */
 extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
         int nup) {
 #  if LUA_VERSION_NUM == 502
@@ -576,10 +520,6 @@ extern int luaL_len (lua_State *L, int idx) {
 }
 
 
-/*
- * Shallowly ensure that stack[idx][field] is a table and push it onto stack.
- *   ~~> true, stack[+1] if already existed; or false, stack[+1] if allocated
- */
 extern int luaL_getsubtable (lua_State *L, int idx, const char *field) {
   lua_getfield(L, idx, field);
   if (lua_istable(L, -1)) return 1;  /* table already there */
@@ -594,9 +534,6 @@ extern int luaL_getsubtable (lua_State *L, int idx, const char *field) {
 }
 
 
-/* 
- * Like luaL_checkudata, but returns NULL instead of error when non-matching.
- */
 extern void *luaL_testudata (lua_State *L, int ud, const char *tname) {
   void *p = lua_touserdata(L, ud);
   if (p != NULL) {  /* value is a userdata? */
@@ -612,20 +549,12 @@ extern void *luaL_testudata (lua_State *L, int ud, const char *tname) {
 }
 
 
-/* 
- * Assign REG[tname] as metatable for stack[-1].
- */
 extern void luaL_setmetatable (lua_State *L, const char *tname) {
   luaL_getmetatable(L, tname);
   lua_setmetatable(L, -2);
 }
 
 
-/*
- * Merge functions from list 'l' into table at top - 'nup'; each
- * function gets the 'nup' elements at the top as upvalues.
- * When returning, pops upvalues but leaves table on stack.
- */
 extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
   luaL_checkstack(L, nup, "too many upvalues");
   for (; l->name != NULL; l++) {  /* fill the table with given functions */
@@ -651,10 +580,7 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname) {
 
 #endif
 
-/*
- * Asserts that `libname` has already been loaded and pushes it to stack.
- * This is always exported, but it's only in fiveq.h if LUA_FIVEQ_PLUS.
- */
+
 extern void luaQ_checklib (lua_State *L, const char *libname) {
     lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
     lua_getfield(L, -1, libname);
