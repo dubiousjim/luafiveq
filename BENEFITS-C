@@ -183,15 +183,15 @@ meaning. Other positive (and negative) values are treated as stack indices.
         _G[libname].
         Lua 5.2's native version uses gidx just as a boolean.
         In the version provided to Lua 5.1, and to Lua 5.2 if LUA_FIVEQ_PLUS,
-        gidx is treated the same way if it's 0 or 1; but if it has another
+        gidx is treated as in Lua 5.2 if it's 0 or 1; but if it has another
         value, that is used as an index into the stack. In that case, the value
         returned from calling luaopen_libname is stored in
-        stack[gidx][libname], that is to the table at index gidx in the stack,
+        stack[gidx][libname]: that is, to the table at index gidx in the stack,
         rather than _G. As with the native version, a copy of that value is
         also left on the stack, and saved in package.loaded[libname].
         The behavior when gidx is neither 0 nor 1 makes luaL_requiref do for the
         return value of luaopen_libname what luaQ_register does for
-        a lua_CFunction.
+        an explicitly-specified lua_CFunction.
 
 
  *   void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *A,
@@ -202,8 +202,9 @@ meaning. Other positive (and negative) values are treated as stack indices.
         implies it).
         When called with libname == NULL, simply registers the functions in A
         to the table on top of stack (below nup upvalues). If nup is not zero,
-        all functions are created sharing those upvalues from the top of stack.
-        At the end, all upvalues have been popped from stack but table is left.
+        all functions are created sharing that many upvalues from the top of
+        stack. At the end, all upvalues have been popped from stack but table
+        is left.
         If libname != NULL, creates a new table, assigns it to the global
         libname and also as package.loaded[libname], and registers the
         functions in A there instead. If there is already a table in
@@ -284,9 +285,9 @@ meaning. Other positive (and negative) values are treated as stack indices.
         "module". It's only built if Lua 5.2 is compiled with
         LUA_COMPAT_MODULE. There is no difference in the functionality of this
         bit of code in the two versions.
-        fiveq exposes the code for all Lua versions, and fiveqplus
+        fiveq exposes that function for all Lua versions, and fiveqplus
         exposes a generalization of it as luaQ_pushmodule.
-        The two functions share this behavior:
+        These two functions share the following behavior:
         They first look for package.loaded[libname] (treating libname as a
         single key).
         If that fails, and the function is luaL_pushmodule or it's
@@ -303,8 +304,8 @@ meaning. Other positive (and negative) values are treated as stack indices.
 
 
 
-Why are there so many different ways to expose my lua_CFunction to Lua?
------------------------------------------------------------------------
+Why are there so many different ways to expose my library functions to Lua?
+---------------------------------------------------------------------------
 
 Yes. It's already hard to keep track of the differences between:
 
@@ -331,7 +332,7 @@ return void.
 
     
     lua_register(L, "funcname", f):
-        specializes luaQ_register to the case where idx == 0 
+        specializes luaQ_register to the case where idx == 0
 
 
     luaL_requiref(L, "libname", luaopen_libname, gidx):
