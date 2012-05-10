@@ -405,13 +405,9 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.faststring");
   lua_call(L, 1, 0); 
 
-  /* defines error functions and err lib in _G; returns 0 */
-  lua_pushcfunction(L, luaopen_fiveq_err);
-  lua_pushstring(L, "err");
-  lua_call(L, 1, 0); 
-
   /* since these return 1, we can use luaL_requiref to assign the value
    * globally */
+  luaL_requiref(L, "err", luaopen_fiveq_err, 1);
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
@@ -561,13 +557,9 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.faststring");
   lua_call(L, 1, 0); 
 
-  /* defines error functions and err lib in _G; returns 0 */
-  lua_pushcfunction(L, luaopen_fiveq_err);
-  lua_pushstring(L, "err");
-  lua_call(L, 1, 0); 
-
   /* since these return 1, we can use luaL_requiref to assign the value
    * globally */
+  luaL_requiref(L, "err", luaopen_fiveq_err, 1);
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
