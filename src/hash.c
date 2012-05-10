@@ -258,8 +258,6 @@ static const luaL_Reg hlib[] = {
 };
 
 extern int luaopen_fiveq_hash (lua_State *L) {
-    lua_newtable(L);
-    // luaL_setfuncs(L, hlib, 0); // or luaL_openlib(L, NULL, hlib, 0);
-    luaL_openlib(L, "hash", hlib, 0);
+    luaL_newlib(L, hlib);
     return 1;
 }
