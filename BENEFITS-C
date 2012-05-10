@@ -91,7 +91,7 @@ Here is the complete list of interfaces that are provided to Lua 5.1.4:
  *   luaL_getsubtable -- see also luaQ_getdeeptable, below
  *
  *   luaL_requiref -- calls luaopen_foo and saves result in _G or optionally on
- *                   stack; see below
+ *                    stack; see below
  *   luaL_newlibtable
  *   luaL_setfuncs -- part of luaL_openlib
  *   luaL_newlib -- calls luaL_newlibtable then luaL_setfuncs
@@ -153,11 +153,18 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         value, that is used as an index into the stack. In that case, the value
         returned from calling luaopen_libname is stored in
         stack[gidx][libname]: that is, to the table at index gidx in the stack,
-        rather than _G. As with the native version, a copy of that value is
-        also left on the stack, and saved in package.loaded[libname].
+        rather than _G.
+        As with the native version, a copy of that value is also left on the
+        stack, and saved in package.loaded[libname].
 
         To use the caller's environment instead of _G, use:
         { luaQ_getfenv(L, 2, "?"); luaL_requiref(L, "foo", luaopen_foo, -1); }
+
+
+ *   void luaQ_checklib(L, "libname")
+        Unlike luaL_requiref, which runs luaopen_libname, this function
+        asserts that libname has already been loaded, and pushes its
+        table to the stack. if the assertion fails, raises an error.
 
 
  *   void luaQ_pushmodule(L, "libname", int szhint, int level, "caller")
@@ -217,11 +224,6 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
 
  *   luaL_register is a shorthand for luaL_openlib with 0 upvalues.
         In fiveqplus, it inherits luaL_openlib's "more local" behavior.
-
-
- *   void luaQ_checklib(L, "libname")
-        Asserts that Lua has already loaded library libname, and
-        pushes it to the stack. If the assertion fails, raises an error.
 
 
  *   const char *luaQ_getdeeptable(L, idx, "field.field", szhint, &existing)
@@ -298,7 +300,7 @@ sort out the differences. All of these C functions return void.
             stack[gidx] instead of _G
 
 
- *   void luaQ_checklib(L, "libname") TODO
+    luaQ_checklib(L, "libname")
         Asserts that Lua has already loaded library libname, and
         pushes it to the stack. If the assertion fails, raises an error.
 
