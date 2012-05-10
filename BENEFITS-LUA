@@ -222,10 +222,13 @@ changes:
         uses luaQ_getfenv(L, n, NULL)
         Lua 5.1 also permits calling with a function object, does this?
 
+getfenv ([f])
+Returns the current environment in use by the function. f can be a Lua function or a number that specifies the function at that stack level: Level 1 is the function calling getfenv. If the given function is not a Lua function, or if f is 0, getfenv returns the global environment. The default for f is 1.
 
-    table.pack saves the number of elements using key '#' instead of 'n'.
 
-    unpack and table.unpack look for the number of elements at key '#', and if
+    table.pack saves the number of elements using key "#" instead of "n".
+
+    unpack and table.unpack look for the number of elements at key "#", and if
         that's not present, fall back to querying the object's length in a way
         that honors __len metamethods
 
