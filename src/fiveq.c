@@ -309,12 +309,12 @@ extern int luaopen_fiveq_bitlib (lua_State *L);
 extern int luaopen_fiveq (lua_State *L) {
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
 
-  luaQ_register(L, 1, "xpcall", luaB_xpcall);  /* export to _G */
+  lua_register(L, "xpcall", luaB_xpcall);  /* export to _G */
 
   /* rawlen(string or table) is exported by the tablelen patch */
   lua_getglobal(L, "rawlen");
   if (lua_isnil(L, -1)) {
-      luaQ_register(L, 1, "rawlen", luaB_rawlen);  /* export to _G */
+      lua_register(L, "rawlen", luaB_rawlen);  /* export to _G */
   }
   lua_pop(L, 1);
 
@@ -517,7 +517,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_setfield(L, -2, "setfenv");  /* export alias to debug library */
 
 # ifdef LUA_FIVEQ_PLUS
-  luaQ_register(L, 1, "getfenv", getfenv);  /* export to _G */
+  lua_register(L, "getfenv", getfenv);  /* export to _G */
 # endif
 
   /* newproxy needs a weaktable as upvalue */
