@@ -169,6 +169,12 @@ static void require(lua_State *L, const char *modname, lua_CFunction openf) {
   }
 }
 
+/* registers one function in table at top of stack */
+static void set1func(lua_State *L, const char *funcname, lua_CFunction f) {
+    lua_pushcfunction(L, f);
+    lua_setfield(L, -2, funcname);
+}
+
 
 static int newproxy (lua_State *L) {
   lua_settop(L, 1);
@@ -212,13 +218,6 @@ extern int luaopen_fiveq_metafield (lua_State *L);
 extern int luaopen_fiveq_faststring (lua_State *L);
 extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
-
-#ifndef LUA_FIVEQ_PLUS
-#define luaQ_register(L,idx,name,f)  do { lua_pushcfunction(L, (f)); \
-    if ((idx) == 1) lua_setglobal(L, (name)); \
-    else if ((idx) < 0) lua_setfield(L, (idx)-1, (name)); \
-    else lua_setfield(L, (idx), (name)); } while (0)
-#endif
 
 
 /* ----------- for 5.1.4 ---------- */
@@ -319,11 +318,11 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pop(L, 1);
 
   require(L, LUA_STRLIBNAME, luaopen_string);
-  luaQ_register(L, -1, "rep", str_rep);  /* export to string library */
+  set1func(L, "rep", str_rep);  /* export to string library */
   lua_pop(L, 1);  /* pop string library */
 
   require(L, LUA_TABLIBNAME, luaopen_table);
-  luaQ_register(L, -1, "pack", table_pack);  /* export to table library */
+  set1func(L, "pack", table_pack);  /* export to table library */
 # ifdef LUA_FIVEQ_PLUS
   lua_pushcfunction(L, table_unpack);
   lua_pushvalue(L, -1);  /* duplicate */
@@ -335,16 +334,16 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pop(L, 1);  /* pop table library */
 
   require(L,  LUA_MATHLIBNAME, luaopen_math);
-  luaQ_register(L, -1, "log", math_log);  /* export to math library */
+  set1func(L, "log", math_log);  /* export to math library */
 # ifdef LUA_FIVEQ_PLUS
-  luaQ_register(L, -1, "trunc", math_trunc);  /* export to math library */
+  set1func(L, "trunc", math_trunc);  /* export to math library */
 # endif
   lua_pop(L, 1);  /* pop math library */
 
   require(L,  LUA_DBLIBNAME, luaopen_debug);
   /* export to debug library */
-  luaQ_register(L, -1, "getuservalue", db_getuservalue);
-  luaQ_register(L, -1, "setuservalue", db_setuservalue);
+  set1func(L, "getuservalue", db_getuservalue);
+  set1func(L, "setuservalue", db_setuservalue);
 
 # ifdef LUA_FIVEQ_PLUS
   /* newproxy needs a weaktable as upvalue */
@@ -488,7 +487,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_setfield(L, -2, "maxn");  /* export to table library */
 
 # ifdef LUA_FIVEQ_PLUS
-  luaQ_register(L, -1, "pack", table_pack);  /* export to table library */
+  set1func(L, "pack", table_pack);  /* export to table library */
   lua_pushcfunction(L, table_unpack);
   lua_pushvalue(L, -1);
   lua_setfield(L, -3, "unpack");  /* export to table library */
@@ -499,10 +498,10 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pop(L, 1);  /* pop table library */
 
   require(L, LUA_MATHLIBNAME, luaopen_math);
-  luaQ_register(L, -1, "log10", math_log10);  /* export to math library */
+  set1func(L, "log10", math_log10);  /* export to math library */
 # ifdef LUA_FIVEQ_PLUS
-  luaQ_register(L, -1, "log", math_log);  /* export to math library */
-  luaQ_register(L, -1, "trunc", math_trunc);  /* export to math library */
+  set1func(L, "log", math_log);  /* export to math library */
+  set1func(L, "trunc", math_trunc);  /* export to math library */
 # endif
   lua_pop(L, 1);  /* pop math library */
 
