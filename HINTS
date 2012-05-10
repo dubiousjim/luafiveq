@@ -106,3 +106,18 @@ extern void luaL_setmetatable (lua_State *L, const char *tname);
 
 
 
+/* <luaconf.h> -- uses <limits>,<stddef> */
+/* <lua.h> -- uses luaconf,<stddef>,<stdarg> */
+#include <lua.h>
+/* <lauxlib.h> -- uses lua,<stddef>,<stdio> */
+#include <lauxlib.h>
+/* <lualib.h> -- uses lua, provides
+ * LUA_FILEHANDLE,LUA_{CO,TAB,IO,OS,STR,MATH,DB,LOAD}LIBNAME, luaopen_foo,
+ * luaL_openlibs, lua_assert ~~> nop */
+
+
+/* void lua_len(L, i) honors __len */
+/* int luaL_len(L, i) effectively does luaL_checkint on lua_len(L, i), leaves
+ * raw len on stack and returns it converted to int */
+
+
