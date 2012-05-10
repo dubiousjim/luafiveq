@@ -64,7 +64,7 @@ extern void luaQ_checklib (lua_State *L, const char *libname);
 
 #define lua_copy(L,from,to)   (lua_pushvalue(L, (from)), lua_replace(L, (to)))
 
-#define lua_getuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) ==
+#define lua_getuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
             LUA_TUSERDATA, "userdata expected"), lua_getfenv(L, (idx)))
             
 /* the 5.2.0 version can also assign nil, but setfenv and this macro only
