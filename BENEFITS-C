@@ -375,3 +375,49 @@ sort out the differences. All of these C functions return void.
         specializes luaL_openlib to case where there are no upvalues
 
 
+Three typical patterns for a luaopen_foo function are:
+
+    static const luaL_Reg foolib[] = {
+        {"func1name", func1},
+        {"func2name", func2},
+        {NULL, NULL}
+    };
+    extern int luaopen_foo(lua_State *L) {
+        luaL_newlib(L, foolib);
+        return 1;
+    }
+
+then when this library is loaded by calling `require "foo"` from Lua, or
+    luaL_requiref(L, "foo", luaopen_foo, 0)
+from C, the table containing func1 and func2 will be saved in
+package.loaded["foo"].
+
+Another pattern writes the functions to an existing table:
+
+    static const luaL_Reg foolib[] = ...
+    extern int luaopen_foo(lua_State *L) {
+        luaQ_checklib(L, LUA_STRLIBNAME);
+        luaL_setfuncs(L, foolib, 0);
+        /* same as: luaL_openlib(L, LUA_STRLIBNAME, foolib, 0); */
+
+        return 0; /* no return value */
+    }
+
+
+A third pattern writes the functions directly to the global table (or in
+fiveglueplus, to the caller's environment table):
+
+    static const luaL_Reg foolib[] = ...
+    extern int luaopen_foo(lua_State *L) {
+        /* write a single function to _G */
+        lua_register(L, "func0name", func0):
+
+        /* write array foolib of functions to _G or to caller's _ENV */
+        luaL_openlib(L, "foo", foolib, 0);
+        /* same as: luaL_register(L, "foo", foolib); */
+
+        /* the foo library table is still on the stack; we may or may not want
+         * to return it */
+        return 0;
+    }
+
