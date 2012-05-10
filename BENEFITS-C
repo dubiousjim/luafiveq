@@ -90,14 +90,14 @@ Here is the complete list of interfaces that are provided to Lua 5.1.4:
  *
  *   luaL_getsubtable -- see also luaQ_getdeeptable, below
  *
- *   luaL_newlibtable
- *   luaL_newlib
  *   luaL_requiref -- calls luaopen_foo and saves result in _G or optionally on
  *                   stack; see below
- *   luaL_setfuncs -- separates out part of luaL_register
+ *   luaL_newlibtable
+ *   luaL_setfuncs -- part of luaL_openlib
+ *   luaL_newlib -- calls luaL_newlibtable then luaL_setfuncs
+ *   luaL_pushmodule -- part of `module` and luaL_openlib/register; see below
  *   luaL_openlib -- generalizes luaL_register; already exposed if Lua was
-                     compiled with LUA_COMPAT_OPENLIB
- *   luaL_pushmodule -- separates out part of `module`; see below
+ *                   compiled with LUA_COMPAT_OPENLIB
 
 
 Here is the complete list of interfaces that are provided to Lua 5.2.0:
@@ -109,11 +109,11 @@ Here is the complete list of interfaces that are provided to Lua 5.2.0:
  *   lua_lessthan -- already exposed if Lua was compiled with LUA_COMPAT_ALL
  *   lua_cpcall -- already exposed if Lua was compiled with LUA_COMPAT_ALL
  *
+ *   luaL_pushmodule -- already exposed if Lua was compiled with
+ *                   LUA_COMPAT_MODULE
  *   luaL_openlib -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
  *                   (or LUA_COMPAT_ALL, which implies it)
  *   luaL_register -- already exposed if Lua was compiled with
- *                   LUA_COMPAT_MODULE
- *   luaL_pushmodule -- already exposed if Lua was compiled with
  *                   LUA_COMPAT_MODULE
 
 as well as these dinosaurs (there's still some old code around, even on
