@@ -64,3 +64,42 @@ This last patch is also extremely useful:
           variable).
         - Setting the app name to allow for $if lua ... $endif in ~/.inputrc.
 
+
+
+
+Notes
+-----
+
+
+/*
+ * bool lua_getmetatable (lua_State *L, int idx); ~~> true, stack[+1]; or
+ * false, stack[unchanged]
+ *
+ * int luaL_getmetafield (lua_State *L, int idx, const char *field); ~~> true,
+ * stack[+1]=field; or false, stack[unchanged]
+ */
+
+
+/*
+ * shallowly ensure that stack[idx][field] is a table and push it onto stack
+ *   ~~> true, stack[+1] if already existed; or false, stack[+1] if allocated
+ */
+extern int luaL_getsubtable (lua_State *L, int idx, const char *field);
+
+
+/*
+ * luaL_newmetatable(L, "type"); ~~> true, stack[+1] if allocated; or false,
+ * stack[+1]
+ *
+ * void *luaL_checkudata(L, idx, "type");
+ *
+ * void luaL_getmetatable(L, "type"); ~~> stack[+1]
+ */
+
+
+
+/* like luaL_checkudata, but returns NULL instead of error when non-matching */
+extern void *luaL_testudata (lua_State *L, int ud, const char *tname);
+
+/* assign registry[tname] as metatable for stack[-1] */
+extern void luaL_setmetatable (lua_State *L, const char *tname);
