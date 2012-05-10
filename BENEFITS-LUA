@@ -276,14 +276,6 @@ changes:
         ## struct library ## below
 
 
-    all the additional libraries (err, hash, struct, and bit32 on Lua 5.1)
-        are bound to names in the environment table of the function that
-        required "fiveqplus", which needn't be the same as the global
-        environment. The other changes fiveqplus provides, however,
-        such as the enhancements to error and the new string functions,
-        are all exposed globally.
-
-
     an enhanced module system is provided, comprised of the functions
         require, module, package.seeall, and package.strict. The first
         replaces the original require function, and the second and third
