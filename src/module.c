@@ -363,14 +363,19 @@ static int ll_strict (lua_State *L) {
     return 0;
 }
 
+,
+static const luaL_Reg pkglib[] = {
+  {"seeall", ll_seeall},
+  {"strict", ll_strict},
+  {NULL, NULL}
+};
 
 extern int luaopen_fiveq_module (lua_State *L) {
     /* export to _G */
     lua_register(L, "module", ll_module);
 
     luaQ_checklib(L, LUA_LOADLIBNAME);
-    luaQ_register(L, -1, "seeall", ll_seeall);
-    luaQ_register(L, -1, "strict", ll_strict);
+    luaL_setfuncs(L, pkglib, 0);
 
     /*
     lua_getglobal(L, "require");
