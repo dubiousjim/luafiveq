@@ -180,12 +180,13 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         single key).
         If that fails, and the function is luaL_pushmodule or it's
         luaQ_pushmodule with level == 0, they will look "deeply" for a table
-        named libname in the global environment (here libname can contain
-        multiple keys separated by "."). When doing so, they will create any
-        intervening tables as necessary, and will write the retrieved or new
-        table to package.loaded[libname], as well as leaving it on the stack.
-        luaQ_pushmodule can also be called with level > 0. In that case,
-        it instead looks in the local environment of the function at that call
+        named libname in the global environment (here libname is parsed as
+        possibly consisting of multiple keys separated by "."). When doing so,
+        they will create any intervening tables as necessary, and will write
+        the retrieved or new table to package.loaded[libname], as well as
+        leaving it on the stack.
+        luaQ_pushmodule can also be called with level > 0. In that case, it
+        instead looks in the local environment of the function at that call
         stack level. (If that function is a CFunction and caller is non-NULL,
         it will fail using caller in the error message; if caller is NULL, it
         will allow the use of CFunction environments.)
@@ -193,12 +194,13 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
 
  *   void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *A,
      int nup)
-        Generalizes luaL_register to allow upvalues, as luaL_setfuncs does. Is
-        already exposed in Lua 5.1 if compiled with LUA_COMPAT_OPENLIB, and in
-        Lua 5.2 if compiled with LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which
+        Combines luaQ_pushmodule and luaL_setfuncs. Like the latter, this
+        function generalizes luaL_register to allow upvalues. This function
+        is already exposed in Lua 5.1 if compiled with LUA_COMPAT_OPENLIB, and
+        in Lua 5.2 if compiled with LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which
         implies it).
         When called with libname == NULL, simply calls luaL_setfunc to
-        register the functions in A to the table on top of stack (below
+        merge the functions in A into the table on top of stack (below
         nup upvalues). Afterwards, all upvalues have been popped from stack
         but table is left.
         If libname != NULL, creates a new table, assigns it to the global
@@ -210,7 +212,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
 
         In fiveq, this function is always available regardless of how Lua
         was compiled. We approximate the behavior of Lua 5.2's version, which
-        is only slightly different from Lua 5.1's, with these differences:
+        only has these slight differences from Lua 5.1's:
           * permits A to be NULL
           * checks that enough stack space exists to copy the upvalues
         On Lua 5.2, this function (whether provided by fiveq or natively)
@@ -273,7 +275,7 @@ TODO
 Why are there so many different ways to expose my library functions to Lua?
 ---------------------------------------------------------------------------
 
-Yes, there are a lot of functions associated with that task:
+Yes, there *are* a number of functions associated with that task:
 
     * luaL_requiref
     * lua_register
