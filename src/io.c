@@ -413,10 +413,9 @@ static const luaL_Reg flib[] = {
 extern void luaQ_checklib (lua_State *L, const char *libname);
 
 #define luaQ_register(L,idx,name,f)  do { lua_pushcfunction(L, (f)); \
-    if ((idx)) { \
-        if ((idx) < 0) lua_setfield(L, (idx)-1, (name)); \
-        else lua_setfield(L, (idx), (name)); \
-    } else lua_setglobal(L, (name)); } while (0)
+    if ((idx) == 1) lua_setglobal(L, (name)); \
+    else if ((idx) < 0) lua_setfield(L, (idx)-1, (name)); \
+    else lua_setfield(L, (idx), (name)); } while (0)
 #endif
 
 extern int luaopen_fiveq_io (lua_State *L) {

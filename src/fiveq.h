@@ -19,10 +19,9 @@
 
 # ifdef LUA_FIVEQ_PLUS
 #define luaQ_register(L,idx,name,f)  do { lua_pushcfunction(L, (f)); \
-    if ((idx)) { \
-        if ((idx) < 0) lua_setfield(L, (idx)-1, (name)); \
-        else lua_setfield(L, (idx), (name)); \
-    } else lua_setglobal(L, (name)); } while (0)
+    if ((idx) == 1) lua_setglobal(L, (name)); \
+    else if ((idx) < 0) lua_setfield(L, (idx)-1, (name)); \
+    else lua_setfield(L, (idx), (name)); } while (0)
 
 extern const char *luaQ_getdeeptable (lua_State *L, int idx, const char
         *fields, int szhint, int *existing);
