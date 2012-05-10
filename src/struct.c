@@ -422,7 +422,7 @@ static int b_unpack (lua_State *L) {
 
 
 
-static const struct luaL_Reg R[] = {
+static const struct luaL_Reg slib[] = {
   {"pack", b_pack},
   {"unpack", b_unpack},
   {"size", b_size},
@@ -431,7 +431,7 @@ static const struct luaL_Reg R[] = {
 
 
 LUALIB_API int luaopen_fiveq_struct (lua_State *L) {
-  luaL_register(L, "struct", R);
+  luaL_newlib(L, slib);
   return 1;
 }
 
