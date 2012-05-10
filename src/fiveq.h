@@ -1,20 +1,14 @@
 /*
  * fiveq.h: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
- * includes lua.h, lauxlib.h, [unsigned.h]
+ * includes luaconf.h, lua.h, lauxlib.h, [unsigned.h]
  */
 
 
 #ifndef FIVEQ_API_H
 #define FIVEQ_API_H
 
-/* <luaconf.h> -- uses <limits>,<stddef> */
-/* <lua.h> -- uses luaconf,<stddef>,<stdarg> */
 #include <lua.h>
-/* <lauxlib.h> -- uses lua,<stddef>,<stdio> */
 #include <lauxlib.h>
-/* <lualib.h> -- uses lua, provides
- * LUA_FILEHANDLE,LUA_{CO,TAB,IO,OS,STR,MATH,DB,LOAD}LIBNAME, luaopen_foo,
- * luaL_openlibs, lua_assert ~~> nop */
 
 
 # ifdef LUA_FIVEQ_PLUS
@@ -220,9 +214,6 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 
 #define lua_objlen(L,i) lua_rawlen(L, (i))
 #define lua_strlen(L,i) lua_rawlen(L, (i))
-/* void lua_len(L, i) honors __len */
-/* int luaL_len(L, i) effectively does luaL_checkint on lua_len(L, i), leaves
- * raw len on stack and returns it converted to int */
 
 #define lua_equal(L,idx1,idx2)		lua_compare(L,(idx1),(idx2),LUA_OPEQ)
 #define lua_lessthan(L,idx1,idx2)	lua_compare(L,(idx1),(idx2),LUA_OPLT)
