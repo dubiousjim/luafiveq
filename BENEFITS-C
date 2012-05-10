@@ -141,46 +141,6 @@ What do I get when I instead link againt fiveqplus.a?
 Note that if you're going to link against fiveqplus.a, you need to make sure
 LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
 
-Where possible, we have tried to minimize the number of API elements you need
-to keep track of. An example of this is the way that the enhancements to
-luaL_requiref are accessed by using a value other than 0 or 1 for the final
-argument. Another example is the way that various of the new functions we do
-add generalize the behavior of existing functions, so if you like you can just
-consistently use the new functions. (See luaQ_register/lua_register and
-luaQ_pushmodule/luaL_pushmodule.)
-
-However, this policy forces some tricky questions about how to express
-out-of-band values within the existing API constraints. In some cases, the
-choice is clear: for example, luaQ_pushmodule takes a `level` argument to
-indicate what position in the call stack we should use the environment of; and
-we let level == 0 mean use the global environment table instead.
-
-There are other functions that instead expect an index into Lua's argument
-stack. Here the Lua source uses index 0 with a variety of meanings. Some of
-these (for example, see luaL_findtable in Lua 5.2) are useful but we ignore
-them here for a simpler API. We might use index 0 to mean the global
-environment table, just as we use level 0 to. This would compensate for the
-fact that Lua 5.2 no longer has a LUA_GLOBALSINDEX pseudo-index. However, we
-can't do this consistently with the existing interface of luaL_requiref.
-
-So the best, admittedly imperfect, option seems to be this: where a stack index
-is expected but the global environment can be used instead, the index 1
-specifies the global index. The index 0 may have a different meaning, or no
-meaning. Other positive (and negative) values are treated as stack indices.
-
-If you really do mean to refer to stack index 1, refer to it negatively; or
-use { lua_pushvalue(L, 1); luaQ_register(L, -1, ...); ... }.
-
-(I'm not that satisfied with this compromise and may change this.)
-
-
- *   luaQ_register(L, idx, name, f) binds the lua_CFunction f using the supplied
-        name, just as lua_register does. But whereas the latter always
-        binds to _G[name], luaQ_register will instead use the table at index
-        idx on the stack. If idx is 1, instead uses the global environment,
-        just like lua_register. (In Lua 5.1.4, you can get the same effect
-        by using LUA_GLOBALSINDEX for idx.)
-        
 
  *   void luaL_requiref(L, libname, lua_CFunction luaopen_libname, int gidx)
         Runs luaopen_libname (with libname as stack argument) and saves the
@@ -194,9 +154,6 @@ use { lua_pushvalue(L, 1); luaQ_register(L, -1, ...); ... }.
         stack[gidx][libname]: that is, to the table at index gidx in the stack,
         rather than _G. As with the native version, a copy of that value is
         also left on the stack, and saved in package.loaded[libname].
-        The behavior when gidx is neither 0 nor 1 makes luaL_requiref do for the
-        return value of luaopen_libname what luaQ_register does for
-        an explicitly-specified lua_CFunction.
 
 
  *   void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *A,
@@ -319,27 +276,22 @@ Yes. It's already hard to keep track of the differences between:
     * luaL_pushmodule
 
 and then there are the Lua functions "require" and "module"; and finally
-fiveqplus adds:
-
-    * luaQ_register
-    * luaQ_pushmodule
-
-Here are some notes to sort out the differences. All of the C functions below
-return void.
+fiveqplus adds luaQ_pushmodule. Here are some notes to sort out the
+differences. All of the C functions below return void.
 
 
-    luaQ_register(L, idx, "funcname", f): assigns the lua_CFunction f (with
-        no upvalues) to the key "funcname" in the table at stack[idx]. If
-        idx is 1, instead uses the global environment.
-
-    
     lua_register(L, "funcname", f):
-        specializes luaQ_register to the case where idx == 1
+        assigns the lua_CFunction f (with no upvalues) to the key
+        "funcname" in the global environment.
+        luaL_setfuncs is a generalization that works with an array of
+        functions, permits giving them shared upvalues, and uses
+        a table on the stack instead of the global environment.
 
 
     luaL_requiref(L, "libname", luaopen_libname, gidx):
-        calls luaopen_libname and optionally does for its return value what
-        luaQ/lua_register do for the explicitly-specified lua_CFunction f
+        calls luaopen_libname and registers its return value in
+        package.loaded[libname] and optionally also in global or
+        caller's environment
         
         * libname may be NULL, but this has no special effect...? TODO
         * when gidx == 0: just ...? we don't assign the return value anywhere
