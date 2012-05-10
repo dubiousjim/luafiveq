@@ -232,7 +232,6 @@ static const luaL_Reg bitlib[] = {
 
 
 extern int luaopen_fiveq_bitlib (lua_State *L) {
-    /* luaL_openlib(L, "bitlib", bitlib, 0); */
     luaL_newlib(L, bitlib);
     return 1;
 }
