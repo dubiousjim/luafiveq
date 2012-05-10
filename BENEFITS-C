@@ -168,6 +168,11 @@ is expected but the global environment can be used instead, the index 1
 specifies the global index. The index 0 may have a different meaning, or no
 meaning. Other positive (and negative) values are treated as stack indices.
 
+If you really do mean to refer to stack index 1, refer to it negatively; or
+use { lua_pushvalue(L, 1); luaQ_register(L, -1, ...); ... }.
+
+(I'm not that satisfied with this compromise and may change this.)
+
 
  *   luaQ_register(L, idx, name, f) binds the lua_CFunction f using the supplied
         name, just as lua_register does. But whereas the latter always
@@ -250,7 +255,6 @@ meaning. Other positive (and negative) values are treated as stack indices.
         If the function fails (because some existing intervening value isn't a
         table), returns a pointer to the problematic parts of fields and an
         unaltered stack.
-        If idx == 0, uses the table at the top of the stack. FIXME
 
 
  *   const char *luaQ_getdeepvalue(L, idx, "field.field")
@@ -263,7 +267,6 @@ meaning. Other positive (and negative) values are treated as stack indices.
         If it fails (because some intervening table is missing or isn't
         a table), returns a pointer to the problematic parts of fields and
         an unaltered stack.
-        If idx == 0, uses the table at the top of the stack. FIXME
 
 
  *   const char *luaQ_setdeepvalue(L, idx, "field.field")
@@ -275,7 +278,6 @@ meaning. Other positive (and negative) values are treated as stack indices.
         If it fails (because some existing intervening value isn't a table),
         returns a pointer to the problematic parts of fields and an
         unaltered stack.
-        Won't accept idx == 0. FIXME.
 
 
  *   void luaQ_pushmodule(L, "libname", int szhint, int level, "caller")
@@ -328,11 +330,11 @@ return void.
 
     luaQ_register(L, idx, "funcname", f): assigns the lua_CFunction f (with
         no upvalues) to the key "funcname" in the table at stack[idx]. If
-        idx is 0, instead uses the global environment.
+        idx is 1, instead uses the global environment.
 
     
     lua_register(L, "funcname", f):
-        specializes luaQ_register to the case where idx == 0
+        specializes luaQ_register to the case where idx == 1
 
 
     luaL_requiref(L, "libname", luaopen_libname, gidx):
