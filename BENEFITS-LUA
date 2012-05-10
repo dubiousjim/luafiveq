@@ -172,7 +172,7 @@ changes:
 
         might produce the output:
 
-            two   nil nil 
+            two   nil nil
             one   nil nil
             three nil nil
 
@@ -210,7 +210,7 @@ changes:
             __eq
             __index
             __tostring
- 
+
 
     in Lua 5.2, an additional global function getfenv is provided, that
         works like the global function of the same name in Lua 5.1. When called
@@ -247,12 +247,12 @@ Returns the current environment in use by the function. f can be a Lua function 
     assert is modified so as to accept more than two arguments. If its first
         argument is true-like, all arguments are returned; else its second
         argument is used together with the third and subsequent arguments to
-        construct an error message using string.format. 
+        construct an error message using string.format.
 
 
     an additional global function check is provided; this is somewhat akin
         to assert. One difference is that check expects a new second argument
-        that identifies the position of the checked object in an argument list. 
+        that identifies the position of the checked object in an argument list.
         If check's first argument is true-like, then that argument (and it
         alone) is returned, else the third argument is used as a format string
         together with all subsequent arguments. For example:
@@ -306,7 +306,7 @@ The err library adds the following:
             * the standard return values from type(obj): "nil", "table",
               "boolean", and so on. Both full and light userdata satisfy
               "userdata". For "string" and "number", obj merely has to be
-              convertible to the type. 
+              convertible to the type 
             * "positive" if obj is convertible to a positive integer
             * "natural" if obj is convertible to a non-negative integer
             * "negative" if obj is convertible to a negative integer
@@ -503,7 +503,7 @@ static int ll_require (lua_State *L) {
 }
 
 
-/* 
+/*
  * This wrapper provides the enhancements to `require`.
  * It needs ll_require as upvalue(1).
  */
@@ -554,7 +554,7 @@ static int ll_require_plus (lua_State *L) {
         k = luaL_checkstring(L, i);
         if (luaQ_getdeepvalue(L, -2, k) != NULL)
             luaL_error(L, "module " LUA_QS " doesn't provide " LUA_QS, modname, k);
-        bad = luaQ_setdeepvalue(L, -2, k); 
+        bad = luaQ_setdeepvalue(L, -2, k);
         if (bad != NULL)
             luaL_error(L, "couldn't set " LUA_QS, bad);
     }
@@ -861,7 +861,7 @@ TODO
     "d"     a double (native size)
     "s"     a zero-terminated string
     "cn"    a sequence of exactly n chars corresponding to a single Lua string. An absent n means 1. The string supplied for packing must have at least n characters; extra characters are ignored.
-    "c0"    this is like "cn", except that the n is given by other means: When packing, n is the actual length of the supplied string; when unpacking, n is the value of the previous unpacked value (which must be a number). In that case, this previous value is not returned. 
+    "c0"    this is like "cn", except that the n is given by other means: When packing, n is the actual length of the supplied string; when unpacking, n is the value of the previous unpacked value (which must be a number). In that case, this previous value is not returned.
     "("     stop capturing values
     ")"     start capturing values
     "="     current offset
@@ -874,7 +874,7 @@ TODO
     // pack string Pascal-style
     sp = struct.pack("Bc0", string.len(s), s)
     s = struct.unpack("Bc0", sp)
-    -- the length (read by the element "B") is not returned. 
+    -- the length (read by the element "B") is not returned.
 
     // pack a string in a fixed-width field with 10 characters padded with blanks:
     x = struct.pack("c10", s .. string.rep(" ", 10))
