@@ -189,7 +189,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
 
 
  *   luaL_register is a shorthand for luaL_openlib with 0 upvalues.
-        In fiveqplus, it inherits luaL_openlib's "local" behavior.
+        In fiveqplus, it inherits luaL_openlib's "more local" behavior.
 
 
  *   void luaQ_checklib(L, "libname")
@@ -293,27 +293,33 @@ differences. All of the C functions below return void.
         package.loaded[libname] and optionally also in global or
         caller's environment
         
-        * libname may be NULL, but this has no special effect...? TODO
-        * when gidx == 0: just ...? we don't assign the return value anywhere
-        * when gidx == 1: save the return value to the key "libname" in the
-            global environment
-        * when fiveqplus, and gidx is neither 0 nor 1: save the return
-            value to the key "libname" in the table at stack[gidx]
+        * libname may be NULL, but this has no special effect
+        * when gidx == 0: only save return value in package.loaded[libname]
+        * when gidx == 1: also save the return value to the key "libname" in
+            the global environment
+        * when fiveqplus and gidx is neither 0 nor 1: use the table at
+            stack[gidx] instead of _G
 
 
     luaL_setfuncs(L, luaL_Reg *A, int nup);
-        part of the implementation of luaL_openlib and luaL_register
+        part of the implementation of luaL_openlib;
         merges functions from A, with nup shared upvalues, into the
         table immediately below the upvalues on the top of the stack.
+        pops upvalues but leaves table on stack
+
+
+    luaL_newlib(L, luaL_Reg *A);
+        allocate table and call luaL_setfuncs with nup == 0
 
 
     luaL_openlib(L, "libname", luaL_Reg *A, int nup);
-        * libname == NULL: simply calls luaL_setfuncs ...? TODO
-        * libname != NULL: uses a new or existing table from
-            package.loaded[libname] or _G[libname]
-        * when fiveqplus and libname != NULL: uses _ENV[libname]
-            in place of _G[libname], where _ENV is the caller's
-            environment
+        * libname == NULL: simply calls luaL_setfuncs(L, A, nup);
+        * libname != NULL: instead of table already on the stack,
+            uses a new or existing table from package.loaded[libname] or
+            _G[libname]. This is retrieved using luaL_pushmodule.
+        * when fiveqplus and libname != NULL: uses caller's environment
+            _ENV in place of _G.
+        * in all cases, table that A has been merged into is left on stack
 
 
     luaL_register(L, "libname", luaL_Reg *A);
@@ -322,15 +328,15 @@ differences. All of the C functions below return void.
 
     luaQ_pushmodule(L, "libname", szhint, int level, "caller");
         looks shallowly for "libname" in package.loaded, then
-        "deeply" for it in the global environment (or in the table
-        at stack level if that's > 0; if "caller" is non-NULL,
+        "deeply" for it in the global environment (or in the environment
+        at call stack level if that's > 0; if "caller" is non-NULL,
         that caller must be a Lua function).
         Creates intervening tables as necessary, saves the table
         in package.loaded, and leaves it on stack.
 
 
     luaL_pushmodule(L, "libname", szhint);
-       part of the implementation of `module`
+       part of the implementation of `module` and luaL_openlib/register.
        specializes luaQ_pushmodule to case where level == 0.
 
 
