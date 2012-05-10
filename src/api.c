@@ -652,6 +652,7 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname) {
 
 /*
  * Asserts that `libname` has already been loaded and pushes it to stack.
+ * This is always exported, but it's only in fiveq.h if LUA_FIVEQ_PLUS.
  */
 extern void luaQ_checklib (lua_State *L, const char *libname) {
     lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
