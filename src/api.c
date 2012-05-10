@@ -194,6 +194,8 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
 /*
  * Pops table from stack and assigns it as environment of function
  * at call stack `level`.
+ * In Lua 5.2, fails silently if that function doesn't already have
+ * an upvalue(1).
  */
 extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
   lua_Debug ar;
