@@ -7,6 +7,7 @@
 #ifndef FIVEQ_API_H
 #define FIVEQ_API_H
 
+/* luaconf.h is included indirectly */
 #include <lua.h>
 #include <lauxlib.h>
 
