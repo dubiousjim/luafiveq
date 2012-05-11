@@ -275,7 +275,7 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
 }
 # elif LUA_VERSION_NUM == 501
 #  undef luaL_openlib
-extern void luaI_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
+extern void luaQ_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
         int nup) {
   if (l)
     luaL_openlib(L, libname, l, nup);
