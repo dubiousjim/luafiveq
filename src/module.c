@@ -12,21 +12,21 @@
 
 
 /*
- * This behaves equivalently to Lua 5.2's require, which is mostly the same
+ * This behaves exactly like Lua 5.2's require, which is mostly the same
  * as Lua 5.1.4, except that 5.1.4 leaves package.loaded[name] alone if
  * the library wrote anything there (even nil), and detects cyclic requires.
  * Whereas 5.2.0 only leaves it alone if the library wrote non-nil there,
- * and no longer detects cyclic requires. We accommodate the difference in
+ * and no longer detects cyclic requires. We allow for the difference in
  * signatures between 5.1.4 loaders/libraries (loaders return a single
  * function, which is called with the library name) and 5.2.0 (loaders
  * return a single function plus an arbitrary value, which is supplied as
  * a second argument to the library).
  *
- * This function needs the global "package" table as upvalue(1) (in 5.1.4,
- * it's the function's env). That's a strange design choice: package.loaded
- * is already accessible as REG._LOADED. We only need additional access
- * to package.searchers: but then why not make that table directly be the
- * upvalue/env?
+ * Following the native design, we use the global "package" table as upvalue(1)
+ * (in 5.1.4, it's the function's env). But other designs are also reasonable:
+ * package.loaded is already accessible as REG._LOADED, and we only need
+ * additional access to package.searchers: why not make that table directly be
+ * the upvalue/env?
  */
 
 static int ll_require (lua_State *L) {
@@ -93,7 +93,7 @@ static int ll_require (lua_State *L) {
 }
 
 
-/* 
+/*
  * This wrapper provides the enhancements to `require`.
  * It needs ll_require as upvalue(1).
  */
