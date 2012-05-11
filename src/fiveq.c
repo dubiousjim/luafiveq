@@ -277,6 +277,7 @@ static int str_rep (lua_State *L) {
 
 /* --- adapted from lua-5.2.0's ldblib.c --- */
 
+
 static int db_getuservalue (lua_State *L) {
   if (lua_type(L, 1) != LUA_TUSERDATA)
     lua_pushnil(L);
@@ -295,7 +296,6 @@ static int db_setuservalue (lua_State *L) {
   lua_setuservalue(L, 1);
   return 1;
 }
-
 
 extern int luaopen_fiveq_pairs (lua_State *L);
 extern int luaopen_fiveq_io (lua_State *L);
