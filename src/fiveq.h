@@ -25,15 +25,25 @@ extern void luaQ_checklib (lua_State *L, const char *libname);
 # endif
 
 
+/*
+ * #define LUA_USE_APICHECK to assert(cond) for api_check(L, cond)
+ *                             assert is disabled when compile with -DNDEBUG
+ * lua_assert(cond) is just for PUC-Rio in-house debugging
+ */
+
+#ifndef lua_assert
+#define lua_assert(cond) ((void)0)
+#endif
 
 /* ----------- for 5.1.4 ---------- */
 #if LUA_VERSION_NUM == 501
 
-#ifdef lua_assert
-#define api_check(L,e,msg)	lua_assert((e) && msg)
+/* from luaconf.h and llimits.h, updated to be more 5.2-like, omitting check_exp */
+#if defined(LUA_USE_APICHECK)
+#include <assert.h>
+#define api_check(L, cond, msg)	assert((cond) && msg)
 #else
-#define lua_assert(c)		((void)0)
-#define api_check(L,e,msg)	luai_apicheck(L, (e) && msg)
+#define api_check(L, cond, msg)	lua_assert((cond) && msg)
 #endif
 
 #include "unsigned.h"
@@ -183,31 +193,15 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 /* ----------- for 5.2.0 ---------- */
 #elif LUA_VERSION_NUM == 502
 
+
+/* from llimits.h, omitting check_exp and lua_longassert */
+
 #if defined(LUA_USE_APICHECK)
 #include <assert.h>
-#define luai_apicheck(L,e)	assert(e)
+#define api_check(L, cond, msg)	assert((cond) && msg)
 #else
-#define luai_apicheck(L,e)	lua_assert(e)
+#define api_check(L, cond, msg)	lua_assert((cond) && msg)
 #endif
-#ifndef lua_assert
-#define lua_assert(c)		((void)0)
-#endif
-#define api_check(l,e,msg)	luai_apicheck(l,(e) && msg)
-
-
-/* internal assertions for in-house debugging */
-#if !defined(lua_assert)
-# define lua_assert(c)		((void)0)
-#endif
-#if !defined(luai_apicheck)
-# if defined(LUA_USE_APICHECK)
-#  include <assert.h>
-#  define luai_apicheck(L,e)	assert(e)
-# else
-#  define luai_apicheck(L,e)	lua_assert(e)
-# endif
-#endif
-#define api_check(l,e,msg)	luai_apicheck(l,(e) && msg)
 
 
 #define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), \
