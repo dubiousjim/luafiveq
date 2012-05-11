@@ -96,7 +96,7 @@ extern void lua_len (lua_State *L, int idx);
 /* the following operations need the math library */
 #include <math.h>
 #define luai_nummod(L,a,b)	((a) - floor((a)/(b))*(b))
-#define luai_numpow(L,a,b)	(pow(a,b))
+#define luai_numpow(L,a,b)	(pow((a),(b)))
 
 /* these are quite standard operations */
 #define luai_numadd(L,a,b)	((a)+(b))
@@ -174,7 +174,7 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
 
 #define luaL_newlibtable(L,l)   lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) \
         - 1)
-#define luaL_newlib(L,l)	(luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
+#define luaL_newlib(L,l)	(luaL_newlibtable(L,l), luaL_setfuncs(L,(l),0))
 
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
         luaopen_lib, int gidx);
@@ -232,7 +232,7 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname);
 #define lua_getgccount(L)	lua_gc(L, LUA_GCCOUNT, 0)
 #define lua_Chunkreader		lua_Reader
 #define lua_Chunkwriter		lua_Writer
-#define luaL_putchar(B,c)	luaL_addchar(B,c)
+#define luaL_putchar(B,c)	luaL_addchar(B,(c))
 
 #define lua_ref(L,lock) ((lock) ? luaL_ref(L, LUA_REGISTRYINDEX) : \
 (lua_pushstring(L, "unlocked references are obsolete"), lua_error(L), 0))
