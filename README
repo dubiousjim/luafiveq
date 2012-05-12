@@ -154,19 +154,13 @@ Installing
 
 To build for both versions of Lua (which must already be installed):
 
-    make clean
-    make
-    sudo make install
+    gmake clean
+    gmake
+    sudo gmake install
 
 To build for only one version of Lua:
 
-    make clean
-    make fiveq fiveqplus LUA_VERSION_NUM=501
-    make install-501 LUA_VERSION_NUM=501
-
-
-TODO
-----
-
-Currently uses BSD make; I will convert to gmake.
+    gmake clean
+    gmake fiveq fiveqplus LUA_VERSION_NUM=501
+    gmake install-501 LUA_VERSION_NUM=501
 
