@@ -6,13 +6,12 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
-
-#define LUA_FIVEQ_PLUS
+#include <string.h>
 #include "fiveq.h"
 
 
 /*
- * This behaves exactly like Lua 5.2's require, which is mostly the same
+ * ll_require behaves exactly like Lua 5.2's require, which is mostly the same
  * as Lua 5.1.4, except that 5.1.4 leaves package.loaded[name] alone if
  * the library wrote anything there (even nil), and detects cyclic requires.
  * Whereas 5.2.0 only leaves it alone if the library wrote non-nil there,
@@ -29,10 +28,9 @@
  * the upvalue/env?
  */
 
-static int ll_require (lua_State *L) {
+static int ll_require_base (lua_State *L, int loaded) {
   int i;
   const char *name = luaL_checkstring(L, 1);
-  lua_settop(L, 1);  /* _LOADED table will be at index 2 */
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
   lua_getfield(L, -1, name);
   if (lua_toboolean(L, -1)) {  /* is it there? */
@@ -65,45 +63,51 @@ static int ll_require (lua_State *L) {
 #else
     lua_call(L, 1, 2);  /* call it */
 #endif
-    if (lua_isfunction(L, 5))  /* did it find module? */
+    if (lua_isfunction(L, 3+loaded))  /* did it find module? */
       break;  /* module loaded successfully */
-    else if (lua_isstring(L, 5)) {  /* loader returned error message? */
-      lua_settop(L, 5);  /* remove any extra return values */
+    else if (lua_isstring(L, 3+loaded)) {  /* loader returned error message? */
+      lua_settop(L, 3+loaded);  /* remove any extra return values */
       lua_concat(L, 2);  /* accumulate it */
     }
     else
-      lua_settop(L, 4);
+      lua_settop(L, 2+loaded);
   }
   lua_pushstring(L, name);  /* pass name as argument to module */
-  lua_insert(L, 6);  /* name is 1st argument (before search data) */
+  lua_insert(L, 4+loaded);  /* name is 1st argument (before search data) */
 #if LUA_VERSION_NUM == 501
     lua_call(L, 1, 1);  /* run loaded module */
 #else
     lua_call(L, 2, 1);  /* run loaded module */
 #endif
   if (!lua_isnil(L, -1))  /* non-nil return? */
-    lua_setfield(L, 2, name);  /* _LOADED[name] = returned value */
-  lua_getfield(L, 2, name);
+    lua_setfield(L, loaded, name);  /* _LOADED[name] = returned value */
+  lua_getfield(L, loaded, name);
   if (lua_isnil(L, -1)) {   /* module did not set a value? */
     lua_pushboolean(L, 1);  /* use true as result */
     lua_pushvalue(L, -1);  /* extra copy to be returned */
-    lua_setfield(L, 2, name);  /* _LOADED[name] = true */
+    lua_setfield(L, loaded, name);  /* _LOADED[name] = true */
   }
   return 1;
 }
 
+#if 0
+static int ll_require (lua_State *L) {
+  lua_settop(L, 1); /* _LOADED table will be at index 2 */
+  return ll_require_base(L, 2);
+}
+#endif
 
+#ifdef LUA_FIVEQ_PLUS
 /*
  * This wrapper provides the enhancements to `require`.
- * It needs ll_require as upvalue(1).
+ * It needs package as upvalue(1).
  */
 static int ll_require_plus (lua_State *L) {
     int top = lua_gettop(L);
     // stack[1]=modname, stack[2..top]= [table], keys...
     const char *modname = luaL_checkstring(L, 1);
-    lua_pushvalue(L, lua_upvalueindex(1));
     lua_pushvalue(L, 1);
-    lua_call(L, 1, 1);
+    ll_require_base(L, top+2);
     // stack[+1]=_LOADED[name]
     if (top == 1)
         return 1;
@@ -151,15 +155,20 @@ static int ll_require_plus (lua_State *L) {
     lua_pop(L, 1);
     return 1;
 }
+#endif
 
 
-#include <string.h>
-
+#ifdef LUA_FIVEQ_PLUS
 static const int sentinel_ = 0;
 #define sentinel ((const void *)&sentinel_)
+#else
+extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
+extern void luaQ_checklib (lua_State *L, const char *libname);
+#endif
+
 
 /*
- * Tweaks to module implementation.
+ * fiveqplus tweaks the module implementation.
  * Default is to provide a clean environment, and module's public interface
  * is the same as its _ENV.
  * We register module in env of caller of chunk that invokes module, instead of _G.
@@ -167,7 +176,12 @@ static const int sentinel_ = 0;
 static int ll_module (lua_State *L) {
   const char *modname = luaL_checkstring(L, 1);
   int lastdecorator = lua_gettop(L);
-  luaQ_pushmodule(L, modname, 1, 4, "module");  /* get/create module table */
+  /* get/create module table */
+#ifndef LUA_FIVEQ_PLUS
+  luaL_pushmodule(L, modname, 1);
+#else
+  luaQ_pushmodule(L, modname, 1, 3, "module");
+#endif
   /* does module table already have a _NAME field? */
   lua_getfield(L, -1, "_NAME");
   if (!lua_isnil(L, -1))
@@ -188,9 +202,11 @@ static int ll_module (lua_State *L) {
     lua_setfield(L, -2, "_PACKAGE");
     /* ------------------------------ */
   }
+#ifdef LUA_FIVEQ_PLUS
   /* temporarily set module[sentinel]=caller's _ENV for use by seeall decorator */
   luaQ_getfenv(L, 1, "module");
   lua_setfield(L, -2, sentinel);
+#endif
   /* set caller's fenv to module table */
   lua_pushvalue(L, -1);
   luaQ_setfenv(L, 1, "module");
@@ -204,12 +220,33 @@ static int ll_module (lua_State *L) {
     }
   }
   /* -------------------------------------- */
+#ifdef LUA_FIVEQ_PLUS
   lua_pushnil(L);
   lua_setfield(L, -2, sentinel);
+#endif
   return 1; // return module table
 }
 
 
+#ifndef LUA_FIVEQ_PLUS
+static int ll_seeall (lua_State *L) {
+  luaL_checktype(L, 1, LUA_TTABLE);
+  if (!lua_getmetatable(L, 1)) {
+    lua_createtable(L, 0, 1); /* create new metatable */
+    lua_pushvalue(L, -1);
+    lua_setmetatable(L, 1);
+  }
+  lua_pushglobaltable(L);
+  lua_setfield(L, -2, "__index");  /* mt.__index = _G */
+  return 0;
+}
+
+static const luaL_Reg pkglib[] = {
+  {"seeall", ll_seeall},
+  {NULL, NULL}
+};
+
+#else
 static int ll_seeall_index (lua_State *L) {
     // stack[1]=proxy, stack[2]=k, upvalue(1)=_M, upvalue(2)=caller's _ENV
     lua_settop(L, 2);
@@ -221,7 +258,6 @@ static int ll_seeall_index (lua_State *L) {
     }
     return 1;
 }
-
 
 /*
  * Module decorator
@@ -337,7 +373,7 @@ static int ll_strict_newindex (lua_State *L) {
 static int ll_strict (lua_State *L) {
     luaL_checktype(L, 1, LUA_TTABLE);
     lua_settop(L, 1);
-    luaQ_getfenv(L, 2, "strict");
+    luaQ_getfenv(L, 2, "package.strict");
     if (!lua_getmetatable(L, 2)) {
         lua_createtable(L, 0, 2); /* create new metatable */
         lua_pushvalue(L, -1);
@@ -369,6 +405,7 @@ static const luaL_Reg pkglib[] = {
   {"strict", ll_strict},
   {NULL, NULL}
 };
+#endif
 
 extern int luaopen_fiveq_module (lua_State *L) {
     /* export to _G */
@@ -377,29 +414,20 @@ extern int luaopen_fiveq_module (lua_State *L) {
     luaQ_checklib(L, LUA_LOADLIBNAME);
     luaL_setfuncs(L, pkglib, 0);
 
-    /*
-    lua_getglobal(L, "require");
-    if (lua_isnil(L, -1))
-      return luaL_error(L, "can't find " LUA_QL("require") " function");
-    */
+#ifdef LUA_FIVEQ_PLUS
+    /* make package library upvalue for (ll_require and) ll_requireplus */
 
-    /* make package library upvalue for ll_require */
+    /*
+    lua_pushvalue(L, -1);
     lua_pushcclosure(L, ll_require, 1);
-    /*
-    lua_insert(L, -2); // move beneath package library
-    lua_setfenv(L, -2); // set package library as ll_require's fenv
+    lua_pushcclosure(L, ll_require_plus, 2);
     */
 
-    /* make ll_require (with package upvalue) upvalue(1) for ll_require_plus */
     lua_pushcclosure(L, ll_require_plus, 1);
 
-    /*
-    // stack[1]=name, stack[2]=_ENV, stack[3]=ll_require_plus
-    // formerly set _ENV as fenv for ll_require_plus -- why?
-    lua_pushvalue(L, 2);
-    lua_setfenv(L, -2);
-    */
-
+    // stack[1]=name, stack[2]=ll_require_plus
     lua_setglobal(L, "require");
+#endif
+
     return 0;
 }

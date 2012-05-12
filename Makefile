@@ -3,7 +3,7 @@
 SO_VERSION?= 1
 
 NAMES= bitlib io pairs
-PLUSNAMES= metafield iter err module hash struct faststring
+PLUSNAMES= metafield iter err hash struct faststring
 
 OBJS= ${NAMES:S/$/-${LUA_VERSION_NUM}.o/}
 LIBS= ${NAMES:S/$/-${LUA_VERSION_NUM}.so/}
@@ -17,7 +17,7 @@ GLUEOBJS= fiveq-${LUA_VERSION_NUM}.o fiveqplus-${LUA_VERSION_NUM}.o
 # all
 # fiveq [LUA_VERSION_NUM=501]
 # fiveqplus [LUA_VERSION_NUM=501]
-# bitlib io pairs metafield iter err module hash struct faststring
+# bitlib io pairs module metafield iter err hash struct faststring
 # install install-501 install-502
 # clean
 
@@ -29,8 +29,13 @@ all:
 ${NAMES} ${PLUSNAMES} fiveq fiveqplus: ${.TARGET}-${LUA_VERSION_NUM}.so ${.TARGET}-${LUA_VERSION_NUM}.a
 
 ${OBJS} ${PLUSOBJS} ${APIOBJ} ${GLUEOBJS}: ${.PREFIX:S/^/src\//S/-${LUA_VERSION_NUM}//}.c
-	#cd src && ${CC} ${CFLAGS} -I . -o ../$@ -c ${.ALLSRC:S/^src\///}
 	${CC} ${CFLAGS} -I src -o $@ -c ${.ALLSRC}
+
+module-502.o:
+	${CC} ${CFLAGS} -I src -o $@ -c src/module.c
+
+moduleplus-${LUA_VERSION_NUM}.o:
+	${CC} ${CFLAGS} -I src -DLUA_FIVEQ_PLUS -o $@ -c src/module.c
 
 fiveq-501.a: ${OBJS} ${APIOBJ} ${.PREFIX}.o
 	ar crs $@ $>
@@ -51,13 +56,13 @@ fiveqplus-502.a: ${PLUSOBJS} ${.PREFIX}.o
 fiveq-501.so: ${OBJS} ${APIOBJ} ${.TARGET:S/.so$/.o/}
 	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
 
-fiveqplus-501.so: ${OBJS} ${PLUSOBJS} ${.TARGET:S/.so$/.o/}
+fiveqplus-501.so: ${OBJS} ${PLUSOBJS} ${.TARGET:S/.so$/.o/} moduleplus-501.o
 	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
 
-fiveq-502.so: ${APIOBJ} ${.TARGET:S/.so$/.o/}
+fiveq-502.so: ${APIOBJ} ${.TARGET:S/.so$/.o/} module-502.o
 	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
 
-fiveqplus-502.so: ${PLUSOBJS} ${.TARGET:S/.so$/.o/}
+fiveqplus-502.so: ${PLUSOBJS} ${.TARGET:S/.so$/.o/} moduleplus-502.o
 	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
 
 install-${LUA_VERSION_NUM}: ${GLUEOBJS:S/.o$/.so/}
