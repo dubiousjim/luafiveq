@@ -112,10 +112,7 @@ functions are added:
         if arg is (literally) true: with a new empty metatable
         if arg is a function: with a new metatable using arg as __gc
 
-    debug.getfenv
-        only available for userdata
-
-    debug.setfenv
+    debug.getfenv and debug.setfenv:
         only available for userdata
 
 Additionally, the global _FIVEQ is set to true.
@@ -246,7 +243,7 @@ Returns the current environment in use by the function. f can be a Lua function 
         that's not present, fall back to querying the object's length in a way
         that honors __len metamethods
 
-    (If you don't like these two changes, just change two `#ifdef 0` in
+    (If you prefer to stay with key "n", just change two `#ifdef 0` in
         api.c to `#ifdef 1`.)
 
 
@@ -264,7 +261,7 @@ Returns the current environment in use by the function. f can be a Lua function 
         construct an error message using string.format.
 
 
-    an additional global function check is provided; this is somewhat akin
+    an additional global function `check` is provided; this is somewhat akin
         to assert. One difference is that check expects a new second argument
         that identifies the position of the checked object in an argument list.
         If check's first argument is true-like, then that argument (and it
@@ -280,9 +277,9 @@ Returns the current environment in use by the function. f can be a Lua function 
                 stdin:1: in main chunk
                 [C]: ?
 
-    an additional library err is provided with more specific error/checking
-        functions to complement error, assert, and check. See description of
-        ## err library ## below.
+    an additional library `err` is provided with more specific error/checking
+        functions to complement error, assert, and check; see description of
+        ## err library ## below
 
 
     an additional library hash is provided; see description of
