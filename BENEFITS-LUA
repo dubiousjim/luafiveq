@@ -483,15 +483,16 @@ changes. These address some of the concerns raised at
     this table unless _NAME already exists. Make this table the environment of
     the current chunk.
 
-    Equivalent code:
+    Roughly equivalent code (though note that for "a.b.c", it will be
+    _G["a"]["b"]["c"] that's checked, not _G["a.b.c"]):
         local _M = package.loaded[name] or _G[name] or {}
-        if package.loaded[name] == nil then
-            if _G[name] == nil then _G[name] = _M end
+        if not package.loaded[name] then
+            if not _G[name] then _G[name] = _M end
             package.loaded[name] = _M
         end
-        if _M._NAME == nil then
+        if not _M._NAME then
             _M._NAME = name
-            _M._PACKAGE = string.gsub(name, "%.[^.]*$", "")
+            _M._PACKAGE = string.gsub(name, "[^.]*$", "")
             _M._M = _M
         end
         setfenv(1, _M)
