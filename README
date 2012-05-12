@@ -109,7 +109,7 @@ The fiveq library exposes as much as possible the union of the Lua 5.1 and Lua
 
 
 5. Or, as with use case 3, suppose *you're* writing new Lua code, and you want
-to your code to be usable with either version of Lua. Then consider adding
+your code to be usable with either version of Lua. Then consider adding
 fiveq as a dependency, and just writing (mostly) against the Lua 5.2 API.
 
 
