@@ -68,6 +68,20 @@ Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
 
 Finally, the global _FIVEQ is set to true.
 
+Note that the following facilities from Lua 5.2 have not been backported:
+        * package.searchpath, debug.upvalueid, debug.upvaluejoin
+        * new behavior of coroutine.running when called from main thread
+        * new behavior of collectgarbage, load, package.loadlib,
+          string.format, debug.getlocal, debug.setlocal, debug.sethook
+        * ability to yield across C functions
+        * honoring __lt, __le metamethods for different types
+        * tables honoring __len
+        * string.format honoring __tostring for "%s"
+        * os.exit honoring optional `close` argument
+        * __tostring honored on error objects 
+
+Patches exist to incorporate the last six into Lua 5.1. See the PATCHES file.
+
 
 
 When you require "fiveq" in Lua 5.2, no functions are modified. The following
