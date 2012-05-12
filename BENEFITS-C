@@ -379,6 +379,8 @@ Three typical patterns for a luaopen_foo function are:
     };
     extern int luaopen_foo(lua_State *L) {
         luaL_newlib(L, foolib);
+        /* same as: lua_newtable(L); luaL_setfuncs(L, foolib, 0); */
+        /* same as: lua_newtable(L); luaL_openlib(L, NULL, foolib, 0); */
         return 1;
     }
 
@@ -391,11 +393,9 @@ Another pattern writes the functions to an existing table:
 
     static const luaL_Reg foolib[] = ...
     extern int luaopen_foo(lua_State *L) {
-        luaQ_checklib(L, LUA_STRLIBNAME);
-        luaL_setfuncs(L, foolib, 0);
+        luaQ_checklib(L, LUA_STRLIBNAME); luaL_setfuncs(L, foolib, 0);
         /* same as: luaL_openlib(L, LUA_STRLIBNAME, foolib, 0); */
-
-        return 0; /* no return value */
+        return 0;
     }
 
 
@@ -411,8 +411,7 @@ fiveglueplus, to the caller's environment table):
         luaL_openlib(L, "foo", foolib, 0);
         /* same as: luaL_register(L, "foo", foolib); */
 
-        /* the foo library table is still on the stack; we may or may not want
-         * to return it */
+        /* foo library is still on stack; may or may not want to return it */
         return 0;
     }
 
