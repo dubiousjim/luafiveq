@@ -216,6 +216,18 @@ extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
 
 
+/* expects stack[1]=msg, stack[2]=level; upvalue[1]=print, upvalue[2]=debug.traceback */
+extern int traceback(lua_State *L) {
+    lua_settop(L, 2);
+    lua_pushvalue(L, lua_upvalueindex(1)); /* print */
+    lua_pushvalue(L, lua_upvalueindex(2)); /* debug.traceback */
+    lua_pushvalue(L, 1);
+    lua_pushinteger(L, lua_tointeger(L, 2) + 1);
+    lua_call(L, 2, 1);
+    lua_call(L, 1, 0);
+    return 0;
+}
+
 /* ----------- for 5.1.4 ---------- */
 #if LUA_VERSION_NUM == 501
 
@@ -340,6 +352,10 @@ extern int luaopen_fiveq (lua_State *L) {
   /* export to debug library */
   set1func(L, "getuservalue", db_getuservalue);
   set1func(L, "setuservalue", db_setuservalue);
+  lua_getglobal(L, "print");
+  lua_getfield(L, -2, "traceback");
+  lua_pushcclosure(L, traceback, 2);
+  lua_setfield(L, LUA_REGISTRYINDEX, "_TRACEBACK");
 
 # ifdef LUA_FIVEQ_PLUS
   /* newproxy needs a weaktable as upvalue */
@@ -505,6 +521,11 @@ extern int luaopen_fiveq (lua_State *L) {
   // lua_pushcfunction(L, db_setuservalue);
   lua_getfield(L, -1, "setuservalue");  /* get debug.setuservalue */
   lua_setfield(L, -2, "setfenv");  /* export alias to debug library */
+
+  lua_getglobal(L, "print");
+  lua_getfield(L, -2, "traceback");
+  lua_pushcclosure(L, traceback, 2);
+  lua_setfield(L, LUA_REGISTRYINDEX, "_TRACEBACK");
 
 # ifdef LUA_FIVEQ_PLUS
   lua_register(L, "getfenv", getfenv);  /* export to _G */

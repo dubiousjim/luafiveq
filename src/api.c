@@ -118,6 +118,19 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
 }
 
 
+extern void luaQ_traceback(lua_State *L, const char *msg, int level) {
+    lua_getfield(L, LUA_REGISTRYINDEX, "_TRACEBACK");
+    if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        return;
+    }
+    lua_pushstring(L, msg);
+    lua_pushinteger(L, level);
+    lua_call(L, 2, 0);
+    return;
+}
+
+
 extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
   if (level) {
     lua_Debug ar;
