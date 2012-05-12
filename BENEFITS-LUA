@@ -642,15 +642,22 @@ The hash library has the following methods:
 
 Struct library
 --------------
-TODO
+There are a number of libraries available for manipulating binary data in Lua.
+Roberto Ierusalimschy's struct library
+<http://www.inf.puc-rio.br/~roberto/struct/> is lightweight but still powerful.
+I made two additions and some tweaks. One addition is a patch by Fleming Madsen
+(though I didn't include his c0/c<nothing> change.) The second addition is
+exposing a "size" function to Lua, based on alien's implementation of struct.c.
+See <http://lua-users.org/wiki/StructurePacking> for links to both.
 
-    require "struct" (based on Ierusalimschy's)
+Here are some examples of how to use:
 
     str = struct.pack (fmt, v1, v2, ...)
     v1, v2, stop = struct.unpack (fmt, s, [start=1])
     struct.size (fmt) -- fmt can't contain s or c0
 
-    Initially has native endianness and no alignment (!1).
+Here are the formatting codes. Initially endianness is set to
+native and alignment is set to none (!1).
 
     ">"     use big endian
     "<"     use little endian
@@ -674,19 +681,21 @@ TODO
     ")"     start capturing values
     "="     current offset
 
+More examples:
+
+(1) To match:
     struct Str {
       char b;
       int i[4];
-    }; // in Linux/gcc/x86 (little-endian, max align 4), use "<!4biiii"
+    };
+in Linux/gcc/x86 (little-endian, max align 4), use "<!4biiii"
 
-    // pack string Pascal-style
+(2) To pack and unpack Pascal-style strings:
     sp = struct.pack("Bc0", string.len(s), s)
     s = struct.unpack("Bc0", sp)
-    -- the length (read by the element "B") is not returned.
+In the latter command, the length (read by the element "B") is not returned.
 
-    // pack a string in a fixed-width field with 10 characters padded with blanks:
+
+(3) To pack a string in a fixed-width field with 10 characters padded with blanks:
     x = struct.pack("c10", s .. string.rep(" ", 10))
 
-
-
------------------------------------------------------
