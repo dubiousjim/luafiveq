@@ -1,15 +1,15 @@
-.include "config"
+include config
 
 SO_VERSION?= 1
 
 NAMES= bitlib io pairs
 PLUSNAMES= metafield iter err hash struct faststring
 
-OBJS= ${NAMES:S/$/-${LUA_VERSION_NUM}.o/}
-LIBS= ${NAMES:S/$/-${LUA_VERSION_NUM}.so/}
+OBJS= $(patsubst %,%-${LUA_VERSION_NUM}.o,${NAMES})
+LIBS= $(patsubst %,%-${LUA_VERSION_NUM}.so,${NAMES})
 APIOBJ= api-${LUA_VERSION_NUM}.o
-PLUSOBJS= ${PLUSNAMES:S/$/-${LUA_VERSION_NUM}.o/} apiplus-${LUA_VERSION_NUM}.o
-PLUSLIBS= ${PLUSNAMES:S/$/-${LUA_VERSION_NUM}.so/}
+PLUSOBJS= $(patsubst %,%-${LUA_VERSION_NUM}.o,${PLUSNAMES}) apiplus-${LUA_VERSION_NUM}.o
+PLUSLIBS= $(patsubst %,%-${LUA_VERSION_NUM}.so,${PLUSNAMES})
 GLUEOBJS= fiveq-${LUA_VERSION_NUM}.o fiveqplus-${LUA_VERSION_NUM}.o
 
 # Targets [with defaults]
@@ -17,7 +17,6 @@ GLUEOBJS= fiveq-${LUA_VERSION_NUM}.o fiveqplus-${LUA_VERSION_NUM}.o
 # all
 # fiveq [LUA_VERSION_NUM=501]
 # fiveqplus [LUA_VERSION_NUM=501]
-# bitlib io pairs module metafield iter err hash struct faststring
 # install install-501 install-502
 # clean
 
@@ -26,10 +25,9 @@ all:
 	@${MAKE} fiveq fiveqplus LUA_VERSION_NUM=501
 	@${MAKE} fiveq fiveqplus LUA_VERSION_NUM=502
 
-${NAMES} ${PLUSNAMES} fiveq fiveqplus: ${.TARGET}-${LUA_VERSION_NUM}.so ${.TARGET}-${LUA_VERSION_NUM}.a
+fiveq: fiveq-${LUA_VERSION_NUM}.so fiveq-${LUA_VERSION_NUM}.a
 
-${OBJS} ${PLUSOBJS} ${APIOBJ} ${GLUEOBJS}: ${.PREFIX:S/^/src\//S/-${LUA_VERSION_NUM}//}.c
-	${CC} ${CFLAGS} -I src -o $@ -c ${.ALLSRC}
+fiveqplus: fiveqplus-${LUA_VERSION_NUM}.so fiveqplus-${LUA_VERSION_NUM}.a
 
 module-502.o:
 	${CC} ${CFLAGS} -I src -o $@ -c src/module.c
@@ -37,31 +35,34 @@ module-502.o:
 moduleplus-${LUA_VERSION_NUM}.o:
 	${CC} ${CFLAGS} -I src -DLUA_FIVEQ_PLUS -o $@ -c src/module.c
 
-fiveq-501.a: ${OBJS} ${APIOBJ} ${.PREFIX}.o
-	ar crs $@ $>
+%-${LUA_VERSION_NUM}.o: src/%.c
+	${CC} ${CFLAGS} -I src -o $@ -c $^
 
-fiveqplus-501.a: ${OBJS} ${PLUSOBJS} ${.PREFIX}.o
-	ar crs $@ $>
+fiveq-501.a: ${OBJS} ${APIOBJ} fiveq-501.o
+	ar crs $@ $^
 
-fiveq-502.a: ${APIOBJ} ${.PREFIX}.o
-	ar crs $@ $>
+fiveqplus-501.a: ${OBJS} ${PLUSOBJS} fiveqplus-501.o
+	ar crs $@ $^
 
-fiveqplus-502.a: ${PLUSOBJS} ${.PREFIX}.o
-	ar crs $@ $>
+fiveq-502.a: ${APIOBJ} fiveq-502.o
+	ar crs $@ $^
 
-fiveq-501.so: ${OBJS} ${APIOBJ} ${.TARGET:S/.so$/.o/}
-	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
+fiveqplus-502.a: ${PLUSOBJS} fiveqplus-502.o
+	ar crs $@ $^
 
-fiveqplus-501.so: ${OBJS} ${PLUSOBJS} ${.TARGET:S/.so$/.o/} moduleplus-501.o
-	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
+fiveq-501.so: ${OBJS} ${APIOBJ} fiveq-501.o
+	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:-${LUA_VERSION_NUM}.so=.so.${SO_VERSION}} -o $@ $^
 
-fiveq-502.so: ${APIOBJ} ${.TARGET:S/.so$/.o/} module-502.o
-	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
+fiveqplus-501.so: ${OBJS} ${PLUSOBJS} fiveqplus-501.o moduleplus-501.o
+	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:-${LUA_VERSION_NUM}.so=.so.${SO_VERSION}} -o $@ $^
 
-fiveqplus-502.so: ${PLUSOBJS} ${.TARGET:S/.so$/.o/} moduleplus-502.o
-	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:S/-${LUA_VERSION_NUM}//}.${SO_VERSION} -o $@ $>
+fiveq-502.so: ${APIOBJ} fiveq-502.o module-502.o
+	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:-${LUA_VERSION_NUM}.so=.so.${SO_VERSION}} -o $@ $^
 
-install-${LUA_VERSION_NUM}: ${GLUEOBJS:S/.o$/.so/}
+fiveqplus-502.so: ${PLUSOBJS} fiveqplus-502.o moduleplus-502.o
+	${CC} ${LDFLAGS} -shared -Wl,-soname,${@:-${LUA_VERSION_NUM}.so=.so.${SO_VERSION}} -o $@ $^
+
+install-${LUA_VERSION_NUM}: ${GLUEOBJS:.o=.so}
 	install -d -m755 "${DESTDIR}${LUA_INCDIR}"
 	install -m444 src/fiveq.h src/unsigned.h "${DESTDIR}${LUA_INCDIR}"
 	install -d -m755 "${DESTDIR}${LUA_MODLIBDIR}"
@@ -81,9 +82,9 @@ clean:
 
 
 uninstall-${LUA_VERSION_NUM}:
-	rm -f "${DESTDIR}${LUA_INCDIR}/fiveq.h" "${DESTDIR}${LUA_INCDIR}/unsigned.h"
-	rm -f "${DESTDIR}${LUA_LIBDIR}/"*fiveq*
-	rm -f "${DESTDIR}${LUA_MODLIBDIR}/"*fiveq*
+	rm -vif "${DESTDIR}${LUA_INCDIR}/fiveq.h" "${DESTDIR}${LUA_INCDIR}/unsigned.h"
+	rm -vif "${DESTDIR}${LUA_LIBDIR}/"*fiveq*
+	rm -vif "${DESTDIR}${LUA_MODLIBDIR}/"*fiveq*
 
 uninstall:
 	@${MAKE} uninstall-501 LUA_VERSION_NUM=501

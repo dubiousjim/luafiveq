@@ -5,7 +5,7 @@ PREFIX= /usr/local
 # e.g. Lua 5.0.2 => 500, Lua 5.1 => 501, Lua 5.1.1 => 501)
 LUA_VERSION_NUM?= 501
 
-.if ${LUA_VERSION_NUM} == 501
+ifeq (${LUA_VERSION_NUM},501)
 # pkg-config lua-5.1 --variable=includedir
 LUA_INCDIR=      ${PREFIX}/include/lua51
 # pkg-config lua-5.1 --variable=libdir
@@ -15,13 +15,13 @@ LUA_MODLIBDIR=   ${PREFIX}/lib/lua/5.1
 # pkg-config lua-5.1 --variable=INSTALL_LMOD
 LUA_MODSHAREDIR= ${PREFIX}/share/lua/5.1
 LUA_BIN= ${PREFIX}/bin/lua-5.1
-.else
+else
 LUA_INCDIR=      ${PREFIX}/include/lua52
 LUA_LIBDIR=      ${PREFIX}/lib/lua52
 LUA_MODLIBDIR=   ${PREFIX}/lib/lua/5.2
 LUA_MODSHAREDIR= ${PREFIX}/share/lua/5.2
 LUA_BIN= ${PREFIX}/bin/lua-5.2
-.endif
+endif
 
 # pkg-config lua-5.1 --cflags
 CPPFLAGS= -I${LUA_INCDIR} -I.
@@ -49,13 +49,8 @@ WARNINGS= -Wall -Wextra -std=c99 -pedantic \
       -Wundef -Wmissing-include-dirs \
       -Wno-unused-function
 
-.ifdef STRICT
+ifdef STRICT
 WARNINGS+=  -Wconversion -Wmissing-prototypes -Wmissing-declarations \
             -Wunreachable-code -Wunused-function -Wfloat-equal
-.endif
+endif
 
-
-# -m64 specify for 64bit: int is 32 bits, long and pointer are 64 bits
-# -std=c89 [same as -ansi]; -std=c99
-# -pedantic or -Wpointer-arith
-# -Werror -Wconversion
