@@ -1,6 +1,10 @@
 HINTS
 =====
 
+This is just a bunch of notes to myself at this point ...
+
+
+
 In Lua 5.2, coroutine.running() returns (thread, false) when called from main thread, instead of nil
 
  * in 5.1.4, load(func, [chunkname="=(load)"]) only accepts functions, which are expected to return string pieces on each call
@@ -141,3 +145,8 @@ extern void luaL_setmetatable (lua_State *L, const char *tname) {
 
 
 
+
+# -m64 specify for 64bit: int is 32 bits, long and pointer are 64 bits
+# -std=c89 [same as -ansi]; -std=c99
+# -pedantic or -Wpointer-arith
+# -Werror -Wconversion
