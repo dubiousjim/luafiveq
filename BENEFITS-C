@@ -7,7 +7,7 @@ What do I get when I #include "fiveq.h" and link against fiveq.a?
 Fiveq backports most of Lua 5.2's C API to Lua 5.1.4, and vice-versa, with
 the following limitations.
 
-Some functions have a different signature in 5.2.0; if your code depends
+Some functions have a different signature in 5.2; if your code depends
 on the differences you'll need to add conditional compilation directives like:
 
         #if LUA_VERSION_NUM == 501
@@ -18,26 +18,26 @@ on the differences you'll need to add conditional compilation directives like:
 
 These functions include:
 
-    1. All three of:
+    1. all three of:
 
        *   lua_pushlstring(L, string, len)
        *   lua_pushstring(L, nulterminated_string)
        *   the macro lua_pushliteral(L, "string")
 
-       in Lua 5.2.0 return a const char *, pointing to Lua's internal copy
-       of the string, instead of void.
+       in Lua 5.2.0 these return a const char *, pointing to Lua's internal
+       copy of the string, instead of void
 
     2. lua_resume(L, lua_State *from, int narg) expects an addtional `from`
        parameter in Lua 5.2.0, which should be NULL or the thread doing the
-       call.
+       call
 
     3. lua_load expects an additional `mode` parameter, which can be any of "t",
        "b", "bt" or NULL (which is treated as "bt")
 
 Another difference is:
 
-    4. In 5.1.4's lua_getstack(L, level, &ar), the `level` argument also
-       increments for Lua tail calls; in 5.2.0 it doesn't.
+    4. in 5.1.4's lua_getstack(L, level, &ar), the `level` argument also
+       increments for Lua tail calls; in 5.2.0 it doesn't
 
 These have not been backported to Lua 5.1.4:
 
@@ -46,7 +46,7 @@ These have not been backported to Lua 5.1.4:
     7. lua_version, luaL_checkversion
     8. luaL_traceback
 
-These have not been forward-ported to Lua 5.2.0:
+These have not been forward-ported to Lua 5.2:
 
     9. LUA_ENVIRONINDEX, LUA_GLOBALSINDEX
    10. lua_getfenv, lua_setfenv
@@ -105,7 +105,7 @@ Here is the complete list of interfaces that are provided to Lua 5.1.4:
  *                   compiled with LUA_COMPAT_OPENLIB
 
 
-Here is the complete list of interfaces that are provided to Lua 5.2.0:
+Here is the complete list of interfaces that are provided to Lua 5.2:
 
  *   luaL_typerror
  *   lua_objlen -- already exposed if Lua was compiled with LUA_COMPAT_ALL
@@ -115,11 +115,9 @@ Here is the complete list of interfaces that are provided to Lua 5.2.0:
  *   lua_cpcall -- already exposed if Lua was compiled with LUA_COMPAT_ALL
  *
  *   luaL_pushmodule -- already exposed if Lua was compiled with
- *                   LUA_COMPAT_MODULE
+ *                   LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which implies it)
  *   luaL_openlib -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
- *                   (or LUA_COMPAT_ALL, which implies it)
- *   luaL_register -- already exposed if Lua was compiled with
- *                   LUA_COMPAT_MODULE
+ *   luaL_register -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
 
 as well as these dinosaurs (there's still some old code around, even on
 www.keplerproject.org, and sometimes only the trivial compatibility #defines
@@ -155,32 +153,32 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         Lua 5.2's native version uses gidx just as a boolean.
         In the version provided to Lua 5.1, and to Lua 5.2 if LUA_FIVEQ_PLUS,
         gidx is treated as in Lua 5.2 if it's 0 or 1; but if it has another
-        value, that is used as an index into the stack. In that case, the value
-        returned from calling luaopen_libname is stored in
-        stack[gidx][libname]: that is, to the table at index gidx in the stack,
-        rather than _G.
+        value, that is used as an index into the stack. That is, the value
+        returned from calling luaopen_libname is stored at key libname
+        in the table at index gidx in the stack, rather than in _G.
         As with the native version, a copy of that value is also left on the
         stack, and saved in package.loaded[libname].
 
         To use the caller's environment instead of _G, use:
-        { luaQ_getfenv(L, 2, "?"); luaL_requiref(L, "foo", luaopen_foo, -1); }
+        { luaQ_getfenv(L, 2, NULL); luaL_requiref(L, "foo", luaopen_foo, -1); }
 
 
  *   void luaQ_checklib(L, "libname")
         Unlike luaL_requiref, which runs luaopen_libname, this function
-        asserts that libname has already been loaded, and pushes its
-        table to the stack. if the assertion fails, raises an error.
+        asserts that libname has already been loaded, and pushes
+        package.loaded[libname] to the stack. If the assertion fails, raises an
+        error.
 
 
  *   void luaQ_pushmodule(L, "libname", int szhint, int level, "caller")
         An optional addition to the Lua 5.2 API is:
             void luaL_pushmodule (L, "libname", int szhint);
         This is only built if Lua 5.2 is compiled with LUA_COMPAT_MODULE. There
-        is no difference in the functionality of this bit of code in the two
-        versions.
+        is no difference in the functionality of this bit of code between
+        Lua 5.1 and Lua 5.2 (when it's built).
         fiveq exposes that function for all Lua versions, and fiveqplus
         exposes a generalization of it as luaQ_pushmodule.
-        These two functions share the following behavior:
+        luaL_pushmodule and luaQ_pushmodule share the following behavior:
         They first look for package.loaded[libname] (treating libname as a
         single key).
         If that fails, and the function is luaL_pushmodule or it's
@@ -202,18 +200,16 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         Combines luaQ_pushmodule and luaL_setfuncs. Like the latter, this
         function generalizes luaL_register to allow upvalues. This function
         is already exposed in Lua 5.1 if compiled with LUA_COMPAT_OPENLIB, and
-        in Lua 5.2 if compiled with LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which
-        implies it).
-        When called with libname == NULL, simply calls luaL_setfunc to
+        in Lua 5.2 if compiled with LUA_COMPAT_MODULE.
+        When called with libname == NULL, simply calls luaL_setfuncs to
         merge the functions in A into the table on top of stack (below
         nup upvalues). Afterwards, all upvalues have been popped from stack
         but table is left.
-        If libname != NULL, creates a new table, assigns it to the global
-        libname and also as package.loaded[libname], and registers the
-        functions in A there instead. If there is already a table in
-        package.loaded[libname], or at the global libname, reuses that table
-        instead of creating a new one. In either case, all upvalues will have
-        been popped from stack, and the table used will have been pushed.
+        If libname != NULL, instead retrieves a new or existing table
+        from package.loaded[libname] or _G[libname], using luaL_pushmodule.
+        and registers the functions in A there instead. Afterwards, all
+        upvalues will have been popped from stack, and the table used will have
+        been pushed.
 
         In fiveq, this function is always available regardless of how Lua
         was compiled. We approximate the behavior of Lua 5.2's version, which
@@ -225,8 +221,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         5.1.
 
         In fiveqplus, we change this function to look for and register table
-        libname in the caller's environment, which may differ from the global
-        environment.
+        libname in the caller's environment, which may differ from _G.
 
 
  *   luaL_register is a shorthand for luaL_openlib with 0 upvalues.
@@ -236,7 +231,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
  *   const char *luaQ_getdeeptable(L, idx, "field.field", szhint, &existing)
         Based on luaL_findtable from lauxlib.c.
         Tries to "deeply" get the table value at stack[idx][fields]: that is,
-        fields can contain multiple keys separated by "." Constrast
+        fields can contain multiple keys separated by "." Contrast
         luaL_getsubtable which only searches "shallowly" (always treats its
         field argument as a single key).
         Creates any intervening tables as necessary (but won't overwrite any
@@ -315,7 +310,7 @@ sort out the differences. All of these C functions return void.
         package.loaded[libname] and optionally also to global or
         caller's environment
         
-        * libname may be NULL, but this has no special effect
+        * "libname" may be NULL, but this has no special effect
         * when gidx == 0: only save return value in package.loaded[libname]
         * when gidx == 1: also save the return value to key "libname" in
             the global environment
@@ -344,7 +339,7 @@ sort out the differences. All of these C functions return void.
 
 
     luaL_newlib(L, luaL_Reg *A);
-        allocate table and call luaL_setfuncs with nup = 0
+        allocate a new table and call luaL_setfuncs with nup = 0
 
 
     luaQ_pushmodule(L, "libname", szhint, int level, "caller");
