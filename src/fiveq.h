@@ -22,7 +22,7 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
 extern void luaQ_getfenv (lua_State *L, int level, const char *fname);
 extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
 extern void luaQ_checklib (lua_State *L, const char *libname);
-extern void luaQ_traceback(lua_State *L, const char *msg, int level);
+extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 # endif
 
 

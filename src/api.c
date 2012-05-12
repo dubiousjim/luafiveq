@@ -2,9 +2,11 @@
  * api.c: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
  */
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "fiveq.h"
 
-#include <string.h>
 
 /*
  * Based on luaL_findtable from lauxlib.c.
@@ -118,15 +120,24 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
 }
 
 
-extern void luaQ_traceback(lua_State *L, const char *msg, int level) {
+extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
     lua_getfield(L, LUA_REGISTRYINDEX, "_TRACEBACK");
     if (lua_isnil(L, -1)) {
         lua_pop(L, 1);
         return;
     }
+    char *msg;
+    va_list ap;
+    if ((msg = malloc(256)) != NULL) {
+        va_start(ap, fmt);
+        (void) vsnprintf(msg, 256, fmt, ap);
+        va_end(ap);
     lua_pushstring(L, msg);
+        free(msg);
     lua_pushinteger(L, level);
     lua_call(L, 2, 0);
+    } else
+        lua_pop(L, 1);
     return;
 }
 
