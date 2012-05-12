@@ -227,18 +227,13 @@ changes:
 
 
     in Lua 5.2, an additional global function getfenv is provided, that
-        works like the global function of the same name in Lua 5.1. When called
-        with argument 0, it returns the global table _G (even if it's not
-        available through any local binding). When called with an argument n >
-        0, it returns the environment of the function at stack level n.
-        The function calling getfenv is at stack level 1.
-        FIXME
-        uses luaQ_getfenv(L, n, NULL)
-        Lua 5.1 also permits calling with a function object, does this?
-
-getfenv ([f])
-Returns the current environment in use by the function. f can be a Lua function or a number that specifies the function at that stack level: Level 1 is the function calling getfenv. If the given function is not a Lua function, or if f is 0, getfenv returns the global environment. The default for f is 1.
-
+        provides some of the functionality of the global function of the
+        same name in Lua 5.1. When called with argument 0, it returns the
+        global table _G (even if it's not available through any local binding).
+        When called with an argument n > 0, it returns the environment of the
+        function at stack level n. The function calling getfenv is at stack
+        level 1.
+        Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
 
     table.pack saves the number of elements using key "#" instead of "n".
 
@@ -443,11 +438,11 @@ changes. These address some of the concerns raised at
             LUA_CPATH/package.cpath, invoke its luaopen_name function with the
             argument name on the stack (and in Lua 5.2, a second argument of
             "/path/to/name.so"). If name is of the form "prefix-a.b.c",
-            /path/to/a/b/c.so and luaopen_a_b_c will be used.
+            /path/to/prefix-a/b/c.so and luaopen_a_b_c will be used.
         [4] else where name has the form "prefix-a.b.c", look for prefix-a.so
             (or prefix-a/init.so) in LUA_CPATH/package.cpath, invoke its
             luaopen_a_b_c function with the argument name on the stack (and in
-            Lua 5.2, a second argument of "/path/to/a.so")
+            Lua 5.2, a second argument of "/path/to/prefix-a.so")
         If a function was found and invoked, and its return value is non-nil,
         that value is assigned to package.loaded[name].
         If the return value is nil: (in Lua 5.1.4) if package.loaded[name]
@@ -483,18 +478,18 @@ changes. These address some of the concerns raised at
 
 
  *  module(name, [...additional decorators...])
-    Native behavior: Use lua_pushmodule to find a new or existing table from
+    Native behavior: Use luaL_pushmodule to find a new or existing table from
     package.loaded[name] or _G[name]. Set fields _M, _NAME, and _PACKAGE in
     this table unless _NAME already exists. Make this table the environment of
     the current chunk.
 
     Equivalent code:
         local _M = package.loaded[name] or _G[name] or {}
-        if not package.loaded[name] then
-            if not _G[name] then _G[name] = _M end
+        if package.loaded[name] == nil then
+            if _G[name] == nil then _G[name] = _M end
             package.loaded[name] = _M
         end
-        if not _M._NAME then
+        if _M._NAME == nil then
             _M._NAME = name
             _M._PACKAGE = string.gsub(name, "%.[^.]*$", "")
             _M._M = _M
@@ -504,7 +499,7 @@ changes. These address some of the concerns raised at
     Note that if you set package.loaded[name] = {} before invoking
         module(name), _G won't be written to
 
-    fiveqplus uses caller's the environment (in Lua 5.2, _ENV) in place of
+    fiveqplus uses the caller's environment (in Lua 5.2, _ENV) in place of
         _G. It also does some behind-the-scenes magic to cooperate with
         fiveqplus's enhanced package.seeall.
 
@@ -536,7 +531,7 @@ changes. These address some of the concerns raised at
     This is another decorator provided by fiveqplus, that can be used instead
     of package.seeall.
     Based on etc/strict.lua in the Lua 5.1 sources, and code from
-    <http://lua-users.org/wiki/ModuleDefinition>
+    <http://lua-users.org/wiki/ModuleDefinition>.
 
     Only when a variable has been written from the module's toplevel (even
     writing nil suffices) can it be read or written to anywhere else in the
@@ -675,8 +670,13 @@ native and alignment is set to none (!1).
     "f"     a float (native size)
     "d"     a double (native size)
     "s"     a zero-terminated string
-    "cn"    a sequence of exactly n chars corresponding to a single Lua string. An absent n means 1. The string supplied for packing must have at least n characters; extra characters are ignored.
-    "c0"    this is like "cn", except that the n is given by other means: When packing, n is the actual length of the supplied string; when unpacking, n is the value of the previous unpacked value (which must be a number). In that case, this previous value is not returned.
+    "cn"    a sequence of exactly n chars corresponding to a single Lua string.
+            An absent n means 1. The string supplied for packing must have at
+            least n characters; extra characters are ignored.
+    "c0"    this is like "cn", except that the n is given by other means: When
+            packing, n is the actual length of the supplied string; when
+            unpacking, n is the value of the previous unpacked value (which
+            must be a number). In that case, this previous value is not returned.
     "("     stop capturing values
     ")"     start capturing values
     "="     current offset
@@ -689,6 +689,7 @@ More examples:
       int i[4];
     };
 in Linux/gcc/x86 (little-endian, max align 4), use "<!4biiii"
+
 
 (2) To pack and unpack Pascal-style strings:
     sp = struct.pack("Bc0", string.len(s), s)
