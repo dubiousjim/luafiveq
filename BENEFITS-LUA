@@ -351,7 +351,7 @@ The err library adds the following:
         explicitly specify the index of the type that was expected (the first
         one having index 1); else 1 is assumed. Examples:
 
-        > function example(a, b, c) checktype(c ,3, "number", "string") end
+        > function example(a, b, c) checktype(c, 3, "number", "string") end
         > example(1, 2, false)
         stdin:1: bad argument #3 to 'example' (number expected, got boolean)
         stack traceback:
@@ -360,7 +360,7 @@ The err library adds the following:
             stdin:1: in main chunk
             [C]: ?
 
-        > function example(a, b, c) checktype(c ,3, 2, "number", "string") end
+        > function example(a, b, c) checktype(c, 3, 2, "number", "string") end
         > example(1, 2, false)
         stdin:1: bad argument #3 to 'example' (string expected, got boolean)
         stack traceback:
@@ -593,7 +593,7 @@ The hash library has the following methods:
                 counts as distinct (even ones with the same elements, such as
                 {} and {}) will generally produce different hashes. Permuting
                 arguments will also generally produce different hashes. And
-                hash.tuple() ~= hash.tuple(nil) ~= hash.tuple(nil,nil).
+                hash.tuple() ~= hash.tuple(nil) ~= hash.tuple(nil, nil).
 
         * hash.set(seed, value, [count=1])
                 Provides a hash of seed together with (value annotated by
