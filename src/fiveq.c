@@ -366,8 +366,8 @@ extern int luaopen_fiveq (lua_State *L) {
   /* redefines ipairs and pairs, returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_pairs);
   lua_pushstring(L, "fiveq.pairs");
-  lua_call(L, 1, 0); 
-  
+  lua_call(L, 1, 0);
+
   /* redefines lines, read, write in file metatable
      redefines lines, read, open in io library
      redefines popen's "__close"
@@ -384,22 +384,22 @@ extern int luaopen_fiveq (lua_State *L) {
   /* defines require, module, package.seeall, package.strict; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_module);
   lua_pushstring(L, "fiveq.module");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* defines iter; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_iter);
   lua_pushstring(L, "fiveq.iter");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* defines debug.getmetafield; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_metafield);
   lua_pushstring(L, "fiveq.metafield");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* defines faststring methods; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_faststring);
   lua_pushstring(L, "fiveq.faststring");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* these return 1, we use luaL_requiref to assign the value globally */
   luaL_requiref(L, "err", luaopen_fiveq_err, 1);
@@ -469,7 +469,7 @@ static int db_setuservalue (lua_State *L) {
 
 extern int luaopen_fiveq (lua_State *L) {
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
-  
+
   lua_getglobal(L, "load");
   lua_setglobal(L, "loadstring");
 
@@ -535,22 +535,22 @@ extern int luaopen_fiveq (lua_State *L) {
   /* defines require, module, package.seeall, package.strict; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_module);
   lua_pushstring(L, "fiveq.module");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* defines iter, returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_iter);
   lua_pushstring(L, "fiveq.iter");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* defines debug.getmetafield, returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_metafield);
   lua_pushstring(L, "fiveq.metafield");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* defines faststring methods; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_faststring);
   lua_pushstring(L, "fiveq.faststring");
-  lua_call(L, 1, 0); 
+  lua_call(L, 1, 0);
 
   /* these return 1, we use luaL_requiref to assign the value globally */
   luaL_requiref(L, "err", luaopen_fiveq_err, 1);
