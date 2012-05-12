@@ -558,21 +558,86 @@ changes. These address some of the concerns raised at
 
 Hash library
 ------------
-TODO
+A data structure is "extensional" when its identity should depend only on the
+identities of its components, and their position in the structure. So, for
+example, Lua tables are not extensional because {10, 20} and {10, 20} are two
+different tables. On the other hand, immutable sets and tuples should be
+extensional. Any immutable set containing exactly the members 10 and 20 should
+be identical to any other.
 
-  /*
-   * Hashing library for Lua 5.1.4.
-   * Used by tuple.lua and multiset.lua.
-   * Exports:
-   *      hash.tuple(...)
-   *      hash.set(seed,value,[count=1]) ; doesn't check for duplicates
-   *      hash.unset(seed,value,[oldcount=1],[newcount=0])
-   *      hash.xor(string1, equallengthstring2)
-   *      hash.unbox(obj)   ; for gc-able objects, convert to lightuserdata
-   *                        ; for others, return unchanged
-   *      hash.pointer(obj) ; for gc-able objects and lightuserdata, return "%p"
-   *                        ; for others, return nil
-   */
+It's easy enough to define sets in terms of tables (we can use {[10]=true,
+[20]=true}), and for many purposes we don't need to bother about their
+identity. Where we do need to bother, it may sometimes suffice to give sets an
+__eq metamethod that declares two sets equal just when they have the same
+elements. (And likewise for immutable tuples.) However, if we ever want to use
+sets or any other extensional structure as table keys, this won't suffice. For
+even if set1 and set2 count as equal by their __eq metamethod, Lua may still
+see them as distinct objects, and tbl[set1] and tbl[set2] may give different
+results.
+
+The nicest solution would be if Lua honored a __hash metamethod, and counted
+two objects as identical table keys if they had the same hash and also were
+equal according to __eq. But we don't have that.
+
+The next best solution is to have a general-purpose hash library, and to intern
+extensional objects by their hash as they're created. Preferably we'd intern
+them in weak tables, so that they can be gc'd when no other code refers to them
+anymore. But if such an object is still interned, then when we try to create
+another __eq object, we just re-use the original one. In this case, then, if
+set1 and set2 did count as equal according to __eq, they will be the same Lua
+object, and can be relied on to be equivalent table keys, too.
+
+I have implemented this technique for immutable tuples and immutable
+sets/multisets. I will provide those implementations separately. The fiveqplus
+libraries just provides the general tools with which such systems can be built.
+
+The hash library has the following methods:
+
+        * hash.tuple(...)
+                Provides an int hash of its argument sequence. Objects that Lua
+                counts as distinct (even ones with the same elements, such as
+                {} and {}) will generally produce different hashes. Permuting
+                arguments will also generally produce different hashes. And
+                hash.tuple() ~= hash.tuple(nil) ~= hash.tuple(nil,nil).
+
+        * hash.set(seed, value, [count=1])
+                Provides a hash of seed together with (value annotated by
+                count). Here the order in which values are added does not
+                affect the hash. That is:
+                  hash.set(hash.set(seed0, value1), value2) ==
+                  hash.set(hash.set(seed0, value2), value1)
+                Although the intent of the optional annotation is to keep track
+                of the count of value, do not expect that:
+                  hash.set(hash.set(seed0, value1), value1) ==
+                  hash.set(seed0, value, 2)
+                In fact, since we achieve the commutativity for value1 and
+                value2 by using an xor-based hash, the result of hashing value1
+                twice with the same annotation will be as if it had never been
+                added to the hash at all.
+                If count is provided, it should be convertible to an integer
+                >= 1.
+
+        * hash.unset(seed, value, [oldcount=1], [newcount=0])
+                If seed1 is the result of hash.set(seed0, value, oldcount)
+                then hash.unset(seed1, value, oldcount, newcount) will
+                be the same as hash.set(seed0, value, newcount)
+                or, if newcount == 0, to seed0 itself.
+
+        * hash.xor(string1, string2)
+                If the strings are of equal length, returns a third string
+                which is the result of xor-ing their bytes.
+                Taken from Roberto Ierusalimschy's md5lib.
+        
+        * hash.unbox(obj)
+                If obj is of a gc-able type, return a lightuserdatum that
+                points to the same block of memory. For other objects,
+                return them unchanged.
+
+        * hash.pointer(obj)
+                If obj is of a gc-able type, or is a lightuserdatum,
+                return the string that lua_pushfstring would return using
+                format "%p". For other objects, return nil.
+
 
 
 Struct library
