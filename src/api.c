@@ -184,10 +184,33 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
       lua_iscfunction(L, -1))
     luaL_error(L, LUA_QS " not called from a Lua function", fname);
   lua_insert(L, -2); /* move below env table */
+  // stack[+1]=function at level level, stack[+2]=new env table
 #if LUA_VERSION_NUM == 501
   lua_setfenv(L, -2);
 #else
-  lua_setupvalue(L, -2, 1);
+  const char *var;
+  int i;
+  for(i=1;;i++) {
+      var = lua_getlocal(L, &ar, i);
+      if (!var || strcmp("_ENV", var)==0)
+          break;
+      lua_pop(L, 1);
+  }
+  if (var) {
+      lua_pop(L, 1); /* discard existing local value */
+      lua_setlocal(L, &ar, i);
+  } else {
+      for(i=1;;i++) {
+          var = lua_getupvalue(L, -1, i);
+          if (!var || strcmp("_ENV", var)==0)
+              break;
+          lua_pop(L, 1);
+      }
+      if (!var)
+          luaL_error(L, LUA_QS " couldn't identify the caller's _ENV at level %d", fname, level);
+      lua_pop(L, 1); /* discard existing upvalue */
+      lua_setupvalue(L, -2, i);
+  }
 #endif
   lua_pop(L, 1);  /* remove function */
 }
