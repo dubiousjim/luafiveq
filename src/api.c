@@ -215,6 +215,7 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
       var = lua_getlocal(L, &ar, i);
       if (!var || strcmp("_ENV", var)==0)
           break;
+      /* printf("rejecting local #%d: %s\n", i, var); */
       lua_pop(L, 1);
   }
   if (var) {
@@ -222,13 +223,15 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
       lua_setlocal(L, &ar, i);
   } else {
       for(i=1;;i++) {
-          var = lua_getupvalue(L, -1, i);
+          var = lua_getupvalue(L, -2, i);
           if (!var || strcmp("_ENV", var)==0)
               break;
+          /* printf("rejecting upvalue #%d: %s\n", i, var); */
           lua_pop(L, 1);
       }
       if (var) {
           lua_pop(L, 1); /* discard existing upvalue */
+          /* printf(LUA_QS " setting upvalue #%d at level %d\n", fname, i, level); */
           lua_setupvalue(L, -2, i);
       } else if (strcmp("main", ar.what) == 0) {
           luaL_error(L, LUA_QS " found no _ENV in main chunk at level %d", fname, level+1);
