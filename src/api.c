@@ -120,6 +120,7 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
 }
 
 
+/* undocumented */
 extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
     lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
     if (!lua_isnil(L, -1)) {
