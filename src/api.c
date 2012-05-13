@@ -201,7 +201,7 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
 extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
   lua_Debug ar;
   if (lua_getstack(L, level, &ar) == 0 ||
-      lua_getinfo(L, "f", &ar) == 0 ||  /* get calling function */
+      lua_getinfo(L, "fS", &ar) == 0 ||  /* get calling function */
       lua_iscfunction(L, -1))
     luaL_error(L, LUA_QS " not called from a Lua function", fname);
   lua_insert(L, -2); /* move below env table */
@@ -227,10 +227,14 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
               break;
           lua_pop(L, 1);
       }
-      if (!var)
-          luaL_error(L, LUA_QS " couldn't identify the caller's _ENV at level %d", fname, level);
-      lua_pop(L, 1); /* discard existing upvalue */
-      lua_setupvalue(L, -2, i);
+      if (var) {
+          lua_pop(L, 1); /* discard existing upvalue */
+          lua_setupvalue(L, -2, i);
+      } else if (strcmp("main", ar.what) == 0) {
+          luaL_error(L, LUA_QS " found no _ENV in main chunk at level %d", fname, level+1);
+      } else {
+          luaL_error(L, LUA_QS " couldn't identify the caller's _ENV at level %d", fname, level+1);
+      }
   }
 #endif
   lua_pop(L, 1);  /* remove function */
