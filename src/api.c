@@ -149,35 +149,26 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
 
 
 extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
-  if (level) {
+  if (level==0) {
+    lua_pushglobaltable(L);
+  } else {
     lua_Debug ar;
-    if (fname == NULL) {
-      if (lua_getstack(L, level, &ar) == 0 ||
-          lua_getinfo(L, "f", &ar) == 0)  /* get calling function */
-        luaL_error(L, "couldn't identify the calling function");
+    if (lua_getstack(L, level, &ar) == 0 || lua_getinfo(L, "f", &ar) == 0)
+        luaL_error(L, LUA_QS " couldn't identify the calling function", fname ? fname : "?");
+    if (level == 2 && fname && strcmp("module", fname) == 0) {
+        lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
+        lua_pushvalue(L, -2);
+        lua_gettable(L, -2);
+        if (lua_tointeger(L, -1) == 1) {
+            level++;
+            if (lua_getstack(L, level, &ar) == 0 || lua_getinfo(L, "f", &ar) == 0)
+                luaL_error(L, LUA_QS " couldn't identify the calling function", fname);
+            lua_replace(L, -4);
+        }
+        lua_pop(L, 2);
     }
-    else if (level==2 && fname && strcmp("module", fname) == 0) {
-        /* we have to special-case step an extra level only when 'require'd */
-        if (lua_getstack(L, level, &ar) == 0 ||
-            lua_getinfo(L, "fn", &ar) == 0 ||  /* get calling function */
-            lua_iscfunction(L, -1) && strcmp("require", ar.name)==0)
-        if (lua_getstack(L, ++level, &ar) == 0 ||
-            lua_getinfo(L, "fn", &ar) == 0 ||  /* get calling function */
-            lua_iscfunction(L, -1))
-          luaL_error(L, LUA_QS " not called from a Lua function\n  name=<%s> namewhat=<%s> what=<%s>", fname, ar.name, ar.namewhat, ar.what);
-    } else {
-#if LUA_VERSION_NUM == 501
-      if (lua_getstack(L, level, &ar) == 0 ||
-          lua_getinfo(L, "fn", &ar) == 0 ||  /* get calling function */
-          lua_iscfunction(L, -1))
-        luaL_error(L, LUA_QS " not called from a Lua function\n  name=<%s> namewhat=<%s> what=<%s>", fname, ar.name, ar.namewhat, ar.what);
-#else
-      if (lua_getstack(L, level, &ar) == 0 ||
-          lua_getinfo(L, "fnt", &ar) == 0 ||  /* get calling function */
-          lua_iscfunction(L, -1))
-        luaL_error(L, LUA_QS " not called from a Lua function\n  name=<%s> namewhat=<%s> what=<%s> istailcall=%d", fname, ar.name, ar.namewhat, ar.what, ar.istailcall);
-#endif
-    }
+    if (fname && lua_iscfunction(L, -1))
+        luaL_error(L, LUA_QS " not called from a Lua function");
 #if LUA_VERSION_NUM == 501
     lua_getfenv(L, -1);
 #else
@@ -203,9 +194,6 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
     }
 #endif
     lua_remove(L, -2);  /* remove function */
-  }
-  else {
-    lua_pushglobaltable(L);
   }
 }
 

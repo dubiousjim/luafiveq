@@ -407,6 +407,7 @@ static const luaL_Reg pkglib[] = {
 };
 #endif
 
+
 extern int luaopen_fiveq_module (lua_State *L) {
     /* export to _G */
     lua_register(L, "module", ll_module);
@@ -415,7 +416,7 @@ extern int luaopen_fiveq_module (lua_State *L) {
     luaL_setfuncs(L, pkglib, 0);
 
 #ifdef LUA_FIVEQ_PLUS
-    /* make package library upvalue for (ll_require and) ll_requireplus */
+    /* make package library upvalue for [* ll_require and *] ll_requireplus */
 
     /*
     lua_pushvalue(L, -1);
@@ -425,9 +426,19 @@ extern int luaopen_fiveq_module (lua_State *L) {
 
     lua_pushcclosure(L, ll_require_plus, 1);
 
+    lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
+    lua_pushvalue(L, -2);
+    lua_pushinteger(L, 1);
+    lua_settable(L, -3); /* _FIVEQ[our register]=1 */
+    lua_getglobal(L, "require");
+    lua_pushinteger(L, 1);
+    lua_settable(L, -3); /* FIVEQ[native register]=1 */
+    lua_pop(L, 1); /* pop FIVEQ */
+
     // stack[1]=name, stack[2]=ll_require_plus
     lua_setglobal(L, "require");
 #endif
 
     return 0;
 }
+
