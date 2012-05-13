@@ -58,7 +58,7 @@ The following functions are added:
         alias for package.loaders
 
     debug.getuservalue
-        returns nil if argument isn't a userdatum
+        returns nil if argument isn't a full userdatum, else nil or a table
 
     debug.setuservalue
         raises error if arguments aren't a full userdatum and either nil or a
