@@ -314,6 +314,8 @@ sort out the differences. All of these C functions return void.
             the global environment
         * when fiveqplus and gidx is neither 0 nor 1: use the table at
             stack[gidx] instead of _G
+        * in all cases, the return value from luaopen_libname is also left
+          on the stack
 
 
     luaQ_checklib(L, "libname")
