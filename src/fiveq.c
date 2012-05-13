@@ -37,20 +37,23 @@ static int floorlog2 (unsigned int v) {
   return r;
 }
 
-
 static int math_log (lua_State *L) {
   lua_Number x = luaL_checknumber(L, 1);
   lua_Number res;
   if (lua_isnoneornil(L, 2))
-    res = (log)(x);
+    res = log(x);
   else {
     lua_Number base = luaL_checknumber(L, 2);
-    if (base == 10.0 || x == 0.0) res = (log10)(x);
+    if (base == 10.0 || x == 0.0) res = log10(x);
     else if (base == 2.0) {
+      /* floorlog2 is actually slower than .../log(2) in Lua 5.2
+       * presumably because luaL_checkinteger is somehow more expensive than in Lua 5.1
+       * but we substitute this version anyway to have consistent semantics
+       */
       unsigned int i = luaL_checkinteger(L, 1);
-      res = (floorlog2)(i);
+      res = floorlog2(i);
     }
-    else res = (log)(x)/(log)(base);
+    else res = log(x)/log(base);
   }
   lua_pushnumber(L, res);
   return 1;
