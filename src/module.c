@@ -180,7 +180,7 @@ static int ll_module (lua_State *L) {
 #ifndef LUA_FIVEQ_PLUS
   luaL_pushmodule(L, modname, 1);
 #else
-  luaQ_pushmodule(L, modname, 1, 3, "module");
+  luaQ_pushmodule(L, modname, 1, 2, "module");
 #endif
   /* does module table already have a _NAME field? */
   lua_getfield(L, -1, "_NAME");

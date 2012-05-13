@@ -150,11 +150,27 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
           lua_getinfo(L, "f", &ar) == 0)  /* get calling function */
         luaL_error(L, "couldn't identify the calling function");
     }
-    else {
+    else if (level==2 && fname && strcmp("module", fname) == 0) {
+        /* we have to special-case step an extra level only when 'require'd */
+        if (lua_getstack(L, level, &ar) == 0 ||
+            lua_getinfo(L, "fn", &ar) == 0 ||  /* get calling function */
+            lua_iscfunction(L, -1) && strcmp("require", ar.name)==0)
+        if (lua_getstack(L, ++level, &ar) == 0 ||
+            lua_getinfo(L, "fn", &ar) == 0 ||  /* get calling function */
+            lua_iscfunction(L, -1))
+          luaL_error(L, LUA_QS " not called from a Lua function\n  name=<%s> namewhat=<%s> what=<%s>", fname, ar.name, ar.namewhat, ar.what);
+    } else {
+#if LUA_VERSION_NUM == 501
       if (lua_getstack(L, level, &ar) == 0 ||
-          lua_getinfo(L, "f", &ar) == 0 ||  /* get calling function */
+          lua_getinfo(L, "fn", &ar) == 0 ||  /* get calling function */
           lua_iscfunction(L, -1))
-        luaL_error(L, LUA_QS " not called from a Lua function", fname);
+        luaL_error(L, LUA_QS " not called from a Lua function\n  name=<%s> namewhat=<%s> what=<%s>", fname, ar.name, ar.namewhat, ar.what);
+#else
+      if (lua_getstack(L, level, &ar) == 0 ||
+          lua_getinfo(L, "fnt", &ar) == 0 ||  /* get calling function */
+          lua_iscfunction(L, -1))
+        luaL_error(L, LUA_QS " not called from a Lua function\n  name=<%s> namewhat=<%s> what=<%s> istailcall=%d", fname, ar.name, ar.namewhat, ar.what, ar.istailcall);
+#endif
     }
 #if LUA_VERSION_NUM == 501
     lua_getfenv(L, -1);
