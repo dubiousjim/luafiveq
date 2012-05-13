@@ -132,10 +132,10 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
         va_start(ap, fmt);
         (void) vsnprintf(msg, 256, fmt, ap);
         va_end(ap);
-    lua_pushstring(L, msg);
+        lua_pushstring(L, msg);
         free(msg);
-    lua_pushinteger(L, level);
-    lua_call(L, 2, 0);
+        lua_pushinteger(L, level);
+        lua_call(L, 2, 0);
     } else
         lua_pop(L, 1);
     return;

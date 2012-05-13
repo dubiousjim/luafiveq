@@ -226,10 +226,10 @@ extern int traceback(lua_State *L) {
         lua_pushstring(L, "\n");
         lua_pushvalue(L, -3);
         lua_pushvalue(L, -3);
-    lua_pushvalue(L, lua_upvalueindex(2)); /* debug.traceback */
+        lua_pushvalue(L, lua_upvalueindex(2)); /* debug.traceback */
         lua_pushvalue(L, 1); /* msg */
         lua_pushinteger(L, lua_tointeger(L, 2) + 1); /* level */
-    lua_call(L, 2, 1);
+        lua_call(L, 2, 1);
         lua_call(L, 2, 0); /* write traceback; discard return value */
         lua_call(L, 2, 0); /* write \n; discard return value */
     }
