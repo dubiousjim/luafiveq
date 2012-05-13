@@ -195,7 +195,8 @@ static void require(lua_State *L, const char *modname, lua_CFunction openf) {
   lua_getfield(L, -1, modname);
   if (lua_isnil(L, -1)) {
     lua_pop(L, 1);
-    /* gidx == 0: we want the library in _LOADED but not in _G or anywhere else */
+    /* gidx == 0: we want the library in _LOADED and on stack
+     * but not in _G or anywhere else */
     luaL_requiref(L, modname, openf, 0);
     if (lua_isnil(L, -1)) {
       luaL_error(L, "can't open " LUA_QS " library", modname);
