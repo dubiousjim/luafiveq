@@ -159,8 +159,8 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         As with the native version, a copy of that value is also left on the
         stack, and saved in package.loaded[libname].
 
-        To use the caller's environment instead of _G, use:
-        { luaQ_getfenv(L, 2, NULL); luaL_requiref(L, "foo", luaopen_foo, -1); }
+        To use the current environment instead of _G, use:
+        { luaQ_getfenv(L, 1, NULL); luaL_requiref(L, "foo", luaopen_foo, -1); }
 
 
  *   void luaQ_checklib(L, "libname")
