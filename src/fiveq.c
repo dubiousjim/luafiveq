@@ -598,12 +598,10 @@ extern int luaopen_fiveq (lua_State *L) {
 
 # else
 
-#  if !defined(LUA_COMPAT_MODULE)
-  /* defines require, module, package.seeall; returns 0 */
+  /* defines module, possibly package.seeall; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_module);
   lua_pushstring(L, "fiveq.module");
   lua_call(L, 1, 0);
-#  endif
 
   lua_pushboolean(L, 1);
   lua_setglobal(L, "_FIVEQ");

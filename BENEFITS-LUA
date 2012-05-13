@@ -106,7 +106,9 @@ functions are added:
         (this is already exposed if you compiled Lua with LUA_COMPAT_LOADERS)
 
     module and package.seeall:
-        (these are already exposed if you compiled Lua with LUA_COMPAT_MODULE)
+        (these are already exposed if you compiled Lua with LUA_COMPAT_MODULE,
+        though our version of module is more reliable and replaces the
+        native one)
 
     newproxy(arg) and debug.newproxy(arg)
         returns a new userdatum
@@ -495,10 +497,17 @@ changes. These address some of the concerns raised at
             _M._PACKAGE = string.gsub(name, "[^.]*$", "")
             _M._M = _M
         end
-        setfenv(1, _M)
+        setfenv(1, _M) -- in 5.2 this is done by assigning to the first local
+                       -- or upvalue named _ENV
 
     Note that if you set package.loaded[name] = {} before invoking
         module(name), _G won't be written to
+
+    Lua 5.2 provides a version of module and package.seeall if compiled with
+        LUA_COMPAT_MODULE, however this version just blindly assumes that
+        _ENV is upvalue #1, which is not always true. We replace with
+        the fiveq version, which explicitly checks which local or upvalue
+        is named _ENV.
 
     fiveqplus uses the caller's environment (in Lua 5.2, _ENV) in place of
         _G. It also does some behind-the-scenes magic to cooperate with

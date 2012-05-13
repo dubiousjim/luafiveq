@@ -412,8 +412,10 @@ extern int luaopen_fiveq_module (lua_State *L) {
     /* export to _G */
     lua_register(L, "module", ll_module);
 
+#if defined(LUA_FIVEQ_PLUS) || !defined(LUA_COMPAT_MODULE)
     luaQ_checklib(L, LUA_LOADLIBNAME);
     luaL_setfuncs(L, pkglib, 0);
+#endif
 
 #ifdef LUA_FIVEQ_PLUS
     /* make package library upvalue for [* ll_require and *] ll_requireplus */
