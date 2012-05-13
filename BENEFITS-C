@@ -273,8 +273,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         level. If caller is NULL, permits the function at that level
         to be a C function.
         Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
-        In 5.2, walks locals and upvalues from that stack level upwards
-        until it finds _ENV.
+        In 5.2, searches locals and upvalues at that stack level for _ENV.
         If level == 0, returns the global table instead.
 
 
@@ -283,8 +282,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         at call stack `level`. If caller is NULL, permits the function
         at that level to be a C function.
         Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
-        In Lua 5.2, fails silently if the specified function doesn't already
-        have an upvalue(1).
+        In 5.2, searches locals and upvalues at that stack level for _ENV.
 
 
 
