@@ -270,7 +270,7 @@ extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint,
             luaL_error(L, "name conflict for module " LUA_QS, modname);
         // stack[top+1]=_LOADED, [+2]=caller, [+3]=possibly new caller[modname]
         lua_pushvalue(L, -1);
-        lua_setfield(L, -3, modname);  /* _LOADED[modname] = new table */
+        lua_setfield(L, -4, modname);  /* _LOADED[modname] = new table */
         lua_remove(L, -2); /* remove caller table */
     }
     lua_remove(L, -2);  /* remove _LOADED table */
