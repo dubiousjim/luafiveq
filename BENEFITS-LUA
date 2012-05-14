@@ -422,9 +422,7 @@ Module system
 -------------
 
 We review the native behavior of "require" and "module", then describe our
-changes. These address some of the concerns raised at
-<http://lua-users.org/wiki/LuaModuleFunctionCritiqued>.
-
+changes.
 
  *  require "name"
     Native behavior: Retrieve package.loaded[name]; if it doesn't exist
@@ -513,8 +511,10 @@ changes. These address some of the concerns raised at
         _G. It also does some behind-the-scenes magic to cooperate with
         fiveqplus's enhanced package.seeall.
 
-    our code is adapted from the Lua sources and
-        http://lua-users.org/wiki/ModuleDefinition
+    Our code is adapted from the Lua sources and
+        <http://lua-users.org/wiki/ModuleDefinition>. It addresses most
+        of the concerns raised at 
+        <http://lua-users.org/wiki/LuaModuleFunctionCritiqued>.
 
 
  * package.seeall
