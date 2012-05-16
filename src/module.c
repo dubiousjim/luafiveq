@@ -428,6 +428,7 @@ extern int luaopen_fiveq_module (lua_State *L) {
 
     lua_pushcclosure(L, ll_require_plus, 1);
 
+    /* TODO: don't use reserved name */
     lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
     lua_pushvalue(L, -2);
     lua_pushinteger(L, 1);
