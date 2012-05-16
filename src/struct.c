@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-
 #include <lua.h>
 #include <lauxlib.h>
 
@@ -34,8 +33,8 @@
 ** b/B - signed/unsigned byte
 ** h/H - signed/unsigned short
 ** l/L - signed/unsigned long
-** i/I[num] - signed/unsigned integer with size `n' (default is size of int)
-** cn - sequence of `n' chars (from/to a string); when packing, n==0 means
+** i/I[num] - signed/unsigned integer with size 'n' (default is size of int)
+** cn - sequence of 'n' chars (from/to a string); when packing, n==0 means
         the whole string; when unpacking, n==0 means use the previous
         read number as the string length
 ** s        - zero-terminated string
@@ -99,8 +98,8 @@ static size_t getnum (const char **fmt, size_t df) {
 }
 
 
-#define defaultoptions(h)	((h)->endian = native.endian, (h)->align = 1, (h)->noassign = 0, \
-                                 (h)->dblswap = false)
+#define defaultoptions(h)	((h)->endian = native.endian, (h)->align = 1, \
+                                (h)->noassign = false, (h)->dblswap = false)
 
 
 
@@ -126,7 +125,7 @@ static size_t optsize (lua_State *L, char opt, const char **fmt) {
     case 'i': case 'I': {
       int sz = getnum(fmt, sizeof(int));
       if (!isp2(sz))
-        luaL_error(L, "integral size %d is not a power of 2", sz);
+        luaL_error(L, "integer size %d is not a power of 2", sz);
       return sz;
     }
     default: {
@@ -319,7 +318,7 @@ static int b_size (lua_State *L) {
         size_t size = optsize(L, opt, &fmt);
         totalsize += gettoalign(totalsize, &h, opt, size);
         if (size == 0)
-          luaL_error(L, "options `c0' - `s' have undefined sizes");
+          luaL_error(L, "options 'c0' and 's' have undefined sizes");
         totalsize += size;
       }
     }
@@ -335,8 +334,13 @@ static int b_unpack (lua_State *L) {
   const char *data;
   size_t pos;
   lua_Number lastnum = 0;
+  int lastassign = -1;
+  int top;
 
-#define pushnumber(n) { lastnum = (lua_Number)(n); if (!h.noassign) lua_pushnumber(L, (lua_Number)(n)); }
+#define pushnumber(n) { lastnum = (lua_Number)(n); lastassign = !h.noassign; \
+    if (!h.noassign) { if (lua_checkstack(L, ++top)) \
+        lua_pushnumber(L, (lua_Number)(n)); \
+        else luaL_error(L, "too many results to unpack"); } }
 
   if (lua_isuserdata(L, 2)) {
     data = (const char*)lua_touserdata(L, 2);
@@ -348,6 +352,7 @@ static int b_unpack (lua_State *L) {
   }
   defaultoptions(&h);
   lua_settop(L, 2);
+  top = 3; /* reserve space for stop position at end */
   while (*fmt) {
     int opt = *fmt++;
     size_t size = optsize(L, opt, &fmt);
@@ -387,14 +392,27 @@ static int b_unpack (lua_State *L) {
       }
       case 'c': {
         if (size == 0) {
-          if (!lua_isnumber(L, -1))
-            luaL_error(L, "format `c0' needs a previous size");
-          size = lua_tonumber(L, -1);
+          if (lastassign < 0) {
+            /* no cached lastnum available */
+            luaL_error(L, "format 'c0' needs a previous size");
+          } else if (lastnum < 0) {
+            luaL_error(L, "format 'c0' needs a size >= 0");
+          }
+          size = lastnum;
+          if (lastassign) {
           lua_pop(L, 1);
+            top--;
+          }
           luaL_argcheck(L, pos+size <= ld, 2, "data string too short");
         }
-        if (!h.noassign)
+        /* we clear cached lastnum */
+        lastassign = -1;
+        if (!h.noassign) {
+            if (lua_checkstack(L, ++top))
         lua_pushlstring(L, data+pos, size);
+            else
+                luaL_error(L, "too many results to unpack");
+        }
         break;
       }
       case 's': {
@@ -402,20 +420,32 @@ static int b_unpack (lua_State *L) {
         if (e == NULL)
           luaL_error(L, "unfinished string in data");
         size = (e - (data+pos)) + 1;
-        if (!h.noassign)
+        /* we clear cached lastnum */
+        lastassign = -1;
+        if (!h.noassign) {
+            if (lua_checkstack(L, ++top))
         lua_pushlstring(L, data+pos, size - 1);
+            else
+                luaL_error(L, "too many results to unpack");
+        }
         break;
       }
       case '=': {
+        /* we clear cached lastnum */
+        lastassign = -1;
+        if (lua_checkstack(L, ++top))
         lua_pushinteger(L, pos + 1);
+        else
+            luaL_error(L, "too many results to unpack");
         break;
       }
       default: commoncases(L, opt, &fmt, &h);
     }
     pos += size;
   }
+  /* push stop position */
   lua_pushinteger(L, pos + 1);
-  return lua_gettop(L) - 2;
+  return top - 2;
 }
 
 /* }====================================================== */

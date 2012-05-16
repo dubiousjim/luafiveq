@@ -660,10 +660,12 @@ Struct library
 There are a number of libraries available for manipulating binary data in Lua.
 Roberto Ierusalimschy's struct library
 <http://www.inf.puc-rio.br/~roberto/struct/> is lightweight but still powerful.
-I made two additions and some tweaks. One addition is a patch by Fleming Madsen
-(though I didn't include his c0/c<nothing> change.) The second addition is
-exposing a "size" function to Lua, based on alien's implementation of struct.c.
-See <http://lua-users.org/wiki/StructurePacking> for links to both.
+I made two major additions and some tweaks. One addition is a patch by Fleming
+Madsen (though I didn't include his c0/c<nothing> change.) The second addition
+is exposing a "size" function to Lua, based on alien's implementation of
+struct.c. See <http://lua-users.org/wiki/StructurePacking> for links to both.
+The tweaks included cleaning up the behavior of c0, and inserting checks to
+make sure we don't overflow the Lua C stack.
 
 Here are some examples of how to use:
 
