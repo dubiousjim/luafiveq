@@ -400,7 +400,7 @@ static int b_unpack (lua_State *L) {
           }
           size = lastnum;
           if (lastassign) {
-          lua_pop(L, 1);
+            lua_pop(L, 1);
             top--;
           }
           luaL_argcheck(L, pos+size <= ld, 2, "data string too short");
@@ -409,7 +409,7 @@ static int b_unpack (lua_State *L) {
         lastassign = -1;
         if (!h.noassign) {
             if (lua_checkstack(L, ++top))
-        lua_pushlstring(L, data+pos, size);
+                lua_pushlstring(L, data+pos, size);
             else
                 luaL_error(L, "too many results to unpack");
         }
@@ -424,7 +424,7 @@ static int b_unpack (lua_State *L) {
         lastassign = -1;
         if (!h.noassign) {
             if (lua_checkstack(L, ++top))
-        lua_pushlstring(L, data+pos, size - 1);
+                lua_pushlstring(L, data+pos, size - 1);
             else
                 luaL_error(L, "too many results to unpack");
         }
@@ -434,7 +434,7 @@ static int b_unpack (lua_State *L) {
         /* we clear cached lastnum */
         lastassign = -1;
         if (lua_checkstack(L, ++top))
-        lua_pushinteger(L, pos + 1);
+            lua_pushinteger(L, pos + 1);
         else
             luaL_error(L, "too many results to unpack");
         break;
