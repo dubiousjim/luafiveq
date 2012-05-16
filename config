@@ -33,7 +33,7 @@ CFLAGS= -O -g -pipe ${WARNINGS} ${CPPFLAGS} -fpic ${FLAGS}
 
 # OS dependent
 LDFLAGS= -O -fpic ${FLAGS}
-#LDFLAGS= -bundle -undefined dynamic_lookup
+#LDFLAGS= -bundle -undefined dynamic_lookup # on Mac, CC should also be MACOSX_DEPLOYMENT_TARGET=10.3 $(CC)
 
 
 WARNINGS= -Wall -Wextra -std=c99 -pedantic \
