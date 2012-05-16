@@ -63,6 +63,7 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define lua_absindex(L,idx)	((idx) > 0 || (idx) <= LUA_REGISTRYINDEX ? \
         (idx) : lua_gettop(L) + (idx) + 1)
 
+/* needs absolute `to` index */
 #define lua_copy(L,from,to)   (lua_pushvalue(L, (from)), lua_replace(L, (to)))
 
 #define lua_getuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
@@ -73,10 +74,11 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define lua_setuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
             LUA_TUSERDATA, "userdata expected"), (void)lua_setfenv(L, (idx)))
 
-
+/* needs absolute `idx` */
 #define lua_rawgetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
     "table expected"), lua_pushlightuserdata(L, (p)), lua_rawget(L, (idx))) 
 
+/* needs absolute `idx` */
 #define lua_rawsetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
     "table expected"), lua_pushlightuserdata(L, (p)), lua_insert(L, -2), \
     lua_rawset(L, (idx)))
