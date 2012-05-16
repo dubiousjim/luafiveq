@@ -147,6 +147,8 @@ extern int luaL_len (lua_State *L, int idx);
  */
 
 
+extern void luaL_pushresultsize (luaL_Buffer *B, size_t sz);
+
 extern int luaL_getsubtable (lua_State *L, int idx, const char *field);
 
 extern void *luaL_testudata (lua_State *L, int ud, const char *tname);

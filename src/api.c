@@ -585,6 +585,12 @@ extern int luaL_len (lua_State *L, int idx) {
 }
 
 
+extern void luaL_pushresultsize (luaL_Buffer *B, size_t sz) {
+  luaL_addsize(B, sz);
+  luaL_pushresult(B);
+}
+
+
 extern int luaL_getsubtable (lua_State *L, int idx, const char *field) {
   lua_getfield(L, idx, field);
   if (lua_istable(L, -1)) return 1;  /* table already there */

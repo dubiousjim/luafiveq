@@ -85,6 +85,7 @@ Here is the complete list of interfaces that are provided to Lua 5.1.4:
  *   lua_len
  *   luaL_len
  *   luaL_tolstring
+ *   luaL_pushresultsize
  *
  *   lua_getuservalue
  *   lua_setuservalue
