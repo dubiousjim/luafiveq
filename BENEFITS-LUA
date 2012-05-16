@@ -210,6 +210,16 @@ changes:
         of iter(..). (But we don't in fact add an __iter metamethod to the
         metatable for files.)
 
+        The choice of "__iter" for the metamethod conflicts with John Hind's
+        Metatable Event '__iter' patch at
+        <http://lua-users.org/wiki/LuaPowerPatches>, which has different
+        behavior. The name conflict derives from me having used this name
+        privately for some years; I am not sure whether that use predated
+        the initial __iter proposals on the mailing list in Oct 2007, but
+        it is by now an old habit, and I didn't notice Hind's patch on the
+        wiki until now. I am open to suggestions for an alternative name
+        for the behavior our library provides. Perhaps __singles?
+
 
     an additional function debug.getmetafield is provided that works like this:
 
