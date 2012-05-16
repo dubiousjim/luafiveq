@@ -161,7 +161,7 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
         /* TODO: don't use reserved name */
         lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
         lua_pushvalue(L, -2);
-        lua_gettable(L, -2);
+        lua_rawget(L, -2);
         if (lua_tointeger(L, -1) == 1) {
             level++;
             if (lua_getstack(L, level, &ar) == 0 || lua_getinfo(L, "f", &ar) == 0)
