@@ -212,7 +212,7 @@ static int ll_module (lua_State *L) {
   luaQ_setfenv(L, 1, "module");
   /* ---- dooptions(L, lastdecorator); ---- */
   int i;
-  for (i = 2; i <= lastdecorator; i++) {
+  for (i=2; i <= lastdecorator; i++) {
     if (lua_isfunction(L, i)) {  /* avoid 'calling' extra info. */
       lua_pushvalue(L, i);  /* get option (a function) */
       lua_pushvalue(L, -2);  /* module */
