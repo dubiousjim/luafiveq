@@ -192,6 +192,8 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
         luaopen_lib, int gidx);
 
+/* 5.2 uses (1), but in 5.1.4 that's used by the luaL_ref system */
+#define LUA_RIDX_MAINTHREAD (-3)
 
 /* ----------- for 5.2.0 ---------- */
 #elif LUA_VERSION_NUM == 502

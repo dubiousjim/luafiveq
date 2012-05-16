@@ -306,6 +306,24 @@ extern int luaopen_fiveq_io (lua_State *L);
 extern int luaopen_fiveq_bitlib (lua_State *L);
 
 extern int luaopen_fiveq (lua_State *L) {
+  if (lua_pushthread(L) != 1) {
+#if 0
+    /* have to #include "lstate.h" */
+    lua_State *L1 = L->l_G->mainthread;
+    lua_pop(L, 1);
+    lua_pushthread(L1);
+#else
+    luaL_error(L, LUA_QS " not loaded from main thread",
+# ifdef LUA_FIVEQ_PLUS
+      "fiveqplus"
+# else
+      "fiveq"
+# endif
+      );
+#endif
+  }
+  lua_rawseti(L, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
 
   lua_register(L, "xpcall", luaB_xpcall);  /* export to _G */
