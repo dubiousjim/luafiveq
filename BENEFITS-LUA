@@ -1,7 +1,6 @@
 BENEFITS-LUA
 ============
 
-
 What do I get when I require "fiveq"?
 ----------------------------------------
 
@@ -32,13 +31,13 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
     file:write:
         will return file
 
-    xpcall
+    xpcall:
         accepts more than two arguments, like pcall and xpcall in Lua 5.2
 
-    string.rep
+    string.rep:
         accepts an optional separator argument
 
-    math.log
+    math.log:
         accepts an optional base argument, uses efficient algorithm for base 2
 
 The following functions are added:
@@ -48,10 +47,10 @@ The following functions are added:
         in unpatched Lua 5.1.4, __len is always ignored anyway for these, so
         this function gives the same result as #tbl or #str
 
-    table.pack
+    table.pack:
         has same behavior as Lua 5.2's
 
-    table.unpack
+    table.unpack:
         alias for global unpack
 
     package.searchers:
@@ -59,10 +58,10 @@ The following functions are added:
 
     package.searchpath
 
-    debug.getuservalue
+    debug.getuservalue:
         returns nil if argument isn't a full userdatum, else nil or a table
 
-    debug.setuservalue
+    debug.setuservalue:
         raises error if arguments aren't a full userdatum and either nil or a
         table
 
