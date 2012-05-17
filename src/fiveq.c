@@ -338,7 +338,6 @@ static int str_rep (lua_State *L) {
 
 
 
-
 /* --- adapted from lua-5.2.0's ldblib.c --- */
 
 
@@ -360,6 +359,7 @@ static int db_setuservalue (lua_State *L) {
   lua_setuservalue(L, 1);
   return 1;
 }
+
 
 
 /* --- adapted from lua-5.2.0's loadlib.c --- */
@@ -417,6 +417,7 @@ static int ll_searchpath (lua_State *L) {
   lua_insert(L, -2);
   return 2;  /* return nil + error message */
 }
+
 
 
 extern int luaopen_fiveq_pairs (lua_State *L);
