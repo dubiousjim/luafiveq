@@ -1,0 +1,1352 @@
+Emergency Garbage Collector
+Author: RobertGabrielJakabosky
+Derived from: http://lua-users.org/files/wiki_insecure/power_patches/5.1/emergency_gc-5.1.4-r6.patch, posted 7 Dec 2010
+Updated: 17 May 2012 by dubiousjim@gmail.com to apply against Lua 5.1.5.
+
+Description from <http://lua-users.org/wiki/EmergencyGarbageCollector>:
+
+   This page is about creating an emergency garbage collector patch for
+   Lua 5.1.4. Please note that LuaFiveTwo has an emergency garbage
+   collector listed as one of the features that will be included. Work on
+   this patch is being done separately from the emergency garbage
+   collector that might be included in LuaFiveTwo.
+
+   The Emergency GC patch makes it safe to call the Lua garbage collector
+   after a memory allocation has failed. This allows the garbage collector
+   to free some memory so that the failed allocation can be retried. The
+   patch also add support for setting a limit on how much memory Lua
+   scripts can allocate.
+
+Files
+
+   Download emergency gc patch for (5.1.4) release 6
+   <http://lua-users.org/files/wiki_insecure/power_patches/5.1/emergency_gc-5.1.4-r6.patch>
+   [A version of this patch updated to apply against Lua 5.1.5 is inlined below]
+
+   Program for stress-testing the emergency garbage collection.
+   <http://lua-users.org/files/wiki_insecure/users/RobertGabrielJakabosky/lua_memlimit.c> 
+
+  Extra memory optimization features.
+
+   These are included in the Emergency GC patch. They can be used without
+   the emergency gc patch.
+
+     * Resizing of the internal strings hashtable requires an extra
+       hashtable to be allocated. For scripts that need to run with a very
+       small amount of memory (64-256kbytes), this can cause "not enough
+       memory" errors when the script is low on memory(only 1-2kbytes
+       free). I have an idea on how to resize the hashtable in place
+       without the extra hashtable. The one downside is that some strings
+       in the hashtable will be removed & added multiple times. So this
+       method will use more CPU time to save some extra memory use.
+       Stringtable patch for 5.1.3:
+       <http://lua-users.org/files/wiki_insecure/users/RobertGabrielJakabosky/stringtable_resize-5.1.3.patch>
+
+     * The hashpart of Lua tables has the same resize problem that the
+       strings hashtable has. Resizing the hashpart of tables will require
+       more work, since the resize code is more complex.
+       Hashpart patch for 5.1.3:
+       <http://lua-users.org/files/wiki_insecure/users/RobertGabrielJakabosky/hashpart_resize-5.1.3.patch>
+
+Notes about how the Lua garbage collector works
+
+   Disclaimer: This is the first time I have worked on a garbage collector
+   so some of this may be incorrect. Corrections/cleanups are welcome.
+   --RobertGabrielJakabosky
+
+   "While working on this patch I had to learn how the garbage collector
+   in Lua works. I am writing this to help me later if I need to fix more
+   bugs with the collector and I hope this info can help other people who
+   are interested in how the Lua garbage collector works."
+   --RobertGabrielJakabosky
+
+  Simple description
+
+   The Lua garbage collector is a mark & sweep collector. The collector
+   has two major phases mark & sweep that it runs each collection cycle.
+   During the mark phases the collector traverse the Lua stack and into
+   tables to mark values it finds as live. Next the sweep phases will walk
+   a list of all collectible values and free all dead values it finds.
+
+  Detailed description
+
+   All collectible type objects have a 'marked' bit field. The bits are
+   defined as (copied from header "lgc.h"):
+     * bit 0 - object is white (type 0)
+     * bit 1 - object is white (type 1)
+     * bit 2 - object is black
+     * bit 3 - for userdata: has been finalized
+     * bit 3 - for tables: has weak keys (note this bit has two different
+       meanings one for userdata and one for tables)
+     * bit 4 - for tables: has weak values
+     * bit 5 - object is fixed (should not be collected)
+     * bit 6 - object is "super" fixed (only the main thread)
+
+   The garbage collector keeps track of a current white (type 0 or 1) and
+   objects with the other white are dead objects that can be collected
+   during the sweep states.
+
+   An object's color is defined by which of the first 3 bits (0, 1, 2) are
+   set:
+     * It is white if one of the two white bits (0,1) are set and the
+       black bit is clear. Only one white bit should be used by a white
+       object.
+     * It is gray if all three color bits (0,1,2) are clear.
+     * It is black if the black bit is set and the two white bits are
+       clear.
+
+   Garbage collector states (each collection cycle passes through these
+   states in this order):
+     * GCSpause - Start of collection cycle. At this state all objects
+       should be marked with the current white. The main lua_State,
+       globals table, registry, and metatables are marked gray and added
+       to the gray list. The state now changes to GCSpropagate.
+     * GCSpropagate - Each object in the gray list is removed and marked
+       black, then any white (type 0 or 1) objects it references are
+       marked gray and added to the gray list. Once the gray list is empty
+       the current white is switched to the other white. All objects
+       marked with the old white type are now dead objects. The state now
+       changes to GCSsweepstring.
+     * GCSsweepstring - The color of each string in the internal strings
+       hashtable is checked. If the color matches the old white type that
+       string is dead and is freed. If the color matches the current white
+       (newly created string) or is gray (some other object references
+       it), then it is alive and its color is reset to the current white.
+       Once all strings are checked the state is changed to GCSsweep.
+     * GCSsweep - The color of each objects in the global rootgc list
+       (this list holds all objects except strings) is checked just like
+       the strings during the GCSsweepstring state. Dead objects are freed
+       and removed from the rootgc list. Live objects have their color
+       reset to the current white. Once all objects have been checked the
+       state is changed to GCSfinalize.
+     * GCSfinalize - This state will finalize all dead userdata objects by
+       running their "__gc" metamethod. Once all dead userdata objects
+       have been finailzed the state is changed to GCSpause and this
+       completes a cycle of the garbage collector.
+
+   --RobertGabrielJakabosky
+
+See Also
+
+     * LuaList:2008-05/msg00023.html - PATCH: fixes bug with calling
+       garbage collector from custom lua_Alloc
+     * GarbageCollection <http://lua-users.org/wiki/GarbageCollection>
+     * Article about garbage collectors
+       <http://www.memorymanagement.org/articles/recycle.html>
+       - has some good info about memory management and different types of
+       garbage collectors.
+     __________________________________________________________________
+
+
+
+diff -urNp lua-5.1.5.orig/src/lapi.c lua-5.1.5/src/lapi.c
+--- lua-5.1.5.orig/src/lapi.c	2008-07-04 14:41:18.000000000 -0400
++++ lua-5.1.5/src/lapi.c	2012-05-17 13:09:28.747717692 -0400
+@@ -547,7 +547,9 @@ LUA_API void lua_getfield (lua_State *L,
+   lua_lock(L);
+   t = index2adr(L, idx);
+   api_checkvalidindex(L, t);
++  fixedstack(L);
+   setsvalue(L, &key, luaS_new(L, k));
++  unfixedstack(L);
+   luaV_gettable(L, t, &key, L->top);
+   api_incr_top(L);
+   lua_unlock(L);
+@@ -656,14 +658,14 @@ LUA_API void lua_settable (lua_State *L,
+ 
+ LUA_API void lua_setfield (lua_State *L, int idx, const char *k) {
+   StkId t;
+-  TValue key;
+   lua_lock(L);
+   api_checknelems(L, 1);
+   t = index2adr(L, idx);
+   api_checkvalidindex(L, t);
+-  setsvalue(L, &key, luaS_new(L, k));
+-  luaV_settable(L, t, &key, L->top - 1);
+-  L->top--;  /* pop value */
++  setsvalue2s(L, L->top, luaS_new(L, k));
++  api_incr_top(L);
++  luaV_settable(L, t, L->top - 1, L->top - 2);
++  L->top -= 2;  /* pop key and value */
+   lua_unlock(L);
+ }
+ 
+@@ -674,7 +676,9 @@ LUA_API void lua_rawset (lua_State *L, i
+   api_checknelems(L, 2);
+   t = index2adr(L, idx);
+   api_check(L, ttistable(t));
++  fixedstack(L);
+   setobj2t(L, luaH_set(L, hvalue(t), L->top-2), L->top-1);
++  unfixedstack(L);
+   luaC_barriert(L, hvalue(t), L->top-1);
+   L->top -= 2;
+   lua_unlock(L);
+@@ -687,7 +691,9 @@ LUA_API void lua_rawseti (lua_State *L, 
+   api_checknelems(L, 1);
+   o = index2adr(L, idx);
+   api_check(L, ttistable(o));
++  fixedstack(L);
+   setobj2t(L, luaH_setnum(L, hvalue(o), n), L->top-1);
++  unfixedstack(L);
+   luaC_barriert(L, hvalue(o), L->top-1);
+   L->top--;
+   lua_unlock(L);
+@@ -903,11 +909,11 @@ LUA_API int lua_gc (lua_State *L, int wh
+   g = G(L);
+   switch (what) {
+     case LUA_GCSTOP: {
+-      g->GCthreshold = MAX_LUMEM;
++      set_block_gc(L);
+       break;
+     }
+     case LUA_GCRESTART: {
+-      g->GCthreshold = g->totalbytes;
++      unset_block_gc(L);
+       break;
+     }
+     case LUA_GCCOLLECT: {
+@@ -924,6 +930,10 @@ LUA_API int lua_gc (lua_State *L, int wh
+       break;
+     }
+     case LUA_GCSTEP: {
++      if(is_block_gc(L)) {
++        res = 1; /* gc is block so we need to pretend that the collection cycle finished. */
++        break;
++      }
+       lu_mem a = (cast(lu_mem, data) << 10);
+       if (a <= g->totalbytes)
+         g->GCthreshold = g->totalbytes - a;
+@@ -948,6 +958,24 @@ LUA_API int lua_gc (lua_State *L, int wh
+       g->gcstepmul = data;
+       break;
+     }
++    case LUA_GCSETMEMLIMIT: {
++      /* GC values are expressed in Kbytes: #bytes/2^10 */
++      lu_mem new_memlimit = (cast(lu_mem, data) << 10);
++      if(new_memlimit > 0 && new_memlimit < g->totalbytes) {
++        /* run a full GC to make totalbytes < the new limit. */
++        luaC_fullgc(L);
++        if(new_memlimit < g->totalbytes)
++          new_memlimit = (g->totalbytes + 1024) & ~(1024-1); /* round up to next multiple of 1024 */
++      }
++      g->memlimit = new_memlimit;
++      /* new memlimit might be > then requested memlimit. */
++      res = cast_int(new_memlimit >> 10);
++      break;
++    }
++    case LUA_GCGETMEMLIMIT: {
++      res = cast_int(g->memlimit >> 10);
++      break;
++    }
+     default: res = -1;  /* invalid option */
+   }
+   lua_unlock(L);
+diff -urNp lua-5.1.5.orig/src/lauxlib.c lua-5.1.5/src/lauxlib.c
+--- lua-5.1.5.orig/src/lauxlib.c	2008-01-21 08:20:51.000000000 -0500
++++ lua-5.1.5/src/lauxlib.c	2012-05-17 13:09:28.748719216 -0400
+@@ -23,6 +23,10 @@
+ #include "lua.h"
+ 
+ #include "lauxlib.h"
++#include "lgc.h"
++#include "ldo.h"
++#include "lobject.h"
++#include "lstate.h"
+ 
+ 
+ #define FREELIST_REF	0	/* free list of references */
+@@ -624,15 +628,44 @@ LUALIB_API int (luaL_loadstring) (lua_St
+ /* }====================================================== */
+ 
+ 
++static int l_check_memlimit(lua_State *L, size_t needbytes) {
++  global_State *g = G(L);
++  int cycle_count = 0;
++  lu_mem limit = g->memlimit - needbytes;
++  /* don't allow allocation if it requires more memory then the total limit. */
++  if (needbytes > g->memlimit) return 1;
++  /* make sure the GC is not disabled. */
++  if (!is_block_gc(L)) {
++    while (g->totalbytes >= limit) {
++      /* only allow the GC to finished atleast 1 full cycle. */
++      if (g->gcstate == GCSpause && ++cycle_count > 1) break;
++      luaC_step(L);
++    }
++  }
++  return (g->totalbytes >= limit) ? 1 : 0;
++}
++
++
+ static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
+-  (void)ud;
+-  (void)osize;
++  lua_State *L = (lua_State *)ud;
++  void *nptr;
+   if (nsize == 0) {
+     free(ptr);
+     return NULL;
+   }
+-  else
+-    return realloc(ptr, nsize);
++  if(nsize > osize && L != NULL) {
++#if defined(LUA_STRESS_EMERGENCY_GC)
++    luaC_fullgc(L);
++#endif
++    if(G(L)->memlimit > 0 && l_check_memlimit(L, nsize - osize))
++      return NULL;
++  }
++  nptr = realloc(ptr, nsize);
++  if (nptr == NULL && L != NULL) {
++    luaC_fullgc(L); /* emergency full collection. */
++    nptr = realloc(ptr, nsize); /* try allocation again */
++  }
++  return nptr;
+ }
+ 
+ 
+@@ -646,6 +679,7 @@ static int panic (lua_State *L) {
+ 
+ LUALIB_API lua_State *luaL_newstate (void) {
+   lua_State *L = lua_newstate(l_alloc, NULL);
++  lua_setallocf(L, l_alloc, L); /* allocator need lua_State. */
+   if (L) lua_atpanic(L, &panic);
+   return L;
+ }
+diff -urNp lua-5.1.5.orig/src/lbaselib.c lua-5.1.5/src/lbaselib.c
+--- lua-5.1.5.orig/src/lbaselib.c	2008-02-14 11:46:22.000000000 -0500
++++ lua-5.1.5/src/lbaselib.c	2012-05-17 13:09:28.749718994 -0400
+@@ -192,9 +192,10 @@ static int luaB_gcinfo (lua_State *L) {
+ 
+ static int luaB_collectgarbage (lua_State *L) {
+   static const char *const opts[] = {"stop", "restart", "collect",
+-    "count", "step", "setpause", "setstepmul", NULL};
++    "count", "step", "setpause", "setstepmul","setmemlimit","getmemlimit", NULL};
+   static const int optsnum[] = {LUA_GCSTOP, LUA_GCRESTART, LUA_GCCOLLECT,
+-    LUA_GCCOUNT, LUA_GCSTEP, LUA_GCSETPAUSE, LUA_GCSETSTEPMUL};
++    LUA_GCCOUNT, LUA_GCSTEP, LUA_GCSETPAUSE, LUA_GCSETSTEPMUL,
++		LUA_GCSETMEMLIMIT,LUA_GCGETMEMLIMIT};
+   int o = luaL_checkoption(L, 1, "collect", opts);
+   int ex = luaL_optint(L, 2, 0);
+   int res = lua_gc(L, optsnum[o], ex);
+diff -urNp lua-5.1.5.orig/src/ldo.c lua-5.1.5/src/ldo.c
+--- lua-5.1.5.orig/src/ldo.c	2012-01-17 21:27:10.000000000 -0500
++++ lua-5.1.5/src/ldo.c	2012-05-17 13:09:28.751721483 -0400
+@@ -51,11 +51,13 @@ struct lua_longjmp {
+ void luaD_seterrorobj (lua_State *L, int errcode, StkId oldtop) {
+   switch (errcode) {
+     case LUA_ERRMEM: {
+-      setsvalue2s(L, oldtop, luaS_newliteral(L, MEMERRMSG));
++      ptrdiff_t oldtopr = savestack(L, oldtop);
++      setsvalue2s(L, restorestack(L, oldtopr), luaS_newliteral(L, MEMERRMSG));
+       break;
+     }
+     case LUA_ERRERR: {
+-      setsvalue2s(L, oldtop, luaS_newliteral(L, "error in error handling"));
++      ptrdiff_t oldtopr = savestack(L, oldtop);
++      setsvalue2s(L, restorestack(L, oldtopr), luaS_newliteral(L, "error in error handling"));
+       break;
+     }
+     case LUA_ERRSYNTAX:
+@@ -92,6 +94,8 @@ static void resetstack (lua_State *L, in
+ 
+ 
+ void luaD_throw (lua_State *L, int errcode) {
++  unfixedstack(L); /* make sure the fixedstack & block_gc flags get reset. */
++  unset_block_gc(L);
+   if (L->errorJmp) {
+     L->errorJmp->status = errcode;
+     LUAI_THROW(L, L->errorJmp);
+@@ -208,7 +212,9 @@ void luaD_callhook (lua_State *L, int ev
+ static StkId adjust_varargs (lua_State *L, Proto *p, int actual) {
+   int i;
+   int nfixargs = p->numparams;
++#if defined(LUA_COMPAT_VARARG)
+   Table *htab = NULL;
++#endif
+   StkId base, fixed;
+   for (; actual < nfixargs; ++actual)
+     setnilvalue(L->top++);
+@@ -219,10 +225,15 @@ static StkId adjust_varargs (lua_State *
+     luaC_checkGC(L);
+     luaD_checkstack(L, p->maxstacksize);
+     htab = luaH_new(L, nvar, 1);  /* create `arg' table */
++    sethvalue2s(L, L->top, htab); /* put table on stack */
++    incr_top(L);
++    fixedstack(L);
+     for (i=0; i<nvar; i++)  /* put extra arguments into `arg' table */
+-      setobj2n(L, luaH_setnum(L, htab, i+1), L->top - nvar + i);
++      setobj2n(L, luaH_setnum(L, htab, i+1), L->top - 1 - nvar + i);
++    unfixedstack(L);
+     /* store counter in field `n' */
+     setnvalue(luaH_setstr(L, htab, luaS_newliteral(L, "n")), cast_num(nvar));
++    L->top--; /* remove table from stack */
+   }
+ #endif
+   /* move fixed parameters to final position */
+@@ -232,11 +243,13 @@ static StkId adjust_varargs (lua_State *
+     setobjs2s(L, L->top++, fixed+i);
+     setnilvalue(fixed+i);
+   }
++#if defined(LUA_COMPAT_VARARG)
+   /* add `arg' parameter */
+   if (htab) {
+     sethvalue(L, L->top++, htab);
+     lua_assert(iswhite(obj2gco(htab)));
+   }
++#endif
+   return base;
+ }
+ 
+@@ -495,6 +508,7 @@ static void f_parser (lua_State *L, void
+   struct SParser *p = cast(struct SParser *, ud);
+   int c = luaZ_lookahead(p->z);
+   luaC_checkGC(L);
++  set_block_gc(L);  /* stop collector during parsing */
+   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z,
+                                                              &p->buff, p->name);
+   cl = luaF_newLclosure(L, tf->nups, hvalue(gt(L)));
+@@ -503,6 +517,7 @@ static void f_parser (lua_State *L, void
+     cl->l.upvals[i] = luaF_newupval(L);
+   setclvalue(L, L->top, cl);
+   incr_top(L);
++  unset_block_gc(L);
+ }
+ 
+ 
+diff -urNp lua-5.1.5.orig/src/lfunc.c lua-5.1.5/src/lfunc.c
+--- lua-5.1.5.orig/src/lfunc.c	2007-12-28 09:58:43.000000000 -0500
++++ lua-5.1.5/src/lfunc.c	2012-05-17 13:09:28.752719235 -0400
+@@ -66,7 +66,6 @@ UpVal *luaF_findupval (lua_State *L, Stk
+   }
+   uv = luaM_new(L, UpVal);  /* not found: create a new one */
+   uv->tt = LUA_TUPVAL;
+-  uv->marked = luaC_white(g);
+   uv->v = level;  /* current value lives in the stack */
+   uv->next = *pp;  /* chain it in the proper position */
+   *pp = obj2gco(uv);
+@@ -74,6 +73,7 @@ UpVal *luaF_findupval (lua_State *L, Stk
+   uv->u.l.next = g->uvhead.u.l.next;
+   uv->u.l.next->u.l.prev = uv;
+   g->uvhead.u.l.next = uv;
++  luaC_marknew(L, obj2gco(uv));
+   lua_assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
+   return uv;
+ }
+diff -urNp lua-5.1.5.orig/src/lgc.c lua-5.1.5/src/lgc.c
+--- lua-5.1.5.orig/src/lgc.c	2011-03-18 14:05:38.000000000 -0400
++++ lua-5.1.5/src/lgc.c	2012-05-17 13:09:28.754720677 -0400
+@@ -232,8 +232,10 @@ static void traverseclosure (global_Stat
+     int i;
+     lua_assert(cl->l.nupvalues == cl->l.p->nups);
+     markobject(g, cl->l.p);
+-    for (i=0; i<cl->l.nupvalues; i++)  /* mark its upvalues */
+-      markobject(g, cl->l.upvals[i]);
++    for (i=0; i<cl->l.nupvalues; i++) { /* mark its upvalues */
++      if(cl->l.upvals[i])
++        markobject(g, cl->l.upvals[i]);
++    }
+   }
+ }
+ 
+@@ -258,6 +260,7 @@ static void traversestack (global_State 
+   CallInfo *ci;
+   markvalue(g, gt(l));
+   lim = l->top;
++  if(l->stack == NULL) return; /* no stack to traverse */
+   for (ci = l->base_ci; ci <= l->ci; ci++) {
+     lua_assert(ci->top <= l->stack_last);
+     if (lim < ci->top) lim = ci->top;
+@@ -266,7 +269,8 @@ static void traversestack (global_State 
+     markvalue(g, o);
+   for (; o <= lim; o++)
+     setnilvalue(o);
+-  checkstacksizes(l, lim);
++  if (!isfixedstack(l)) /* if stack size is fixed, can't resize it. */
++    checkstacksizes(l, lim);
+ }
+ 
+ 
+@@ -419,8 +423,6 @@ static GCObject **sweeplist (lua_State *
+     else {  /* must erase `curr' */
+       lua_assert(isdead(g, curr) || deadmask == bitmask(SFIXEDBIT));
+       *p = curr->gch.next;
+-      if (curr == g->rootgc)  /* is the first element of the list? */
+-        g->rootgc = curr->gch.next;  /* adjust first */
+       freeobj(L, curr);
+     }
+   }
+@@ -434,6 +436,8 @@ static void checkSizes (lua_State *L) {
+   if (g->strt.nuse < cast(lu_int32, g->strt.size/4) &&
+       g->strt.size > MINSTRTABSIZE*2)
+     luaS_resize(L, g->strt.size/2);  /* table is too big */
++  /* it is not safe to re-size the buffer if it is in use. */
++  if (luaZ_bufflen(&g->buff) > 0) return;
+   /* check size of buffer */
+   if (luaZ_sizebuffer(&g->buff) > LUA_MINBUFFER*2) {  /* buffer too big? */
+     size_t newsize = luaZ_sizebuffer(&g->buff) / 2;
+@@ -552,6 +556,15 @@ static void atomic (lua_State *L) {
+   g->estimate = g->totalbytes - udsize;  /* first estimate */
+ }
+ 
++static void sweepstrstep (global_State *g, lua_State *L) {
++  lu_mem old = g->totalbytes;
++  sweepwholelist(L, &g->strt.hash[g->sweepstrgc++]);
++  if (g->sweepstrgc >= g->strt.size)  /* nothing more to sweep? */
++    g->gcstate = GCSsweep;  /* end sweep-string phase */
++  lua_assert(old >= g->totalbytes);
++  g->estimate -= old - g->totalbytes;
++}
++
+ 
+ static l_mem singlestep (lua_State *L) {
+   global_State *g = G(L);
+@@ -570,12 +583,7 @@ static l_mem singlestep (lua_State *L) {
+       }
+     }
+     case GCSsweepstring: {
+-      lu_mem old = g->totalbytes;
+-      sweepwholelist(L, &g->strt.hash[g->sweepstrgc++]);
+-      if (g->sweepstrgc >= g->strt.size)  /* nothing more to sweep? */
+-        g->gcstate = GCSsweep;  /* end sweep-string phase */
+-      lua_assert(old >= g->totalbytes);
+-      g->estimate -= old - g->totalbytes;
++      sweepstrstep(g, L);
+       return GCSWEEPCOST;
+     }
+     case GCSsweep: {
+@@ -609,10 +617,14 @@ static l_mem singlestep (lua_State *L) {
+ 
+ void luaC_step (lua_State *L) {
+   global_State *g = G(L);
++  if(is_block_gc(L)) return;
++  set_block_gc(L);
+   l_mem lim = (GCSTEPSIZE/100) * g->gcstepmul;
+   if (lim == 0)
+     lim = (MAX_LUMEM-1)/2;  /* no limit */
+   g->gcdept += g->totalbytes - g->GCthreshold;
++  if (g->estimate > g->totalbytes)
++    g->estimate = g->totalbytes;
+   do {
+     lim -= singlestep(L);
+     if (g->gcstate == GCSpause)
+@@ -629,11 +641,23 @@ void luaC_step (lua_State *L) {
+   else {
+     setthreshold(g);
+   }
++  unset_block_gc(L);
+ }
+ 
+ 
++int luaC_sweepstrgc (lua_State *L) {
++  global_State *g = G(L);
++  if (g->gcstate == GCSsweepstring) {
++    sweepstrstep(g, L);
++    return (g->gcstate == GCSsweepstring) ? 1 : 0;
++  }
++  return 0;
++}
++
+ void luaC_fullgc (lua_State *L) {
+   global_State *g = G(L);
++  if(is_block_gc(L)) return;
++  set_block_gc(L);
+   if (g->gcstate <= GCSpropagate) {
+     /* reset sweep marks to sweep all elements (returning them to white) */
+     g->sweepstrgc = 0;
+@@ -655,6 +679,7 @@ void luaC_fullgc (lua_State *L) {
+     singlestep(L);
+   }
+   setthreshold(g);
++  unset_block_gc(L);
+ }
+ 
+ 
+@@ -682,6 +707,14 @@ void luaC_barrierback (lua_State *L, Tab
+ }
+ 
+ 
++void luaC_marknew (lua_State *L, GCObject *o) {
++  global_State *g = G(L);
++  o->gch.marked = luaC_white(g);
++  if (g->gcstate == GCSpropagate)
++    reallymarkobject(g, o);  /* mark new objects as gray during propagate state. */
++}
++
++
+ void luaC_link (lua_State *L, GCObject *o, lu_byte tt) {
+   global_State *g = G(L);
+   o->gch.next = g->rootgc;
+diff -urNp lua-5.1.5.orig/src/lgc.h lua-5.1.5/src/lgc.h
+--- lua-5.1.5.orig/src/lgc.h	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/lgc.h	2012-05-17 13:09:28.755720036 -0400
+@@ -37,12 +37,30 @@
+ #define test2bits(x,b1,b2)	testbits(x, (bit2mask(b1, b2)))
+ 
+ 
++/*
++** Possible Garbage Collector flags.
++** Layout for bit use in 'gsflags' field in global_State structure.
++** bit 0 - Protect GC from recursive calls.
++** bit 1 - Don't try to shrink string table if EGC was called during a string table resize.
++*/
++#define GCFlagsNone          0
++#define GCBlockGCBit         0
++#define GCResizingStringsBit 1
++
++
++#define is_block_gc(L)    testbit(G(L)->gcflags, GCBlockGCBit)
++#define set_block_gc(L)   l_setbit(G(L)->gcflags, GCBlockGCBit)
++#define unset_block_gc(L) resetbit(G(L)->gcflags, GCBlockGCBit)
++#define is_resizing_strings_gc(L)    testbit(G(L)->gcflags, GCResizingStringsBit)
++#define set_resizing_strings_gc(L)   l_setbit(G(L)->gcflags, GCResizingStringsBit)
++#define unset_resizing_strings_gc(L) resetbit(G(L)->gcflags, GCResizingStringsBit)
+ 
+ /*
+ ** Layout for bit use in `marked' field:
+ ** bit 0 - object is white (type 0)
+ ** bit 1 - object is white (type 1)
+ ** bit 2 - object is black
++** bit 3 - for thread: Don't resize thread's stack
+ ** bit 3 - for userdata: has been finalized
+ ** bit 3 - for tables: has weak keys
+ ** bit 4 - for tables: has weak values
+@@ -54,6 +72,7 @@
+ #define WHITE0BIT	0
+ #define WHITE1BIT	1
+ #define BLACKBIT	2
++#define FIXEDSTACKBIT	3
+ #define FINALIZEDBIT	3
+ #define KEYWEAKBIT	3
+ #define VALUEWEAKBIT	4
+@@ -76,6 +95,9 @@
+ 
+ #define luaC_white(g)	cast(lu_byte, (g)->currentwhite & WHITEBITS)
+ 
++#define isfixedstack(x)	testbit((x)->marked, FIXEDSTACKBIT)
++#define fixedstack(x)	l_setbit((x)->marked, FIXEDSTACKBIT)
++#define unfixedstack(x)	resetbit((x)->marked, FIXEDSTACKBIT)
+ 
+ #define luaC_checkGC(L) { \
+   condhardstacktests(luaD_reallocstack(L, L->stacksize - EXTRA_STACK - 1)); \
+@@ -101,6 +123,8 @@ LUAI_FUNC void luaC_callGCTM (lua_State 
+ LUAI_FUNC void luaC_freeall (lua_State *L);
+ LUAI_FUNC void luaC_step (lua_State *L);
+ LUAI_FUNC void luaC_fullgc (lua_State *L);
++LUAI_FUNC int luaC_sweepstrgc (lua_State *L);
++LUAI_FUNC void luaC_marknew (lua_State *L, GCObject *o);
+ LUAI_FUNC void luaC_link (lua_State *L, GCObject *o, lu_byte tt);
+ LUAI_FUNC void luaC_linkupval (lua_State *L, UpVal *uv);
+ LUAI_FUNC void luaC_barrierf (lua_State *L, GCObject *o, GCObject *v);
+diff -urNp lua-5.1.5.orig/src/lobject.h lua-5.1.5/src/lobject.h
+--- lua-5.1.5.orig/src/lobject.h	2008-08-06 09:29:48.000000000 -0400
++++ lua-5.1.5/src/lobject.h	2012-05-17 13:09:28.756720093 -0400
+@@ -117,42 +117,48 @@ typedef struct lua_TValue {
+ #define setnilvalue(obj) ((obj)->tt=LUA_TNIL)
+ 
+ #define setnvalue(obj,x) \
+-  { TValue *i_o=(obj); i_o->value.n=(x); i_o->tt=LUA_TNUMBER; }
++  { lua_Number i_x = (x); TValue *i_o=(obj); i_o->value.n=i_x; i_o->tt=LUA_TNUMBER; }
+ 
+ #define setpvalue(obj,x) \
+-  { TValue *i_o=(obj); i_o->value.p=(x); i_o->tt=LUA_TLIGHTUSERDATA; }
++  { void *i_x = (x); TValue *i_o=(obj); i_o->value.p=i_x; i_o->tt=LUA_TLIGHTUSERDATA; }
+ 
+ #define setbvalue(obj,x) \
+-  { TValue *i_o=(obj); i_o->value.b=(x); i_o->tt=LUA_TBOOLEAN; }
++  { int i_x = (x); TValue *i_o=(obj); i_o->value.b=i_x; i_o->tt=LUA_TBOOLEAN; }
+ 
+ #define setsvalue(L,obj,x) \
+-  { TValue *i_o=(obj); \
+-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TSTRING; \
++  { GCObject *i_x = cast(GCObject *, (x)); \
++    TValue *i_o=(obj); \
++    i_o->value.gc=i_x; i_o->tt=LUA_TSTRING; \
+     checkliveness(G(L),i_o); }
+ 
+ #define setuvalue(L,obj,x) \
+-  { TValue *i_o=(obj); \
+-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TUSERDATA; \
++  { GCObject *i_x = cast(GCObject *, (x)); \
++    TValue *i_o=(obj); \
++    i_o->value.gc=i_x; i_o->tt=LUA_TUSERDATA; \
+     checkliveness(G(L),i_o); }
+ 
+ #define setthvalue(L,obj,x) \
+-  { TValue *i_o=(obj); \
+-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TTHREAD; \
++  { GCObject *i_x = cast(GCObject *, (x)); \
++    TValue *i_o=(obj); \
++    i_o->value.gc=i_x; i_o->tt=LUA_TTHREAD; \
+     checkliveness(G(L),i_o); }
+ 
+ #define setclvalue(L,obj,x) \
+-  { TValue *i_o=(obj); \
+-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TFUNCTION; \
++  { GCObject *i_x = cast(GCObject *, (x)); \
++    TValue *i_o=(obj); \
++    i_o->value.gc=i_x; i_o->tt=LUA_TFUNCTION; \
+     checkliveness(G(L),i_o); }
+ 
+ #define sethvalue(L,obj,x) \
+-  { TValue *i_o=(obj); \
+-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TTABLE; \
++  { GCObject *i_x = cast(GCObject *, (x)); \
++    TValue *i_o=(obj); \
++    i_o->value.gc=i_x; i_o->tt=LUA_TTABLE; \
+     checkliveness(G(L),i_o); }
+ 
+ #define setptvalue(L,obj,x) \
+-  { TValue *i_o=(obj); \
+-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TPROTO; \
++  { GCObject *i_x = cast(GCObject *, (x)); \
++    TValue *i_o=(obj); \
++    i_o->value.gc=i_x; i_o->tt=LUA_TPROTO; \
+     checkliveness(G(L),i_o); }
+ 
+ 
+diff -urNp lua-5.1.5.orig/src/lparser.c lua-5.1.5/src/lparser.c
+--- lua-5.1.5.orig/src/lparser.c	2011-10-21 15:31:42.000000000 -0400
++++ lua-5.1.5/src/lparser.c	2012-05-17 13:09:28.757719801 -0400
+@@ -383,14 +383,18 @@ static void close_func (LexState *ls) {
+ Proto *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
+   struct LexState lexstate;
+   struct FuncState funcstate;
++  TString *tname = luaS_new(L, name);
++  setsvalue2s(L, L->top, tname);  /* protect name */
++  incr_top(L);
+   lexstate.buff = buff;
+-  luaX_setinput(L, &lexstate, z, luaS_new(L, name));
++  luaX_setinput(L, &lexstate, z, tname);
+   open_func(&lexstate, &funcstate);
+   funcstate.f->is_vararg = VARARG_ISVARARG;  /* main func. is always vararg */
+   luaX_next(&lexstate);  /* read first token */
+   chunk(&lexstate);
+   check(&lexstate, TK_EOS);
+   close_func(&lexstate);
++  L->top--; /* remove 'name' from stack */
+   lua_assert(funcstate.prev == NULL);
+   lua_assert(funcstate.f->nups == 0);
+   lua_assert(lexstate.fs == NULL);
+diff -urNp lua-5.1.5.orig/src/lstate.c lua-5.1.5/src/lstate.c
+--- lua-5.1.5.orig/src/lstate.c	2008-01-03 10:20:39.000000000 -0500
++++ lua-5.1.5/src/lstate.c	2012-05-17 13:09:28.758720487 -0400
+@@ -119,6 +119,8 @@ static void close_state (lua_State *L) {
+ lua_State *luaE_newthread (lua_State *L) {
+   lua_State *L1 = tostate(luaM_malloc(L, state_size(lua_State)));
+   luaC_link(L, obj2gco(L1), LUA_TTHREAD);
++  setthvalue(L, L->top, L1); /* put thread on stack */
++  incr_top(L);
+   preinit_state(L1, G(L));
+   stack_init(L1, L);  /* init stack */
+   setobj2n(L, gt(L1), gt(L));  /* share table of globals */
+@@ -126,7 +128,8 @@ lua_State *luaE_newthread (lua_State *L)
+   L1->basehookcount = L->basehookcount;
+   L1->hook = L->hook;
+   resethookcount(L1);
+-  lua_assert(iswhite(obj2gco(L1)));
++  lua_assert(!isdead(G(L), obj2gco(L1)));
++  L->top--; /* remove thread from stack */
+   return L1;
+ }
+ 
+@@ -160,6 +163,7 @@ LUA_API lua_State *lua_newstate (lua_All
+   g->uvhead.u.l.prev = &g->uvhead;
+   g->uvhead.u.l.next = &g->uvhead;
+   g->GCthreshold = 0;  /* mark it as unfinished state */
++  g->estimate = 0;
+   g->strt.size = 0;
+   g->strt.nuse = 0;
+   g->strt.hash = NULL;
+@@ -167,6 +171,7 @@ LUA_API lua_State *lua_newstate (lua_All
+   luaZ_initbuffer(L, &g->buff);
+   g->panic = NULL;
+   g->gcstate = GCSpause;
++  g->gcflags = GCFlagsNone;
+   g->rootgc = obj2gco(L);
+   g->sweepstrgc = 0;
+   g->sweepgc = &g->rootgc;
+@@ -175,6 +180,7 @@ LUA_API lua_State *lua_newstate (lua_All
+   g->weak = NULL;
+   g->tmudata = NULL;
+   g->totalbytes = sizeof(LG);
++  g->memlimit = 0;
+   g->gcpause = LUAI_GCPAUSE;
+   g->gcstepmul = LUAI_GCMUL;
+   g->gcdept = 0;
+diff -urNp lua-5.1.5.orig/src/lstate.h lua-5.1.5/src/lstate.h
+--- lua-5.1.5.orig/src/lstate.h	2008-01-03 10:20:39.000000000 -0500
++++ lua-5.1.5/src/lstate.h	2012-05-17 13:09:28.759720055 -0400
+@@ -71,6 +71,7 @@ typedef struct global_State {
+   void *ud;         /* auxiliary data to `frealloc' */
+   lu_byte currentwhite;
+   lu_byte gcstate;  /* state of garbage collector */
++  lu_byte gcflags;  /* flags for the garbage collector */
+   int sweepstrgc;  /* position of sweep in `strt' */
+   GCObject *rootgc;  /* list of all collectable objects */
+   GCObject **sweepgc;  /* position of sweep in `rootgc' */
+@@ -81,6 +82,7 @@ typedef struct global_State {
+   Mbuffer buff;  /* temporary buffer for string concatentation */
+   lu_mem GCthreshold;
+   lu_mem totalbytes;  /* number of bytes currently allocated */
++  lu_mem memlimit;  /* maximum number of bytes that can be allocated, 0 = no limit. */
+   lu_mem estimate;  /* an estimate of number of bytes actually in use */
+   lu_mem gcdept;  /* how much GC is `behind schedule' */
+   int gcpause;  /* size of pause between successive GCs */
+diff -urNp lua-5.1.5.orig/src/lstring.c lua-5.1.5/src/lstring.c
+--- lua-5.1.5.orig/src/lstring.c	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/lstring.c	2012-05-17 13:09:28.760719973 -0400
+@@ -20,30 +20,34 @@
+ 
+ 
+ void luaS_resize (lua_State *L, int newsize) {
+-  GCObject **newhash;
+   stringtable *tb;
+   int i;
+-  if (G(L)->gcstate == GCSsweepstring)
+-    return;  /* cannot resize during GC traverse */
+-  newhash = luaM_newvector(L, newsize, GCObject *);
+   tb = &G(L)->strt;
+-  for (i=0; i<newsize; i++) newhash[i] = NULL;
++  if (luaC_sweepstrgc(L) || newsize == tb->size || is_resizing_strings_gc(L))
++    return;  /* cannot resize during GC traverse or doesn't need to be resized */
++  set_resizing_strings_gc(L);
++  if (newsize > tb->size) {
++    luaM_reallocvector(L, tb->hash, tb->size, newsize, GCObject *);
++    for (i=tb->size; i<newsize; i++) tb->hash[i] = NULL;
++  }
+   /* rehash */
+   for (i=0; i<tb->size; i++) {
+     GCObject *p = tb->hash[i];
++    tb->hash[i] = NULL;
+     while (p) {  /* for each node in the list */
+       GCObject *next = p->gch.next;  /* save next */
+       unsigned int h = gco2ts(p)->hash;
+       int h1 = lmod(h, newsize);  /* new position */
+       lua_assert(cast_int(h%newsize) == lmod(h, newsize));
+-      p->gch.next = newhash[h1];  /* chain it */
+-      newhash[h1] = p;
++      p->gch.next = tb->hash[h1];  /* chain it */
++      tb->hash[h1] = p;
+       p = next;
+     }
+   }
+-  luaM_freearray(L, tb->hash, tb->size, TString *);
++  if (newsize < tb->size)
++    luaM_reallocvector(L, tb->hash, tb->size, newsize, GCObject *);
+   tb->size = newsize;
+-  tb->hash = newhash;
++  unset_resizing_strings_gc(L);
+ }
+ 
+ 
+@@ -53,6 +57,9 @@ static TString *newlstr (lua_State *L, c
+   stringtable *tb;
+   if (l+1 > (MAX_SIZET - sizeof(TString))/sizeof(char))
+     luaM_toobig(L);
++  tb = &G(L)->strt;
++  if ((tb->nuse + 1) > cast(lu_int32, tb->size) && tb->size <= MAX_INT/2)
++    luaS_resize(L, tb->size*2);  /* too crowded */
+   ts = cast(TString *, luaM_malloc(L, (l+1)*sizeof(char)+sizeof(TString)));
+   ts->tsv.len = l;
+   ts->tsv.hash = h;
+@@ -61,13 +68,10 @@ static TString *newlstr (lua_State *L, c
+   ts->tsv.reserved = 0;
+   memcpy(ts+1, str, l*sizeof(char));
+   ((char *)(ts+1))[l] = '\0';  /* ending 0 */
+-  tb = &G(L)->strt;
+   h = lmod(h, tb->size);
+   ts->tsv.next = tb->hash[h];  /* chain new entry */
+   tb->hash[h] = obj2gco(ts);
+   tb->nuse++;
+-  if (tb->nuse > cast(lu_int32, tb->size) && tb->size <= MAX_INT/2)
+-    luaS_resize(L, tb->size*2);  /* too crowded */
+   return ts;
+ }
+ 
+diff -urNp lua-5.1.5.orig/src/ltable.c lua-5.1.5/src/ltable.c
+--- lua-5.1.5.orig/src/ltable.c	2007-12-28 10:32:23.000000000 -0500
++++ lua-5.1.5/src/ltable.c	2012-05-17 13:09:28.762724348 -0400
+@@ -269,20 +269,35 @@ static void setarrayvector (lua_State *L
+ }
+ 
+ 
+-static void setnodevector (lua_State *L, Table *t, int size) {
++static Node *getfreepos (Table *t) {
++  while (t->lastfree-- > t->node) {
++    if (ttisnil(gkey(t->lastfree)))
++      return t->lastfree;
++  }
++  return NULL;  /* could not find a free place */
++}
++
++
++static void resizenodevector (lua_State *L, Table *t, int oldsize, int newsize) {
+   int lsize;
+-  if (size == 0) {  /* no elements to hash part? */
++  if (newsize == 0) {  /* no elements to hash part? */
+     t->node = cast(Node *, dummynode);  /* use common `dummynode' */
+     lsize = 0;
+   }
+   else {
++    Node *node = t->node;
+     int i;
+-    lsize = ceillog2(size);
++    lsize = ceillog2(newsize);
+     if (lsize > MAXBITS)
+       luaG_runerror(L, "table overflow");
+-    size = twoto(lsize);
+-    t->node = luaM_newvector(L, size, Node);
+-    for (i=0; i<size; i++) {
++    newsize = twoto(lsize);
++    if (node == dummynode) {
++      oldsize = 0;
++      node = NULL; /* don't try to realloc `dummynode' pointer. */
++    }
++    luaM_reallocvector(L, node, oldsize, newsize, Node);
++    t->node = node;
++    for (i=oldsize; i<newsize; i++) {
+       Node *n = gnode(t, i);
+       gnext(n) = NULL;
+       setnilvalue(gkey(n));
+@@ -290,19 +305,138 @@ static void setnodevector (lua_State *L,
+     }
+   }
+   t->lsizenode = cast_byte(lsize);
+-  t->lastfree = gnode(t, size);  /* all positions are free */
++  t->lastfree = gnode(t, newsize);  /* reset lastfree to end of table. */
++}
++
++
++static Node *find_prev_node(Node *mp, Node *next) {
++  Node *prev = mp;
++  while (prev != NULL && gnext(prev) != next) prev = gnext(prev);
++  return prev;
++}
++
++
++/*
++** move a node from it's old position to it's new position during a rehash;
++** first, check whether the moving node's main position is free. If not, check whether
++** colliding node is in its main position or not: if it is not, move colliding
++** node to an empty place and put moving node in its main position; otherwise
++** (colliding node is in its main position), moving node goes to an empty position. 
++*/
++static int move_node (lua_State *L, Table *t, Node *node) {
++  Node *mp = mainposition(t, key2tval(node));
++  /* if node is in it's main position, don't need to move node. */
++  if (mp == node) return 1;
++  /* if node is in it's main position's chain, don't need to move node. */
++  if (find_prev_node(mp, node) != NULL) return 1;
++  /* is main position is free? */
++  if (!ttisnil(gval(mp)) || mp == dummynode) {
++    /* no; move main position node if it is out of its main position */
++    Node *othermp;
++    othermp = mainposition(t, key2tval(mp));
++    if (othermp != mp) {  /* is colliding node out of its main position? */
++      /* yes; swap colliding node with the node that is being moved. */
++      Node *prev;
++      Node tmp;
++      tmp = *node;
++      prev = find_prev_node(othermp, mp);  /* find previous */
++      if (prev != NULL) gnext(prev) = node;  /* redo the chain with `n' in place of `mp' */
++      *node = *mp;  /* copy colliding node into free pos. (mp->next also goes) */
++      *mp = tmp;
++      return (prev != NULL) ? 1 : 0; /* is colliding node part of its main position chain? */
++    }
++    else {  /* colliding node is in its own main position */
++      /* add node to main position's chain. */
++      gnext(node) = gnext(mp);  /* chain new position */
++      gnext(mp) = node;
++    }
++  }
++  else { /* main position is free, move node */
++    *mp = *node;
++    gnext(node) = NULL;
++    setnilvalue(gkey(node));
++    setnilvalue(gval(node));
++  }
++  return 1;
++}
++
++
++static int move_number (lua_State *L, Table *t, Node *node) {
++  int key;
++  lua_Number n = nvalue(key2tval(node));
++  lua_number2int(key, n);
++  if (luai_numeq(cast_num(key), nvalue(key2tval(node)))) {/* index is int? */
++    /* (1 <= key && key <= t->sizearray) */
++    if (cast(unsigned int, key-1) < cast(unsigned int, t->sizearray)) {
++      setobjt2t(L, &t->array[key-1], gval(node));
++      setnilvalue(gkey(node));
++      setnilvalue(gval(node));
++      return 1;
++    }
++  }
++  return 0;
++}
++
++
++static void resize_hashpart (lua_State *L, Table *t, int nhsize) {
++  int i;
++  int lsize=0;
++  int oldhsize = (t->node != dummynode) ? twoto(t->lsizenode) : 0;
++  if (nhsize > 0) { /* round new hashpart size up to next power of two. */
++    lsize=ceillog2(nhsize);
++    if (lsize > MAXBITS)
++      luaG_runerror(L, "table overflow");
++  }
++  nhsize = twoto(lsize);
++  /* grow hash part to new size. */
++  if (oldhsize < nhsize)
++    resizenodevector(L, t, oldhsize, nhsize);
++  else { /* hash part might be shrinking */
++    if (nhsize > 0) {
++      t->lsizenode = cast_byte(lsize);
++      t->lastfree = gnode(t, nhsize);  /* reset lastfree back to end of table. */
++    }
++    else { /* new hashpart size is zero. */
++      resizenodevector(L, t, oldhsize, nhsize);
++      return;
++    }
++  }
++  /* break old chains, try moving int keys to array part and compact keys into new hashpart */
++  for (i = 0; i < oldhsize; i++) {
++    Node *old = gnode(t, i);
++    gnext(old) = NULL;
++    if (ttisnil(gval(old))) { /* clear nodes with nil values. */
++      setnilvalue(gkey(old));
++      continue;
++    }
++    if (ttisnumber(key2tval(old))) { /* try moving the int keys into array part. */
++      if(move_number(L, t, old))
++        continue;
++    }
++    if (i >= nhsize) { /* move all valid keys to indices < nhsize. */
++      Node *n = getfreepos(t);  /* get a free place */
++      lua_assert(n != dummynode && n != NULL);
++      *n = *old;
++    }
++  }
++  /* shrink hash part */
++  if (oldhsize > nhsize)
++    resizenodevector(L, t, oldhsize, nhsize);
++  /* move nodes to their new mainposition and re-create node chains */
++  for (i = 0; i < nhsize; i++) {
++    Node *curr = gnode(t, i);
++    if (!ttisnil(gval(curr)))
++      while (move_node(L, t, curr) == 0);
++  }
+ }
+ 
+ 
+ static void resize (lua_State *L, Table *t, int nasize, int nhsize) {
+   int i;
+   int oldasize = t->sizearray;
+-  int oldhsize = t->lsizenode;
+-  Node *nold = t->node;  /* save old hash ... */
+   if (nasize > oldasize)  /* array part must grow? */
+     setarrayvector(L, t, nasize);
+-  /* create new hash part with appropriate size */
+-  setnodevector(L, t, nhsize);  
++  resize_hashpart(L, t, nhsize);
+   if (nasize < oldasize) {  /* array part must shrink? */
+     t->sizearray = nasize;
+     /* re-insert elements from vanishing slice */
+@@ -313,14 +447,6 @@ static void resize (lua_State *L, Table 
+     /* shrink array */
+     luaM_reallocvector(L, t->array, oldasize, nasize, TValue);
+   }
+-  /* re-insert elements from hash part */
+-  for (i = twoto(oldhsize) - 1; i >= 0; i--) {
+-    Node *old = nold+i;
+-    if (!ttisnil(gval(old)))
+-      setobjt2t(L, luaH_set(L, t, key2tval(old)), gval(old));
+-  }
+-  if (nold != dummynode)
+-    luaM_freearray(L, nold, twoto(oldhsize), Node);  /* free old array */
+ }
+ 
+ 
+@@ -358,6 +484,8 @@ static void rehash (lua_State *L, Table 
+ Table *luaH_new (lua_State *L, int narray, int nhash) {
+   Table *t = luaM_new(L, Table);
+   luaC_link(L, obj2gco(t), LUA_TTABLE);
++  sethvalue2s(L, L->top, t); /* put table on stack */
++  incr_top(L);
+   t->metatable = NULL;
+   t->flags = cast_byte(~0);
+   /* temporary values (kept only if some malloc fails) */
+@@ -366,7 +494,8 @@ Table *luaH_new (lua_State *L, int narra
+   t->lsizenode = 0;
+   t->node = cast(Node *, dummynode);
+   setarrayvector(L, t, narray);
+-  setnodevector(L, t, nhash);
++  resizenodevector(L, t, 0, nhash);
++  L->top--; /* remove table from stack */
+   return t;
+ }
+ 
+@@ -379,15 +508,6 @@ void luaH_free (lua_State *L, Table *t) 
+ }
+ 
+ 
+-static Node *getfreepos (Table *t) {
+-  while (t->lastfree-- > t->node) {
+-    if (ttisnil(gkey(t->lastfree)))
+-      return t->lastfree;
+-  }
+-  return NULL;  /* could not find a free place */
+-}
+-
+-
+ 
+ /*
+ ** inserts a new key into a hash table; first, check whether key's main 
+diff -urNp lua-5.1.5.orig/src/lua.c lua-5.1.5/src/lua.c
+--- lua-5.1.5.orig/src/lua.c	2007-12-28 10:32:23.000000000 -0500
++++ lua-5.1.5/src/lua.c	2012-05-17 13:09:28.763724196 -0400
+@@ -45,6 +45,7 @@ static void print_usage (void) {
+   "Available options are:\n"
+   "  -e stat  execute string " LUA_QL("stat") "\n"
+   "  -l name  require library " LUA_QL("name") "\n"
++  "  -m limit set memory limit. (units are in Kbytes)\n"
+   "  -i       enter interactive mode after executing " LUA_QL("script") "\n"
+   "  -v       show version information\n"
+   "  --       stop handling options\n"
+@@ -278,6 +279,7 @@ static int collectargs (char **argv, int
+         break;
+       case 'e':
+         *pe = 1;  /* go through */
++      case 'm':   /* go through */
+       case 'l':
+         if (argv[i][2] == '\0') {
+           i++;
+@@ -305,6 +307,15 @@ static int runargs (lua_State *L, char *
+           return 1;
+         break;
+       }
++      case 'm': {
++        const char *limit = argv[i] + 2;
++        int memlimit=0;
++        if (*limit == '\0') limit = argv[++i];
++        lua_assert(limit != NULL);
++        memlimit = atoi(limit);
++        lua_gc(L, LUA_GCSETMEMLIMIT, memlimit);
++        break;
++      }
+       case 'l': {
+         const char *filename = argv[i] + 2;
+         if (*filename == '\0') filename = argv[++i];
+diff -urNp lua-5.1.5.orig/src/lua.h lua-5.1.5/src/lua.h
+--- lua-5.1.5.orig/src/lua.h	2012-01-13 15:36:20.000000000 -0500
++++ lua-5.1.5/src/lua.h	2012-05-17 13:09:28.764721320 -0400
+@@ -226,6 +226,8 @@ LUA_API int  (lua_status) (lua_State *L)
+ #define LUA_GCSTEP		5
+ #define LUA_GCSETPAUSE		6
+ #define LUA_GCSETSTEPMUL	7
++#define LUA_GCSETMEMLIMIT	8
++#define LUA_GCGETMEMLIMIT	9
+ 
+ LUA_API int (lua_gc) (lua_State *L, int what, int data);
+ 
+diff -urNp lua-5.1.5.orig/src/luaconf.h lua-5.1.5/src/luaconf.h
+--- lua-5.1.5.orig/src/luaconf.h	2008-02-11 11:25:08.000000000 -0500
++++ lua-5.1.5/src/luaconf.h	2012-05-17 13:09:28.766720317 -0400
+@@ -368,6 +368,16 @@
+ 
+ 
+ /*
++@@ LUA_STRESS_EMERGENCY_GC enables stress testing code for the Emergency GC.
++** CHANGE it to defined if you want to test for Emergency GC related bugs.
++** Note that this will make the Lua vm very slow, since it will force a
++** full GC on every new allocation.
++*/
++#undef LUA_STRESS_EMERGENCY_GC
++
++
++
++/*
+ @@ luai_apicheck is the assert macro used by the Lua-C API.
+ ** CHANGE luai_apicheck if you want Lua to perform some checks in the
+ ** parameters it gets from API calls. This may slow down the interpreter
+diff -urNp lua-5.1.5.orig/src/lvm.c lua-5.1.5/src/lvm.c
+--- lua-5.1.5.orig/src/lvm.c	2011-08-17 16:43:11.000000000 -0400
++++ lua-5.1.5/src/lvm.c	2012-05-17 13:15:03.002035419 -0400
+@@ -49,9 +49,10 @@ int luaV_tostring (lua_State *L, StkId o
+     return 0;
+   else {
+     char s[LUAI_MAXNUMBER2STR];
++    ptrdiff_t objr = savestack(L, obj);
+     lua_Number n = nvalue(obj);
+     lua_number2str(s, n);
+-    setsvalue2s(L, obj, luaS_new(L, s));
++    setsvalue2s(L, restorestack(L, objr), luaS_new(L, s));
+     return 1;
+   }
+ }
+@@ -107,6 +108,10 @@ static void callTM (lua_State *L, const 
+ 
+ void luaV_gettable (lua_State *L, const TValue *t, TValue *key, StkId val) {
+   int loop;
++  TValue temp;
++  setnilvalue(L->top);
++  L->top++;
++  fixedstack(L);
+   for (loop = 0; loop < MAXTAGLOOP; loop++) {
+     const TValue *tm;
+     if (ttistable(t)) {  /* `t' is a table? */
+@@ -141,6 +146,8 @@ void luaV_settable (lua_State *L, const 
+       TValue *oldval = luaH_set(L, h, key); /* do a primitive set */
+       if (!ttisnil(oldval) ||  /* result is no nil? */
+           (tm = fasttm(L, h->metatable, TM_NEWINDEX)) == NULL) { /* or no TM? */
++        L->top--;
++        unfixedstack(L);
+         setobj2t(L, oldval, val);
+         h->flags = 0;
+         luaC_barriert(L, h, val);
+@@ -151,12 +158,15 @@ void luaV_settable (lua_State *L, const 
+     else if (ttisnil(tm = luaT_gettmbyobj(L, t, TM_NEWINDEX)))
+       luaG_typeerror(L, t, "index");
+     if (ttisfunction(tm)) {
++      L->top--;
++      unfixedstack(L);
+       callTM(L, tm, t, key, val);
+       return;
+     }
+     /* else repeat with `tm' */
+     setobj(L, &temp, tm);  /* avoid pointing inside table (may rehash) */
+     t = &temp;
++    setobj2s(L, L->top-1, t);  /* need to protect value from EGC. */
+   }
+   luaG_runerror(L, "loop in settable");
+ }
+@@ -280,12 +290,17 @@ int luaV_equalval (lua_State *L, const T
+ 
+ 
+ void luaV_concat (lua_State *L, int total, int last) {
++  lu_mem max_sizet = MAX_SIZET;
++  if (G(L)->memlimit < max_sizet) max_sizet = G(L)->memlimit;
+   do {
+     StkId top = L->base + last + 1;
+     int n = 2;  /* number of elements handled in this pass (at least 2) */
+     if (!(ttisstring(top-2) || ttisnumber(top-2)) || !tostring(L, top-1)) {
+-      if (!call_binTM(L, top-2, top-1, top-2, TM_CONCAT))
++      if (!call_binTM(L, top-2, top-1, top-2, TM_CONCAT)) {
++        /* restore 'top' pointer, since stack might have been reallocted */
++        top = L->base + last + 1;
+         luaG_concaterror(L, top-2, top-1);
++      }
+     } else if (tsvalue(top-1)->len == 0)  /* second op is empty? */
+       (void)tostring(L, top - 2);  /* result is first op (as string) */
+     else {
+@@ -293,12 +308,14 @@ void luaV_concat (lua_State *L, int tota
+       size_t tl = tsvalue(top-1)->len;
+       char *buffer;
+       int i;
++      fixedstack(L);
+       /* collect total length */
+       for (n = 1; n < total && tostring(L, top-n-1); n++) {
+         size_t l = tsvalue(top-n-1)->len;
+-        if (l >= MAX_SIZET - tl) luaG_runerror(L, "string length overflow");
++        if (l >= max_sizet - tl) luaG_runerror(L, "string length overflow");
+         tl += l;
+       }
++      G(L)->buff.n = tl;
+       buffer = luaZ_openspace(L, &G(L)->buff, tl);
+       tl = 0;
+       for (i=n; i>0; i--) {  /* concat all strings */
+@@ -307,6 +324,8 @@ void luaV_concat (lua_State *L, int tota
+         tl += l;
+       }
+       setsvalue2s(L, top-n, luaS_newlstr(L, buffer, tl));
++      luaZ_resetbuffer(&G(L)->buff);
++      unfixedstack(L);
+     }
+     total -= n-1;  /* got `n' strings to create 1 new */
+     last -= n-1;
+@@ -332,8 +351,13 @@ static void Arith (lua_State *L, StkId r
+       default: lua_assert(0); break;
+     }
+   }
+-  else if (!call_binTM(L, rb, rc, ra, op))
+-    luaG_aritherror(L, rb, rc);
++  else {
++    ptrdiff_t br = savestack(L, rb);
++    ptrdiff_t cr = savestack(L, rc);
++    if (!call_binTM(L, rb, rc, ra, op)) {
++      luaG_aritherror(L, restorestack(L, br), restorestack(L, cr));
++    }
++  }
+ }
+ 
+ 
+@@ -461,7 +485,9 @@ void luaV_execute (lua_State *L, int nex
+       case OP_NEWTABLE: {
+         int b = GETARG_B(i);
+         int c = GETARG_C(i);
+-        sethvalue(L, ra, luaH_new(L, luaO_fb2int(b), luaO_fb2int(c)));
++        Table *h;
++        Protect(h = luaH_new(L, luaO_fb2int(b), luaO_fb2int(c)));
++        sethvalue(L, RA(i), h);
+         Protect(luaC_checkGC(L));
+         continue;
+       }
+@@ -523,9 +549,10 @@ void luaV_execute (lua_State *L, int nex
+             break;
+           }
+           default: {  /* try metamethod */
++            ptrdiff_t br = savestack(L, rb);
+             Protect(
+               if (!call_binTM(L, rb, luaO_nilobject, ra, TM_LEN))
+-                luaG_typeerror(L, rb, "get length of");
++                luaG_typeerror(L, restorestack(L, br), "get length of");
+             )
+           }
+         }
+@@ -699,6 +726,7 @@ void luaV_execute (lua_State *L, int nex
+         int c = GETARG_C(i);
+         int last;
+         Table *h;
++        fixedstack(L);
+         if (n == 0) {
+           n = cast_int(L->top - ra) - 1;
+           L->top = L->ci->top;
+@@ -714,6 +742,7 @@ void luaV_execute (lua_State *L, int nex
+           setobj2t(L, luaH_setnum(L, h, last--), val);
+           luaC_barriert(L, h, val);
+         }
++        unfixedstack(L);
+         continue;
+       }
+       case OP_CLOSE: {
+@@ -726,7 +755,9 @@ void luaV_execute (lua_State *L, int nex
+         int nup, j;
+         p = cl->p->p[GETARG_Bx(i)];
+         nup = p->nups;
++        fixedstack(L);
+         ncl = luaF_newLclosure(L, nup, cl->env);
++        setclvalue(L, ra, ncl);
+         ncl->l.p = p;
+         for (j=0; j<nup; j++, pc++) {
+           if (GET_OPCODE(*pc) == OP_GETUPVAL)
+@@ -736,7 +767,7 @@ void luaV_execute (lua_State *L, int nex
+             ncl->l.upvals[j] = luaF_findupval(L, base + GETARG_B(*pc));
+           }
+         }
+-        setclvalue(L, ra, ncl);
++        unfixedstack(L);
+         Protect(luaC_checkGC(L));
+         continue;
+       }
+diff -urNp lua-5.1.5.orig/src/lzio.h lua-5.1.5/src/lzio.h
+--- lua-5.1.5.orig/src/lzio.h	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/lzio.h	2012-05-17 13:09:28.769720139 -0400
+@@ -27,7 +27,7 @@ typedef struct Mbuffer {
+   size_t buffsize;
+ } Mbuffer;
+ 
+-#define luaZ_initbuffer(L, buff) ((buff)->buffer = NULL, (buff)->buffsize = 0)
++#define luaZ_initbuffer(L, buff) ((buff)->buffer = NULL, (buff)->n = 0, (buff)->buffsize = 0)
+ 
+ #define luaZ_buffer(buff)	((buff)->buffer)
+ #define luaZ_sizebuffer(buff)	((buff)->buffsize)

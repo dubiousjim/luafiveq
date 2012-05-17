@@ -1,0 +1,32 @@
+Make os.exit close lua_State
+Author: dubiousjim@gmail.com
+Derived from: Lua 5.2 sources
+Updated: 17 May 2012
+
+If an optional second argument is true, closes the Lua state before exiting (so
+finalizers will be run). The lua interpreter already does this, but
+applications embedding Lua may not.
+
+This behavior cannot be provided by a library, but only by patching the Lua
+source and rebuilding.
+
+
+diff -urN lua-5.1.5.orig/src/loslib.c lua-5.1.5/src/loslib.c
+--- lua-5.1.5.orig/src/loslib.c	2008-01-18 11:38:18.000000000 -0500
++++ lua-5.1.5/src/loslib.c	2012-05-17 12:06:50.940848174 -0400
+@@ -214,7 +214,14 @@
+ 
+ 
+ static int os_exit (lua_State *L) {
+-  exit(luaL_optint(L, 1, EXIT_SUCCESS));
++  int status;
++  if (lua_isboolean(L, 1))
++    status = (lua_toboolean(L, 1) ? EXIT_SUCCESS : EXIT_FAILURE);
++  else
++    status = luaL_optint(L, 1, EXIT_SUCCESS);
++  if (lua_toboolean(L, 2))
++    lua_close(L);
++  exit(status);
+ }
+ 
+ static const luaL_Reg syslib[] = {

@@ -1,0 +1,136 @@
+PATCHES
+=======
+
+Enclosed are a number of patches that can be applied to the Lua 5.1.5 sources
+to make the compiled interpreter act somewhat more like Lua 5.2.
+
+Some of these patches were derived from originals linked at
+http://lua-users.org/wiki/LuaPowerPatches; others are original or
+are no longer available at their original locations.
+
+
+1.  Emergency Garbage Collector
+    See description at: http://lua-users.org/wiki/EmergencyGarbageCollector
+    Author: RobertGabrielJakabosky
+    Derived from: http://lua-users.org/files/wiki_insecure/power_patches/5.1/emergency_gc-5.1.4-r6.patch, posted 7 Dec 2010
+    Updated: 17 May 2012 by dubiousjim@gmail.com to apply against Lua 5.1.5.
+
+
+2.  Yieldable for-loops
+    Description:
+        Modifies the code generator so that the iterator in for ... in loops can
+        call yield. Details and test code are available at
+        <http://lua-users.org/wiki/YieldableForLoops>.
+
+        Note that the current version of the patch orders op codes so as to
+        maintain binary compatibility with compiled Lua scripts, if
+        LUA_COMPAT_TFORLOOP is defined in luaconf.h. This adds a few
+        instructions to the VM, and quite a bit of complexity to the patch,
+        which would otherwise only be about 25 lines. 
+    Author: RiciLake
+    Original last posted at http://primero.ricilake.net/lua/ on 1 Sep 2007, no
+    longer available
+    This version retrieved and updated 17 May 2012 by dubiousjim@gmail.com to
+    apply against Lua 5.1.5.
+
+
+3.  Make os.exit close lua_State
+    Description:
+        If an optional second argument is true, closes the Lua state before
+        exiting (so finalizers will be run). The lua interpreter already does
+        this, but applications embedding Lua may not.
+
+        This behavior cannot be provided by a library, but only by patching the
+        Lua source and rebuilding.
+    Author: dubiousjim@gmail.com
+    Derived from: Lua 5.2 sources
+    Updated: 17 May 2012
+
+
+4.  Make tables honor __len
+    Description:
+        This patch makes #tbl honor a __len metamethod on tbl, as in Lua 5.2.
+        It also provides a new global function, rawlen.
+    Author: dubiousjim@gmail.com
+    Derived from: Lua 5.2 sources
+    Updated: 17 May 2012
+
+
+5.  Patch string.format %s to use __tostring
+    See description at <http://lua-users.org/lists/lua-l/2006-10/msg00001.html>
+    Author: Doug Currie
+    Derived from: http://lua-users.org/files/wiki_insecure/power_patches/5.1/sformat511.patch, posted 3 Oct 2006
+    Updated: 17 May 2012 by dubiousjim@gmail.com
+    (i)  to apply against Lua 5.1.5
+    (ii) for clearer error messages, only try to call tostring when it's non-nil
+
+
+6.  Print NULs
+    Author: Reuben Thomas
+    Description:
+        Make print print NUL characters, by using fwrite instead of fputs.
+        Someone else tidied it up by patching luaconf.h to let the user supply
+        a luai_puts macro.
+    Available at: http://lua-users.org/files/wiki_insecure/power_patches/5.1/print_nuls.patch, posted 18 Feb 2012
+
+
+7.  Equality operators that work like arithmetic operators
+    Description:
+        This modifies the behavior of the equality operator functions so they
+        are able to handle values with dissimilar types. For instance, in
+        standard Lua if the left operand is a userdata and the right is a
+        number, the equality test will fail. This patch causes the __eq
+        metamethod of the userdata to be used, if available. But note, one
+        reason Lua does not support this is because the __eq, __lt and __le
+        metamethods are used for ~=, > and >= as well, by reversing the
+        operands. Therefore, if both the right and left operands have
+        metamethods, you might be surprised by which one gets chosen. As it is,
+        the left metamethod is preferred. But of course, this is the RIGHT
+        metamethod for the ~=, > and >= tests! A good solution to this might be
+        to add __ne, __gt and __ge metamethods. Then the equality operators
+        would truly behave exactly like the arithmetic operators.
+    Author: Chris Marrin
+    Derived from: http://lua-users.org/files/wiki_insecure/power_patches/5.1-alpha/UniformCompare.patch, posted 20 Sep 2005
+    Updated: 17 May 2012 by dubiousjim@gmail.com
+    (i)  to apply against Lua 5.1.5, and
+    (ii) to match Lua 5.2's behavior, disable equals comparisons for
+         objects of different types
+
+
+8.  Custom error object support
+    Description:
+        This patch improves Lua's support for custom error objects. Changes:
+
+        * Uncaught error handler in standard Lua interpreter calls tostring()
+          on error object. This ensures that a call stack is displayed even
+          for non-string error objects. It also allows use of the __tostring
+          hook for human-readable error messages.
+
+        * Base library error() will set the _WHERE field of any table error
+          object to the value of luaL_where(). Uncaught error handler in the
+          standard Lua interpreter will use this, so that for custom error
+          object the error location is shown in the call stack. This is a bit
+          of a hack and implies that any thrown table should be a unique
+          instance of the error (since it will be mutated). Rather than this
+          scheme, the ideal solution would be to have the Lua core manage the
+          location separate from the error object.
+
+        See "Exception Patterns in Lua"
+        <http://memebeam.org/john/lua/exception_patterns.pdf>
+        for more information.
+    Author: John Belmonte
+    Derived from: http://memebeam.org/john/lua/custom_errors.patch, posted
+        8 Sep 2006
+    Updated: 17 May 2012 by dubiousjim@gmail.com to apply against Lua 5.1.5
+
+
+9.  The http://lua-users.org/wiki/LuaPowerPatches page also lists this
+    patch: Literals (hex, UTF-8) (5.1 beta)
+    Description:
+        Allows \x00..\xFFFF (hex) and \u0000..\uFFFF (UTF-8 encoded) characters
+        within strings.
+    Author: AskoKauppi
+    Original last posted at svn://slugak.dyndns.org/public/lua-patches/ on
+        12 Jan 2006, no longer available
+    I don't have any version of this patch.
+

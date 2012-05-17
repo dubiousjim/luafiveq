@@ -1,0 +1,425 @@
+Yieldable for-loops
+Author: RiciLake
+Original last posted at http://primero.ricilake.net/lua/ on 1 Sep 2007, no
+longer available
+This version retrieved and updated 17 May 2012 by dubiousjim@gmail.com to
+apply against Lua 5.1.5.
+
+Description from <http://lua-users.org/wiki/LuaPowerPatches>:
+
+Modifies the code generator so that the iterator in for ... in loops can call
+yield. Details and test code are available at
+<http://lua-users.org/wiki/YieldableForLoops>.
+
+Note that the current version of the patch orders op codes so as to maintain
+binary compatibility with compiled Lua scripts, if LUA_COMPAT_TFORLOOP is
+defined in luaconf.h. This adds a few instructions to the VM, and quite a bit
+of complexity to the patch, which would otherwise only be about 25 lines. 
+
+
+Description from <http://lua-users.org/wiki/YieldableForLoops>:
+
+                       Yieldable For Loops
+
+
+   Changing Lua so that "anything can yield" is (probably) desirable, but
+   it's a long term project. In the meantime, I find it irritating that the
+   iterator function in a for loop is not allowed to yield; it makes it messy
+   to write simple responder loops where the iterator might be, for example,
+   an asychronous input function.
+
+   Instead of just being able to write:
+
+ for msg in eachmsg() do
+   -- handle msg
+ end
+ -- end of messages, clean up
+
+   you need:
+
+ repeat
+   local msg = getmsg()
+   if msg == nil then break end
+   -- handle msg
+ until false
+ -- end of messages, clean up
+
+   However, it is very simple to get the first code sample to work. It is
+   only necessary to split the TFORLOOP VM operation into two opcodes. The
+   first one sets up an ordinary Lua call and then falls into the OP_CALL
+   implementation. The following op code does a conditional move and branch
+   based on the first value returned by the first op code.
+
+   Some very rough testing seems to show that performance is actually
+   slightly improved by this change, although the results are not definitive.
+   I suppose that is because the VM can handle the call without recursing,
+   making up for the overhead of an extra opcode.
+
+   At any rate, the patch is at [1].
+
+Example
+
+   Here's a test program. The key function here is responder, which shows the
+   yieldable for in action. Test output follows the code
+
+ local yield, resume, create, costatus =
+   coroutine.yield, coroutine.resume, coroutine.create, coroutine.status
+
+ local function input(prompt)
+   local inf, outf = io.stdin, io.stderr
+   return function()
+     outf:write(prompt," ")
+     return inf:read()
+   end
+ end
+
+ -- These could be quite a bit more complex
+ function eachmsg()
+   return yield
+ end
+
+ -- This isn't actually used in this demo, but it could be :)
+ getmsg = coroutine.yield
+
+ -- This would probably be more complicated in a real app, too.
+ function responder(name)
+  local n = 0
+  print(name.." is born!")
+  for msg in eachmsg() do
+    n = n + 1
+    if msg == "goodbye" then break
+    else print(name.." heard "..msg)
+    end
+  end
+  print(name.." departs this vale of tears, after listening to "..n.." utterances")
+ end
+
+ function driver()
+  local cmd = {}
+  local kids = {}
+  -- the commands we understand
+  function cmd.quit()
+    print "Exiting!"
+    for _, kid in pairs(kids) do
+      resume(kid)
+    end
+    return false
+  end
+  function cmd.kill(arg)
+    local _, _, who = string.find(arg, "(%w+)")
+    if not who then
+      return "Kill who?"
+    elseif not kids[who] then
+      return who.."? I don't know any "..who
+    else
+      local status, result = resume(kids[who])
+      kids[who] = nil
+      if status then
+        return
+      else
+        return result
+      end
+    end
+  end
+  function cmd.spawn(arg)
+    local _, _, who = string.find(arg, "(%w+)")
+    if not who then
+      return "Spawn who?"
+    elseif kids[who] then
+      return who .. " already exists"
+    else
+      kids[who] = create(responder)
+      local status, result = resume(kids[who], who)
+      if not status then
+        kids[who] = nil
+        return result
+      end
+    end
+  end
+  function cmd.list()
+    print"Currently active:"
+    for k in pairs(kids) do print("  "..k) end
+  end
+
+  -- main loop starts here --
+  for msg in input("->") do
+    local _, _, verb, rest = string.find(msg, "%s*(%w+)%s*(.*)")
+    if cmd[verb] then
+      local res = cmd[verb](rest)
+      if res then print(res)
+      elseif res == false then return
+      end
+    elseif kids[verb] then
+      local status, result = coroutine.resume(kids[verb], rest)
+      if not status then
+        print(verb.." exited with error "..result)
+        kids[verb] = nil
+      elseif coroutine.status(kids[verb]) ~= "suspended" then
+        print(verb.." decided to go away")
+        kids[verb] = nil
+      end
+    else
+      print "I don't understand what you're talking about"
+    end
+  end
+ end
+
+   Sample run:
+
+
+ > driver()
+ -> list
+ Currently active:
+ -> spawn bob
+ bob is born!
+ -> spawn sally
+ sally is born!
+ -> bob hi
+ bob heard hi
+ -> sally hi
+ sally heard hi
+ -> bob meet sally
+ bob heard meet sally
+ -> fred hi
+ I don't understand what you're talking about
+ -> spawn fred
+ fred is born!
+ -> list
+ Currently active:
+   sally
+   fred
+   bob
+ -> fred how are you
+ fred heard how are you
+ -> fred goodbye
+ fred departs this vale of tears, after listening to 2 utterances
+ fred decided to go away
+ -> kill bob
+ bob departs this vale of tears, after listening to 2 utterances
+ -> sally ?
+ sally heard ?
+ -> spawn sue
+ sue is born!
+ -> quit
+ Exiting!
+ sally departs this vale of tears, after listening to 2 utterances
+ sue departs this vale of tears, after listening to 0 utterances
+
+   -- RiciLake
+
+
+diff -urN lua-5.1.5.orig/src/ldebug.c lua-5.1.5/src/ldebug.c
+--- lua-5.1.5.orig/src/ldebug.c	2008-05-08 12:56:26.000000000 -0400
++++ lua-5.1.5/src/ldebug.c	2012-05-17 12:18:06.525737105 -0400
+@@ -403,16 +403,21 @@
+         check(b < c);  /* at least two operands */
+         break;
+       }
++#ifdef LUA_COMPAT_TFORLOOP
+       case OP_TFORLOOP: {
+         check(c >= 1);  /* at least one result (control variable) */
+         checkreg(pt, a+2+c);  /* space for results */
+         if (reg >= a+2) last = pc;  /* affect all regs above its base */
+         break;
+       }
++#endif
+       case OP_FORLOOP:
+       case OP_FORPREP:
+         checkreg(pt, a+3);
+         /* go through */
++      case OP_TESTNIL: 
++        checkreg(pt, a+1);
++        /* go through */
+       case OP_JMP: {
+         int dest = pc+1+b;
+         /* not full check and jump is forward and do not skip `lastpc'? */
+@@ -420,6 +425,11 @@
+           pc += b;  /* do the jump */
+         break;
+       }
++      case OP_TFORCALL:
++        check(a >= b);
++        check(b == 3);
++        check(c >= 1);
++        /* go through */
+       case OP_CALL:
+       case OP_TAILCALL: {
+         if (b != 0) {
+@@ -547,9 +557,14 @@
+     return NULL;  /* calling function is not Lua (or is unknown) */
+   ci--;  /* calling function */
+   i = ci_func(ci)->l.p->code[currentpc(L, ci)];
+-  if (GET_OPCODE(i) == OP_CALL || GET_OPCODE(i) == OP_TAILCALL ||
+-      GET_OPCODE(i) == OP_TFORLOOP)
++  if (GET_OPCODE(i) == OP_CALL || GET_OPCODE(i) == OP_TAILCALL
++#ifdef LUA_COMPAT_TFORLOOP
++      || GET_OPCODE(i) == OP_TFORLOOP
++#endif
++                                     )
+     return getobjname(L, ci, GETARG_A(i), name);
++  else if (GET_OPCODE(i) == OP_TFORCALL)
++    return getobjname(L, ci, GETARG_A(i - 3), name);
+   else
+     return NULL;  /* no useful name can be found */
+ }
+diff -urN lua-5.1.5.orig/src/lopcodes.c lua-5.1.5/src/lopcodes.c
+--- lua-5.1.5.orig/src/lopcodes.c	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/lopcodes.c	2012-05-17 12:18:06.526720959 -0400
+@@ -47,11 +47,15 @@
+   "RETURN",
+   "FORLOOP",
+   "FORPREP",
++#ifdef LUA_COMPAT_TFORLOOP
+   "TFORLOOP",
++#endif
+   "SETLIST",
+   "CLOSE",
+   "CLOSURE",
+   "VARARG",
++  "TESTNIL",
++  "TFORCALL",
+   NULL
+ };
+ 
+@@ -93,10 +97,14 @@
+  ,opmode(0, 0, OpArgU, OpArgN, iABC)		/* OP_RETURN */
+  ,opmode(0, 1, OpArgR, OpArgN, iAsBx)		/* OP_FORLOOP */
+  ,opmode(0, 1, OpArgR, OpArgN, iAsBx)		/* OP_FORPREP */
++#ifdef LUA_COMPAT_TFORLOOP
+  ,opmode(1, 0, OpArgN, OpArgU, iABC)		/* OP_TFORLOOP */
++#endif
+  ,opmode(0, 0, OpArgU, OpArgU, iABC)		/* OP_SETLIST */
+  ,opmode(0, 0, OpArgN, OpArgN, iABC)		/* OP_CLOSE */
+  ,opmode(0, 1, OpArgU, OpArgN, iABx)		/* OP_CLOSURE */
+  ,opmode(0, 1, OpArgU, OpArgN, iABC)		/* OP_VARARG */
++ ,opmode(0, 1, OpArgR, OpArgN, iAsBx)		/* OP_TESTNIL */
++ ,opmode(0, 1, OpArgU, OpArgU, iABC)		/* OP_TFORCALL */
+ };
+ 
+diff -urN lua-5.1.5.orig/src/lopcodes.h lua-5.1.5/src/lopcodes.h
+--- lua-5.1.5.orig/src/lopcodes.h	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/lopcodes.h	2012-05-17 12:18:06.527721366 -0400
+@@ -197,18 +197,23 @@
+ 			if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }*/
+ OP_FORPREP,/*	A sBx	R(A)-=R(A+2); pc+=sBx				*/
+ 
++#ifdef LUA_COMPAT_TFORLOOP
+ OP_TFORLOOP,/*	A C	R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2)); 
+                         if R(A+3) ~= nil then R(A+2)=R(A+3) else pc++	*/ 
++#endif
+ OP_SETLIST,/*	A B C	R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B	*/
+ 
+ OP_CLOSE,/*	A 	close all variables in the stack up to (>=) R(A)*/
+ OP_CLOSURE,/*	A Bx	R(A) := closure(KPROTO[Bx], R(A), ... ,R(A+n))	*/
+ 
+-OP_VARARG/*	A B	R(A), R(A+1), ..., R(A+B-1) = vararg		*/
++OP_VARARG,/*	A B	R(A), R(A+1), ..., R(A+B-1) = vararg		*/
++OP_TESTNIL,/*   A sBx   if R(A+1) ~= nil then R(A)=R(A+1); pc+=sBx      */
++OP_TFORCALL/*   A B C   R(A), ..., R(A+C-2) := R(A-3)(R(A-2), R(A-1));  */
++                        
+ } OpCode;
+ 
+ 
+-#define NUM_OPCODES	(cast(int, OP_VARARG) + 1)
++#define NUM_OPCODES	(cast(int, OP_TFORCALL) + 1)
+ 
+ 
+ 
+@@ -218,6 +223,8 @@
+       and can be 0: OP_CALL then sets `top' to last_result+1, so
+       next open instruction (OP_CALL, OP_RETURN, OP_SETLIST) may use `top'.
+ 
++  (*) In OP_TFORCALL, B must be 3 and C may not be 0.
++
+   (*) In OP_VARARG, if (B == 0) then use actual number of varargs and
+       set top (like in OP_CALL with C == 0).
+ 
+diff -urN lua-5.1.5.orig/src/lparser.c lua-5.1.5/src/lparser.c
+--- lua-5.1.5.orig/src/lparser.c	2011-10-21 15:31:42.000000000 -0400
++++ lua-5.1.5/src/lparser.c	2012-05-17 12:18:06.529722109 -0400
+@@ -1047,7 +1047,7 @@
+   /* forbody -> DO block */
+   BlockCnt bl;
+   FuncState *fs = ls->fs;
+-  int prep, endfor;
++  int prep;
+   adjustlocalvars(ls, 3);  /* control variables */
+   checknext(ls, TK_DO);
+   prep = isnum ? luaK_codeAsBx(fs, OP_FORPREP, base, NO_JUMP) : luaK_jump(fs);
+@@ -1057,10 +1057,16 @@
+   block(ls);
+   leaveblock(fs);  /* end of scope for declared variables */
+   luaK_patchtohere(fs, prep);
+-  endfor = (isnum) ? luaK_codeAsBx(fs, OP_FORLOOP, base, NO_JUMP) :
+-                     luaK_codeABC(fs, OP_TFORLOOP, base, 0, nvars);
+-  luaK_fixline(fs, line);  /* pretend that `OP_FOR' starts the loop */
+-  luaK_patchlist(fs, (isnum ? endfor : luaK_jump(fs)), prep + 1);
++  if (isnum) {
++    luaK_patchlist(fs, luaK_codeAsBx(fs, OP_FORLOOP, base, NO_JUMP), prep + 1);
++    luaK_fixline(fs, line);  /* pretend that `OP_FOR' starts the loop */
++  }
++  else {
++    luaK_codeABC(fs, OP_TFORCALL, base + 3, 3, nvars + 1);
++    luaK_fixline(fs, line);  /* pretend that `OP_FOR' starts the loop */
++    luaK_patchlist(fs, luaK_codeAsBx(fs, OP_TESTNIL, base + 2, NO_JUMP), prep + 1);
++    luaK_fixline(fs, line);  /* pretend that `OP_FOR' starts the loop */
++  }
+ }
+ 
+ 
+diff -urN lua-5.1.5.orig/src/luaconf.h lua-5.1.5/src/luaconf.h
+--- lua-5.1.5.orig/src/luaconf.h	2008-02-11 11:25:08.000000000 -0500
++++ lua-5.1.5/src/luaconf.h	2012-05-17 12:18:06.530718953 -0400
+@@ -312,7 +312,12 @@
+ */
+ #define LUAI_GCMUL	200 /* GC runs 'twice the speed' of memory allocation */
+ 
+-
++/*
++@@ LUA_COMPAT_TFORLOOP controls VM compatibility with 5.1 for..in loops
++** CHANGE it (undefine it) if you don't care about being able to run
++** precompiled 5.1 scripts
++*/
++#define LUA_COMPAT_TFORLOOP
+ 
+ /*
+ @@ LUA_COMPAT_GETN controls compatibility with old getn behavior.
+diff -urN lua-5.1.5.orig/src/lvm.c lua-5.1.5/src/lvm.c
+--- lua-5.1.5.orig/src/lvm.c	2011-08-17 16:43:11.000000000 -0400
++++ lua-5.1.5/src/lvm.c	2012-05-17 12:18:06.531718871 -0400
+@@ -583,6 +583,19 @@
+         pc++;
+         continue;
+       }
++      case OP_TESTNIL: {
++        if (!ttisnil(ra+1)) {
++          setobjs2s(L, ra, ra+1);
++          dojump(L, pc, GETARG_sBx(i));
++        }
++        continue;
++      }
++      case OP_TFORCALL: {
++        setobjs2s(L, ra+2, ra-1);
++        setobjs2s(L, ra+1, ra-2);
++        setobjs2s(L, ra, ra-3);
++        /* FALLS THROUGH */
++      }
+       case OP_CALL: {
+         int b = GETARG_B(i);
+         int nresults = GETARG_C(i) - 1;
+@@ -678,6 +691,7 @@
+         dojump(L, pc, GETARG_sBx(i));
+         continue;
+       }
++#ifdef LUA_COMPAT_TFORLOOP
+       case OP_TFORLOOP: {
+         StkId cb = ra + 3;  /* call base */
+         setobjs2s(L, cb+2, ra+2);
+@@ -694,6 +708,7 @@
+         pc++;
+         continue;
+       }
++#endif
+       case OP_SETLIST: {
+         int n = GETARG_B(i);
+         int c = GETARG_C(i);

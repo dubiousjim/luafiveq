@@ -1,0 +1,66 @@
+Print NULs
+Author: Reuben Thomas
+Available at: http://lua-users.org/files/wiki_insecure/power_patches/5.1/print_nuls.patch, posted 18 Feb 2012
+
+Description from <http://lua-users.org/wiki/LuaPowerPatches>:
+
+Make print print NUL characters, by using fwrite instead of fputs. Someone else
+tidied it up by patching luaconf.h to let the user supply a luai_puts macro.
+
+
+diff -Nur lua-5.1.5/src/lbaselib.c lua-5.1.5-print_nuls/src/lbaselib.c
+--- lua-5.1.5/src/lbaselib.c	2008-02-14 16:46:22.000000000 +0000
++++ lua-5.1.5-print_nuls/src/lbaselib.c	2012-02-18 18:53:03.977622295 +0000
+@@ -24,9 +24,8 @@
+ 
+ /*
+ ** If your system does not support `stdout', you can just remove this function.
+-** If you need, you can define your own `print' function, following this
+-** model but changing `fputs' to put the strings at a proper place
+-** (a console window or a log file, for instance).
++** To change its behavior, simply change the definition of the `luai_puts'
++** macro in luaconf.h.
+ */
+ static int luaB_print (lua_State *L) {
+   int n = lua_gettop(L);  /* number of arguments */
+@@ -34,18 +33,19 @@
+   lua_getglobal(L, "tostring");
+   for (i=1; i<=n; i++) {
+     const char *s;
++    size_t len;
+     lua_pushvalue(L, -1);  /* function to be called */
+     lua_pushvalue(L, i);   /* value to print */
+     lua_call(L, 1, 1);
+-    s = lua_tostring(L, -1);  /* get result */
++    s = lua_tolstring(L, -1, &len);  /* get result */
+     if (s == NULL)
+       return luaL_error(L, LUA_QL("tostring") " must return a string to "
+                            LUA_QL("print"));
+-    if (i>1) fputs("\t", stdout);
+-    fputs(s, stdout);
++    if (i>1) luai_puts("\t", 1);
++    luai_puts(s, len);
+     lua_pop(L, 1);  /* pop result */
+   }
+-  fputs("\n", stdout);
++  luai_puts("\n", 1);
+   return 0;
+ }
+ 
+diff -Nur lua-5.1.5/src/luaconf.h lua-5.1.5-print_nuls/src/luaconf.h
+--- lua-5.1.5/src/luaconf.h	2008-02-11 16:25:08.000000000 +0000
++++ lua-5.1.5-print_nuls/src/luaconf.h	2012-02-18 18:53:03.977622295 +0000
+@@ -757,6 +757,13 @@
+ ** without modifying the main part of the file.
+ */
+ 
++/*
++@@ luai_puts writes strings for print().
++** Modify this as needed to put the strings at a proper place
++** (a console window or a log file, for instance).
++*/
++#define luai_puts(str,len) fwrite((str), 1, (len), stdout)
++
+ 
+ 
+ #endif

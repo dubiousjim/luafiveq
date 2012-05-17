@@ -1,0 +1,79 @@
+Custom error object support
+Author: John Belmonte
+Derived from: http://memebeam.org/john/lua/custom_errors.patch, posted
+    8 Sep 2006
+Updated: 17 May 2012 by dubiousjim@gmail.com to apply against Lua 5.1.5
+
+Description from <http://lua-users.org/wiki/LuaPowerPatches>:
+
+This patch improves Lua's support for custom error objects.  Changes:
+
+    * Uncaught error handler in standard Lua interpreter calls tostring()
+      on error object.  This ensures that a call stack is displayed even
+      for non-string error objects.  It also allows use of the __tostring
+      hook for human-readable error messages.
+
+    * Base library error() will set the _WHERE field of any table error
+      object to the value of luaL_where().  Uncaught error handler in the
+      standard Lua interpreter will use this, so that for custom error
+      object the error location is shown in the call stack.  This is a bit
+      of a hack and implies that any thrown table should be a unique
+      instance of the error (since it will be mutated).  Rather than this
+      scheme, the idea solution would be to have the Lua core manage the
+      location separate from the error object.
+
+See "Exception Patterns in Lua"
+<http://memebeam.org/john/lua/exception_patterns.pdf> for more information.
+
+
+
+diff -urN lua-5.1.5.orig/src/lbaselib.c lua-5.1.5/src/lbaselib.c
+--- lua-5.1.5.orig/src/lbaselib.c	2008-02-14 11:46:22.000000000 -0500
++++ lua-5.1.5/src/lbaselib.c	2012-05-17 12:23:13.577720178 -0400
+@@ -81,10 +81,14 @@
+ static int luaB_error (lua_State *L) {
+   int level = luaL_optint(L, 2, 1);
+   lua_settop(L, 1);
+-  if (lua_isstring(L, 1) && level > 0) {  /* add extra information? */
++  if ((lua_isstring(L, 1) || lua_istable(L, 1)) && level > 0) {  /* add extra information? */
+     luaL_where(L, level);
+-    lua_pushvalue(L, 1);
+-    lua_concat(L, 2);
++    if (lua_isstring(L, 1)) {
++      lua_pushvalue(L, 1);
++      lua_concat(L, 2);
++    }
++    else
++      lua_setfield(L, 1, "_WHERE");
+   }
+   return lua_error(L);
+ }
+diff -urN lua-5.1.5.orig/src/lua.c lua-5.1.5/src/lua.c
+--- lua-5.1.5.orig/src/lua.c	2007-12-28 10:32:23.000000000 -0500
++++ lua-5.1.5/src/lua.c	2012-05-17 12:23:13.578718420 -0400
+@@ -86,7 +86,24 @@
+     lua_pop(L, 2);
+     return 1;
+   }
+-  lua_pushvalue(L, 1);  /* pass error message */
++  lua_getglobal(L, "tostring");
++  if (!lua_isfunction(L, -1)) {
++    lua_pop(L, 1);
++    lua_pushvalue(L, 1);  /* pass error object */
++  }
++  else {
++    lua_pushvalue(L, 1);
++    lua_call(L, 1, 1);  /* call tostring on error object */
++  }
++  if (lua_istable(L, 1)) {  /* use _WHERE on table error if it exists */
++    lua_getfield(L, 1, "_WHERE");
++    if (lua_isstring(L, -1)) {
++      lua_insert(L, -2);
++      lua_concat(L, 2);
++    }
++    else
++      lua_pop(L, 1);
++  }
+   lua_pushinteger(L, 2);  /* skip this function and traceback */
+   lua_call(L, 2, 1);  /* call debug.traceback */
+   return 1;

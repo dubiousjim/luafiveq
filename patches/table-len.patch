@@ -1,0 +1,98 @@
+Make tables honor __len
+Author: dubiousjim@gmail.com
+Derived from: Lua 5.2 sources
+Updated: 17 May 2012
+
+This patch makes #tbl honor a __len metamethod on tbl, as in Lua 5.2.
+It also provides a new global function, rawlen.
+
+
+diff -urN lua-5.1.5.orig/src/lbaselib.c lua-5.1.5/src/lbaselib.c
+--- lua-5.1.5.orig/src/lbaselib.c	2008-02-14 11:46:22.000000000 -0500
++++ lua-5.1.5/src/lbaselib.c	2012-05-17 12:12:02.256721839 -0400
+@@ -158,6 +158,15 @@
+ }
+ 
+ 
++static int luaB_rawlen (lua_State *L) {
++  int t = lua_type(L, 1);
++  luaL_argcheck(L, t == LUA_TTABLE || t == LUA_TSTRING, 1,
++                   "table or string expected");
++  lua_pushinteger(L, lua_objlen(L, 1));
++  return 1;
++}
++
++
+ static int luaB_rawequal (lua_State *L) {
+   luaL_checkany(L, 1);
+   luaL_checkany(L, 2);
+@@ -458,6 +467,7 @@
+   {"next", luaB_next},
+   {"pcall", luaB_pcall},
+   {"print", luaB_print},
++  {"rawlen", luaB_rawlen},
+   {"rawequal", luaB_rawequal},
+   {"rawget", luaB_rawget},
+   {"rawset", luaB_rawset},
+diff -urN lua-5.1.5.orig/src/ltm.c lua-5.1.5/src/ltm.c
+--- lua-5.1.5.orig/src/ltm.c	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/ltm.c	2012-05-17 12:12:02.252794245 -0400
+@@ -30,9 +30,9 @@
+ void luaT_init (lua_State *L) {
+   static const char *const luaT_eventname[] = {  /* ORDER TM */
+     "__index", "__newindex",
+-    "__gc", "__mode", "__eq",
++    "__gc", "__mode", "__len", "__eq",
+     "__add", "__sub", "__mul", "__div", "__mod",
+-    "__pow", "__unm", "__len", "__lt", "__le",
++    "__pow", "__unm", "__lt", "__le",
+     "__concat", "__call"
+   };
+   int i;
+diff -urN lua-5.1.5.orig/src/ltm.h lua-5.1.5/src/ltm.h
+--- lua-5.1.5.orig/src/ltm.h	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/ltm.h	2012-05-17 12:12:02.254718931 -0400
+@@ -20,6 +20,7 @@
+   TM_NEWINDEX,
+   TM_GC,
+   TM_MODE,
++  TM_LEN,
+   TM_EQ,  /* last tag method with `fast' access */
+   TM_ADD,
+   TM_SUB,
+@@ -28,7 +29,6 @@
+   TM_MOD,
+   TM_POW,
+   TM_UNM,
+-  TM_LEN,
+   TM_LT,
+   TM_LE,
+   TM_CONCAT,
+diff -urN lua-5.1.5.orig/src/lvm.c lua-5.1.5/src/lvm.c
+--- lua-5.1.5.orig/src/lvm.c	2011-08-17 16:43:11.000000000 -0400
++++ lua-5.1.5/src/lvm.c	2012-05-17 12:12:02.254718931 -0400
+@@ -515,16 +515,23 @@
+         const TValue *rb = RB(i);
+         switch (ttype(rb)) {
+           case LUA_TTABLE: {
+-            setnvalue(ra, cast_num(luaH_getn(hvalue(rb))));
++            Table *h = hvalue(rb);
++            /* const TValue *tm = luaT_gettmbyobj(L, rb, TM_LEN); */
++            const TValue *tm = fasttm(L, h->metatable, TM_LEN);
++            if (tm == NULL) /* || ttisnil(tm)) */ {
++                setnvalue(ra, cast_num(luaH_getn(h)));
++            } else {
++                Protect(callTMres(L, ra, tm, rb, luaO_nilobject));
++            }
+             break;
+           }
+           case LUA_TSTRING: {
+             setnvalue(ra, cast_num(tsvalue(rb)->len));
+             break;
+           }
+           default: {  /* try metamethod */
+             Protect(
+               if (!call_binTM(L, rb, luaO_nilobject, ra, TM_LEN))
+                 luaG_typeerror(L, rb, "get length of");
+             )
+           }

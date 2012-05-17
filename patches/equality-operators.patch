@@ -1,0 +1,110 @@
+Equality operators that work like arithmetic operators
+Author: Chris Marrin
+Derived from: http://lua-users.org/files/wiki_insecure/power_patches/5.1-alpha/UniformCompare.patch, posted 20 Sep 2005
+Updated: 17 May 2012 by dubiousjim@gmail.com
+    (i)  to apply against Lua 5.1.5, and
+    (ii) to match Lua 5.2's behavior, disable equals comparisons for
+         objects of different types
+
+Description from <http://lua-users.org/wiki/LuaPowerPatches>:
+
+This modifies the behavior of the equality operator functions so they are able
+to handle values with dissimilar types. For instance, in standard Lua if the
+left operand is a userdata and the right is a number, the equality test will
+fail. This patch causes the __eq metamethod of the userdata to be used, if
+available. But note, one reason Lua does not support this is because the __eq,
+__lt and __le metamethods are used for ~=, > and >= as well, by reversing the
+operands. Therefore, if both the right and left operands have metamethods, you
+might be surprised by which one gets chosen. As it is, the left metamethod is
+preferred. But of course, this is the RIGHT metamethod for the ~=, > and >=
+tests! A good solution to this might be to add __ne, __gt and __ge metamethods.
+Then the equality operators would truly behave exactly like the arithmetic
+operators.
+
+
+diff -urNp lua-5.1.5.orig/src/lvm.c lua-5.1.5/src/lvm.c
+--- lua-5.1.5.orig/src/lvm.c	2011-08-17 16:43:11.000000000 -0400
++++ lua-5.1.5/src/lvm.c	2012-05-17 12:48:48.851718969 -0400
+@@ -190,11 +190,9 @@ static const TValue *get_compTM (lua_Sta
+ static int call_orderTM (lua_State *L, const TValue *p1, const TValue *p2,
+                          TMS event) {
+   const TValue *tm1 = luaT_gettmbyobj(L, p1, event);
+-  const TValue *tm2;
+-  if (ttisnil(tm1)) return -1;  /* no metamethod? */
+-  tm2 = luaT_gettmbyobj(L, p2, event);
+-  if (!luaO_rawequalObj(tm1, tm2))  /* different metamethods? */
+-    return -1;
++  if (ttisnil(tm1))
++    tm1 = luaT_gettmbyobj(L, p2, event);  /* try second operand */
++  if (!ttisfunction(tm1)) return 0;
+   callTMres(L, L->top, tm1, p1, p2);
+   return !l_isfalse(L->top);
+ }
+@@ -224,13 +222,13 @@ static int l_strcmp (const TString *ls, 
+ 
+ int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r) {
+   int res;
+-  if (ttype(l) != ttype(r))
+-    return luaG_ordererror(L, l, r);
+-  else if (ttisnumber(l))
+-    return luai_numlt(nvalue(l), nvalue(r));
+-  else if (ttisstring(l))
+-    return l_strcmp(rawtsvalue(l), rawtsvalue(r)) < 0;
+-  else if ((res = call_orderTM(L, l, r, TM_LT)) != -1)
++  if (ttype(l) == ttype(r)) {
++    if (ttisnumber(l))
++      return luai_numlt(nvalue(l), nvalue(r));
++    else if (ttisstring(l))
++      return l_strcmp(rawtsvalue(l), rawtsvalue(r)) < 0;
++  }
++  if ((res = call_orderTM(L, l, r, TM_LT)) != -1)
+     return res;
+   return luaG_ordererror(L, l, r);
+ }
+@@ -238,13 +236,13 @@ int luaV_lessthan (lua_State *L, const T
+ 
+ static int lessequal (lua_State *L, const TValue *l, const TValue *r) {
+   int res;
+-  if (ttype(l) != ttype(r))
+-    return luaG_ordererror(L, l, r);
+-  else if (ttisnumber(l))
+-    return luai_numle(nvalue(l), nvalue(r));
+-  else if (ttisstring(l))
+-    return l_strcmp(rawtsvalue(l), rawtsvalue(r)) <= 0;
+-  else if ((res = call_orderTM(L, l, r, TM_LE)) != -1)  /* first try `le' */
++  if (ttype(l) == ttype(r)) {
++    if (ttisnumber(l))
++      return luai_numle(nvalue(l), nvalue(r));
++    else if (ttisstring(l))
++      return l_strcmp(rawtsvalue(l), rawtsvalue(r)) <= 0;
++  }
++  if ((res = call_orderTM(L, l, r, TM_LE)) != -1) /* first try `le' */
+     return res;
+   else if ((res = call_orderTM(L, r, l, TM_LT)) != -1)  /* else try `lt' */
+     return !res;
+@@ -254,7 +252,10 @@ static int lessequal (lua_State *L, cons
+ 
+ int luaV_equalval (lua_State *L, const TValue *t1, const TValue *t2) {
+   const TValue *tm;
+   lua_assert(ttype(t1) == ttype(t2));
++  /* if (ttype(t1) != ttype(t2))
++	  return call_orderTM(L, t1, t2, TM_EQ) > 0; */
++
+   switch (ttype(t1)) {
+     case LUA_TNIL: return 1;
+     case LUA_TNUMBER: return luai_numeq(nvalue(t1), nvalue(t2));
+diff -urNp lua-5.1.5.orig/src/lvm.h lua-5.1.5/src/lvm.h
+--- lua-5.1.5.orig/src/lvm.h	2007-12-27 08:02:25.000000000 -0500
++++ lua-5.1.5/src/lvm.h	2012-05-17 12:48:48.852718537 -0400
+@@ -18,9 +18,9 @@
+ #define tonumber(o,n)	(ttype(o) == LUA_TNUMBER || \
+                          (((o) = luaV_tonumber(o,n)) != NULL))
+ 
+-#define equalobj(L,o1,o2) \
+-	(ttype(o1) == ttype(o2) && luaV_equalval(L, o1, o2))
++#define equalobj(L,o1,o2) \
++	(ttype(o1) == ttype(o2) && luaV_equalval(L, o1, o2))
+ 
+ 
+ LUAI_FUNC int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r);
+ LUAI_FUNC int luaV_equalval (lua_State *L, const TValue *t1, const TValue *t2);
