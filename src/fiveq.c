@@ -533,7 +533,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.module");
   lua_call(L, 1, 0);
 
-  /* defines iter; returns 0 */
+  /* defines singles; returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_iter);
   lua_pushstring(L, "fiveq.iter");
   lua_call(L, 1, 0);
@@ -721,7 +721,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.module");
   lua_call(L, 1, 0);
 
-  /* defines iter, returns 0 */
+  /* defines singles, returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_iter);
   lua_pushstring(L, "fiveq.iter");
   lua_call(L, 1, 0);

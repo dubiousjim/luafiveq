@@ -232,7 +232,7 @@ static int typechecker(lua_State *L, int idx, int fromidx) {
                 if (lua_type(L, idx) == LUA_TTABLE)
                     res = 1;
                 else if (lua_getmetatable(L, idx)) {
-                    lua_pushliteral(L, "__iter");
+                    lua_pushliteral(L, "__singles");
                     lua_rawget(L, -2);
                     // stack[+1]=meta, stack[+2]=__iter
                     if (!lua_isnil(L, -1)) {
