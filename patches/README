@@ -93,8 +93,8 @@ are no longer available at their original locations.
     Derived from: http://lua-users.org/files/wiki_insecure/power_patches/5.1-alpha/UniformCompare.patch, posted 20 Sep 2005
     Updated: 17 May 2012 by dubiousjim@gmail.com
     (i)  to apply against Lua 5.1.5, and
-    (ii) to match Lua 5.2's behavior, disable equals comparisons for
-         objects of different types
+    (ii) to match Lua 5.2's behavior, only honor __lt and __le comparisons
+         for objects of different types, not __eq comparisons
 
 
 8.  Custom error object support
