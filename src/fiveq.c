@@ -301,6 +301,64 @@ static int db_setuservalue (lua_State *L) {
   return 1;
 }
 
+
+/* --- adapted from lua-5.2.0's loadlib.c --- */
+
+#include <string.h>
+
+#if !defined (LUA_PATH_SEP)
+#define LUA_PATH_SEP		";"
+#endif
+#if !defined (LUA_PATH_MARK)
+#define LUA_PATH_MARK		"?"
+#endif
+
+static int readable (const char *filename) {
+  FILE *f = fopen(filename, "r");  /* try to open file */
+  if (f == NULL) return 0;  /* open failed */
+  fclose(f);
+  return 1;
+}
+
+
+static const char *pushnexttemplate (lua_State *L, const char *path) {
+  const char *l;
+  while (*path == *LUA_PATH_SEP) path++;  /* skip separators */
+  if (*path == '\0') return NULL;  /* no more templates */
+  l = strchr(path, *LUA_PATH_SEP);  /* find next separator */
+  if (l == NULL) l = path + strlen(path);
+  lua_pushlstring(L, path, l - path);  /* template */
+  return l;
+}
+
+
+static int ll_searchpath (lua_State *L) {
+  const char *name = luaL_checkstring(L, 1);
+  const char *path = luaL_checkstring(L, 2);
+  const char *sep = luaL_optstring(L, 3, ".");
+  const char *dirsep = luaL_optstring(L, 4, LUA_DIRSEP);
+  if (*sep != '\0')  /* non-empty separator? */
+    name = luaL_gsub(L, name, sep, dirsep);  /* replace it by 'dirsep' */
+  /* luaL_Buffer msg; luaL_buffinit(L, &msg); */
+  lua_pushliteral(L, "");  /* error accumulator */
+  while ((path = pushnexttemplate(L, path)) != NULL) {
+    const char *filename = luaL_gsub(L, lua_tostring(L, -1), LUA_PATH_MARK, name);
+    lua_remove(L, -2);  /* remove path template */
+    if (readable(filename))  /* does file exist and is readable? */
+      return 1;  /* return that file name */
+    lua_pushfstring(L, "\n\tno file " LUA_QS, filename);
+    lua_remove(L, -2);  /* remove file name */
+    lua_concat(L, 2); /* add entry to possible error message */
+    /* luaL_addvalue(&msg); */
+  }
+  /* luaL_pushresult(&msg); */
+  /* not found: error message is on top of the stack */
+  lua_pushnil(L);
+  lua_insert(L, -2);
+  return 2;  /* return nil + error message */
+}
+
+
 extern int luaopen_fiveq_pairs (lua_State *L);
 extern int luaopen_fiveq_io (lua_State *L);
 extern int luaopen_fiveq_bitlib (lua_State *L);
@@ -400,6 +458,7 @@ extern int luaopen_fiveq (lua_State *L) {
   require(L,  LUA_LOADLIBNAME, luaopen_package);
   lua_getfield(L, -1, "loaders");  /* get package.loaders */
   lua_setfield(L, -2, "searchers");  /* export to package library */
+  set1func(L, "searchpath", ll_searchpath);
   lua_pop(L, 1);  /* pop package library */
 
   lua_pop(L, 1);  /* pop REG._LOADED */
