@@ -142,7 +142,7 @@ static int table_unpack (lua_State *L) {
 }
 
 #ifdef LUA_FIVEQ_PLUS
-extern int getfenv(lua_State *L) {
+static int getfenv(lua_State *L) {
     int level = luaL_checkint(L, 1);
     if (level > 0) {
         luaQ_getfenv(L, level, NULL);
