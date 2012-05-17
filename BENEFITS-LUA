@@ -120,6 +120,7 @@ functions are added:
 
     debug.getfenv and debug.setfenv:
         only available for userdata
+        (see also the global getfenv provided under fiveqplus, below)
 
 Additionally, the global _FIVEQ is set to true.
 

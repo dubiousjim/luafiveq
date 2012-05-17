@@ -141,21 +141,6 @@ static int table_unpack (lua_State *L) {
   return n;
 }
 
-#ifdef LUA_FIVEQ_PLUS
-static int getfenv(lua_State *L) {
-    int level = luaL_checkint(L, 1);
-    if (level > 0) {
-        luaQ_getfenv(L, level, NULL);
-    }
-    else {
-        luaL_argcheck(L, level == 0, 1, "negative level");
-        lua_pushglobaltable(L);
-    }
-    return 1;
-}
-#endif
-
-
 static int newproxy (lua_State *L) {
   lua_settop(L, 1);
   lua_newuserdata(L, 0);  /* create proxy */
@@ -611,6 +596,7 @@ static int math_log10 (lua_State *L) {
 
 /* --- adapted from lua-5.2.0's ldblib.c --- */
 
+#if 0
 static int db_getuservalue (lua_State *L) {
   if (lua_type(L, 1) != LUA_TUSERDATA)
     lua_pushnil(L);
@@ -628,6 +614,22 @@ static int db_setuservalue (lua_State *L) {
   lua_setuservalue(L, 1);
   return 1;
 }
+#endif
+
+
+#ifdef LUA_FIVEQ_PLUS
+static int getfenv(lua_State *L) {
+    int level = luaL_checkint(L, 1);
+    if (level > 0) {
+        luaQ_getfenv(L, level, NULL);
+    }
+    else {
+        luaL_argcheck(L, level == 0, 1, "negative level");
+        lua_pushglobaltable(L);
+    }
+    return 1;
+}
+#endif
 
 
 extern int luaopen_fiveq (lua_State *L) {
