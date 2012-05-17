@@ -31,6 +31,11 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
     file:write:
         will return file
 
+    load:
+        will accept a string argument, like load in 5.2; ignores any
+        third `mode` argument, but does honor any fourth `env` argument (using
+        setfenv)
+
     xpcall:
         accepts more than two arguments, like pcall and xpcall in Lua 5.2
 
