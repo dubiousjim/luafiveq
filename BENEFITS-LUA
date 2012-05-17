@@ -57,6 +57,8 @@ The following functions are added:
     package.searchers:
         alias for package.loaders
 
+    package.searchpath
+
     debug.getuservalue
         returns nil if argument isn't a full userdatum, else nil or a table
 
@@ -69,7 +71,7 @@ Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
 Finally, the global _FIVEQ is set to true.
 
 Note that the following facilities from Lua 5.2 have not been backported:
-        * package.searchpath, debug.upvalueid, debug.upvaluejoin
+        * debug.upvalueid, debug.upvaluejoin
         * new behavior of coroutine.running when called from main thread
         * new behavior of collectgarbage, load, package.loadlib,
           string.format, debug.getlocal, debug.setlocal, debug.sethook
