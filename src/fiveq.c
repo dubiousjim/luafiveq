@@ -255,6 +255,66 @@ static int luaB_rawlen (lua_State *L) {
 }
 
 
+/*
+** reserved slot, above all arguments, to hold a copy of the returned
+** string to avoid it being collected while parsed. 'load' has four
+** optional arguments (chunk, source name, mode, and environment).
+*/
+#define LOADSLOT	5
+
+
+/*
+** Reader for generic `load' function: `lua_load' uses the
+** stack for internal stuff, so the reader cannot change the
+** stack top. Instead, it keeps its resulting string in a
+** reserved slot inside the stack.
+*/
+static const char *generic_reader (lua_State *L, void *ud, size_t *size) {
+  (void)ud;  /* to avoid warnings */
+  luaL_checkstack(L, 2, "too many nested functions");
+  lua_pushvalue(L, 1);  /* get function */
+  lua_call(L, 0, 1);  /* call it */
+  if (lua_isnil(L, -1)) {
+    *size = 0;
+    return NULL;
+  }
+  else if (!lua_isstring(L, -1))
+    luaL_error(L, "reader function must return a string");
+  lua_replace(L, LOADSLOT);  /* save string in reserved slot */
+  return lua_tolstring(L, LOADSLOT, size);
+}
+
+
+/* load(string-or-reader-funct, [sourcename, [mode-is-ignored, [env]]]) */
+static int luaB_load (lua_State *L) {
+  int status;
+  size_t l;
+  int top = lua_gettop(L);
+  const char *s = lua_tolstring(L, 1, &l);
+  if (s != NULL) { /* loading a string? */
+      const char *chunkname = luaL_optstring(L, 2, s);
+      status = luaL_loadbuffer(L, s, l, chunkname); /* 5.1 doesn't take `mode` */
+  } else { /* loading from a reader function */
+      const char *chunkname = luaL_optstring(L, 2, "=(load)");
+      luaL_checktype(L, 1, LUA_TFUNCTION);
+      lua_settop(L, LOADSLOT);  /* arguments plus one reserved slot */
+      status = lua_load(L, generic_reader, NULL, chunkname); /* 5.1 doesn't take `mode` */
+  }
+  if (status == 0 && top >= 4) { /* is there an 'env' argument */
+    lua_pushvalue(L, 4); /* environment for loaded function */
+    lua_setfenv(L, -2);
+  }
+  if (status == 0)  /* OK? */
+    return 1;
+  else {
+    lua_pushnil(L);
+    lua_insert(L, -2);  /* put before error message */
+    return 2;  /* return nil plus error message */
+  }
+}
+
+
+
 /* --- adapted from lua-5.2.0's lstrlib.c --- */
 
 static int str_rep (lua_State *L) {
@@ -385,6 +445,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
 
   lua_register(L, "xpcall", luaB_xpcall);  /* export to _G */
+  lua_register(L, "load", luaB_load);   /* export to _G */
 
   /* rawlen(string or table) is exported by the tablelen patch */
   lua_getglobal(L, "rawlen");
