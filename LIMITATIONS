@@ -132,8 +132,25 @@ Other differences are:
         file.
 
    28.  LUA_ENVIRONINDEX and LUA_GLOBALSINDEX are not available in 5.2.
+
         LUA_RIDX_MAINTHREAD and LUA_RIDX_GLOBALS *are* backported to Lua 5.1,
-        but these macros expand to different literal values.
+        but with the following differences:
+
+        * These macros expand to different literal values.
+
+        * If fiveq isn't first required from the main thread, LUA_RIDX_MAINTHREAD
+          won't be set (there's no error, this step is just silently omitted).
+
+        * In 5.1, one can reassign a thread's environment, and that
+          affects subsequent use of LUA_GLOBALSINDEX. However, any such
+          reassignments aren't propagated to the registry. Unless you manually
+          change it, registry[LUA_RIDX_GLOBALS] will always
+          hold what was the global thread table when fiveq was required.
+
+        * In 5.2 only, the current value of registry[LUA_RIDX_GLOBALS] is assigned
+          as the upvalue of any loaded chunks (which serves as their initial _ENV)
+          In 5.1, the current thread's global env, which may have been reassigned,
+          is used instead.
 
 
 Differences affecting both Lua and C

@@ -426,17 +426,23 @@ extern int luaopen_fiveq (lua_State *L) {
 
   // stack[3] = _LOADED
 
-  if (lua_pushthread(L) != 1) {
+  if (lua_pushthread(L) == 1)
+      lua_rawseti(L, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+  else {
+      lua_pop(L, 1);
 #if 0
     /* have to #include "lstate.h" */
     lua_State *L1 = L->l_G->mainthread;
     lua_pop(L, 1);
     lua_pushthread(L1);
-#else
+#elif 0
     luaL_error(L, LUA_QS " not loaded from main thread", lua_tostring(L, 1));
+#else
+    /* fail silently */
 #endif
   }
-  lua_rawseti(L, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+  lua_pushvalue(L, LUA_GLOBALSINDEX);
+  lua_rawseti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
 
   lua_register(L, "xpcall", luaB_xpcall);  /* export to _G */
   lua_register(L, "load", luaB_load);   /* export to _G */

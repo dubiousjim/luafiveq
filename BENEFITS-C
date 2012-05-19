@@ -47,6 +47,9 @@ Here is the complete list of interfaces that are provided to Lua 5.1:
  *   lua_setuservalue
         the 5.2 version can assign tables or nils, this version only tables
 
+ *   LUA_RIDX_MAINTHREAD and LUA_RIDX_GLOBALS
+        but see accompanying LIMITATIONS file
+
  *   bool luaL_getsubtable(L, idx, "field")
         shallowly ensures stack[idx]["field"] is a table and pushes to stack
         returns true if already existed, or false if newly allocated

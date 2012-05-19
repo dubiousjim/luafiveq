@@ -63,8 +63,9 @@ typedef LUA_UNSIGNED lua_Unsigned;
 
 #define LUA_OK 0
 
-/* 5.2 uses (1), but in 5.1 that's used by the luaL_ref system */
+/* 5.2 uses (1, 2), but in 5.1 those are used by the luaL_ref system */
 #define LUA_RIDX_MAINTHREAD (-3)
+#define LUA_RIDX_GLOBALS (-4)
 
 
 #define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
