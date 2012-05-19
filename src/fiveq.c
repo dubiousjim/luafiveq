@@ -7,6 +7,7 @@
 #include "fiveq.h"
 #include <lualib.h>
 
+#include <stdio.h>
 
 /* --- adapted from lua-5.2.0's lmathlib.c --- */
 
@@ -394,6 +395,26 @@ extern int luaopen_fiveq_io (lua_State *L);
 extern int luaopen_fiveq_bitlib (lua_State *L);
 
 extern int luaopen_fiveq (lua_State *L) {
+  lua_settop(L, 1);
+#ifdef LUA_FIVEQ_PLUS
+  lua_pushstring(L, "fiveq");
+#else
+  lua_pushstring(L, "fiveqplus");
+#endif
+  lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+  lua_pushvalue(L, 2);
+  lua_rawget(L, -2);
+  if (!lua_isnil(L, -1))
+      luaL_error(L, LUA_QS " is already loaded", lua_tostring(L, 2));
+  lua_pop(L, 1);
+#ifdef LUA_FIVEQ_PLUS
+  lua_pushvalue(L, 2);
+  lua_pushliteral(L, "plus");
+  lua_rawset(L, -3);
+#endif
+
+  // stack[3] = _LOADED
+
   if (lua_pushthread(L) != 1) {
 #if 0
     /* have to #include "lstate.h" */
@@ -401,18 +422,10 @@ extern int luaopen_fiveq (lua_State *L) {
     lua_pop(L, 1);
     lua_pushthread(L1);
 #else
-    luaL_error(L, LUA_QS " not loaded from main thread",
-# ifdef LUA_FIVEQ_PLUS
-      "fiveqplus"
-# else
-      "fiveq"
-# endif
-      );
+    luaL_error(L, LUA_QS " not loaded from main thread", lua_tostring(L, 1));
 #endif
   }
   lua_rawseti(L, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
-
-  lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
 
   lua_register(L, "xpcall", luaB_xpcall);  /* export to _G */
   lua_register(L, "load", luaB_load);   /* export to _G */
@@ -456,13 +469,7 @@ extern int luaopen_fiveq (lua_State *L) {
   require(L,  LUA_IOLIBNAME, luaopen_io);
   lua_getfield(L, -1, "stderr");
   if (!luaL_getmetafield(L, -1, "write"))
-      luaL_error(L, LUA_QS " can't get io.stderr's write method",
-# ifdef LUA_FIVEQ_PLUS
-      "fiveqplus"
-#else
-      "fiveq"
-#endif
-      );
+      luaL_error(L, LUA_QS " can't get io.stderr's write method", lua_tostring(L, 1));
   lua_setfield(L, -4, "write");
   lua_setfield(L, -3, "stderr");
   lua_pop(L, 1); /* pop io library */
@@ -538,17 +545,10 @@ extern int luaopen_fiveq (lua_State *L) {
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
-  lua_pushstring(L, "plus");
-  lua_setglobal(L, "_fiveq");
-
-# else
-
-  lua_pushboolean(L, 1);
-  lua_setglobal(L, "_fiveq");
-
 # endif
 
-  return 0;
+  lua_pushboolean(L, 1);
+  return 1;
 }
 
 
@@ -617,7 +617,25 @@ static int getfenv(lua_State *L) {
 
 
 extern int luaopen_fiveq (lua_State *L) {
+  lua_settop(L, 1);
+#ifdef LUA_FIVEQ_PLUS
+  lua_pushstring(L, "fiveq");
+#else
+  lua_pushstring(L, "fiveqplus");
+#endif
   lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+  lua_pushvalue(L, 2);
+  lua_rawget(L, -2);
+  if (!lua_isnil(L, -1))
+      luaL_error(L, LUA_QS " is already loaded", lua_tostring(L, 2));
+  lua_pop(L, 1);
+#ifdef LUA_FIVEQ_PLUS
+  lua_pushvalue(L, 2);
+  lua_pushliteral(L, "plus");
+  lua_rawset(L, -3);
+#endif
+
+  // stack[3] = _LOADED
 
   lua_getglobal(L, "load");
   lua_setglobal(L, "loadstring");
@@ -659,13 +677,7 @@ extern int luaopen_fiveq (lua_State *L) {
   require(L,  LUA_IOLIBNAME, luaopen_io);
   lua_getfield(L, -1, "stderr");
   if (!luaL_getmetafield(L, -1, "write"))
-      luaL_error(L, LUA_QS " can't get io.stderr's write method",
-# ifdef LUA_FIVEQ_PLUS
-      "fiveqplus"
-#else
-      "fiveq"
-#endif
-      );
+      luaL_error(L, LUA_QS " can't get io.stderr's write method", lua_tostring(L, 1));
   lua_setfield(L, -4, "write");
   lua_setfield(L, -3, "stderr");
   lua_pop(L, 1); /* pop io library */
@@ -726,9 +738,6 @@ extern int luaopen_fiveq (lua_State *L) {
   luaL_requiref(L, "hash", luaopen_fiveq_hash, 1);
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
-  lua_pushstring(L, "plus");
-  lua_setglobal(L, "_fiveq");
-
 # else
 
   /* defines module, possibly package.seeall; returns 0 */
@@ -736,12 +745,10 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pushstring(L, "fiveq.module");
   lua_call(L, 1, 0);
 
-  lua_pushboolean(L, 1);
-  lua_setglobal(L, "_fiveq");
-
 # endif
 
-  return 0;
+  lua_pushboolean(L, 1);
+  return 1;
 }
 
 #endif
