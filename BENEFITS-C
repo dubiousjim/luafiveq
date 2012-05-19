@@ -353,7 +353,7 @@ Another pattern writes the functions to an existing table:
     static const luaL_Reg foolib[] = ...
     extern int luaopen_foo(lua_State *L) {
         luaQ_checklib(L, LUA_STRLIBNAME); luaL_setfuncs(L, foolib, 0);
-        /* same as: luaL_openlib(L, LUA_STRLIBNAME, foolib, 0); */
+        /* similar: luaL_openlib(L, LUA_STRLIBNAME, foolib, 0); */
         return 0;
     }
 
