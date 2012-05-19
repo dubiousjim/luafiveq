@@ -472,7 +472,7 @@ extern int luaopen_fiveq (lua_State *L) {
   require(L,  LUA_IOLIBNAME, luaopen_io);
   lua_getfield(L, -1, "stderr");
   if (!luaL_getmetafield(L, -1, "write"))
-      luaL_error(LUA_QS " can't get io.stderr's write method",
+      luaL_error(L, LUA_QS " can't get io.stderr's write method",
 # ifdef LUA_FIVEQ_PLUS
       "fiveqplus"
 #else
@@ -675,7 +675,7 @@ extern int luaopen_fiveq (lua_State *L) {
   require(L,  LUA_IOLIBNAME, luaopen_io);
   lua_getfield(L, -1, "stderr");
   if (!luaL_getmetafield(L, -1, "write"))
-      luaL_error(LUA_QS " can't get io.stderr's write method",
+      luaL_error(L, LUA_QS " can't get io.stderr's write method",
 # ifdef LUA_FIVEQ_PLUS
       "fiveqplus"
 #else
