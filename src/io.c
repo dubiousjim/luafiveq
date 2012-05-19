@@ -22,9 +22,9 @@
 #include "fiveq.h"
 
 
-/* --- adapted from loslib.c and lauxlib.c --- */
+/* --- adapted from lauxlib.c --- */
 
-static int pushresult (lua_State *L, int stat, const char *filename) {
+static int luaL_fileresult (lua_State *L, int stat, const char *filename) {
   int en = errno;  /* calls to Lua API may change this value */
   if (stat) {
     lua_pushboolean(L, 1);
@@ -41,6 +41,8 @@ static int pushresult (lua_State *L, int stat, const char *filename) {
   }
 }
 
+#if !defined(inspectstat)
+# if defined(LUA_USE_POSIX)
 #include <sys/wait.h>
 
 /*
@@ -50,11 +52,17 @@ static int pushresult (lua_State *L, int stat, const char *filename) {
    if (WIFEXITED(stat)) { stat = WEXITSTATUS(stat); } \
    else if (WIFSIGNALED(stat)) { stat = WTERMSIG(stat); what = "signal"; }
 
+# else
+#define inspectstat(stat,what)  /* no op */
+
+# endif
+#endif
+
 
 static int luaL_execresult (lua_State *L, int stat) {
   const char *what = "exit";  /* type of termination */
   if (stat == -1)  /* error? */
-    return pushresult(L, 0, NULL);
+    return luaL_fileresult(L, 0, NULL);
   else {
     inspectstat(stat, what);  /* interpret result */
     if (*what == 'e' && stat == 0)  /* successful termination? */
@@ -151,7 +159,7 @@ static int io_open (lua_State *L) {
     return luaL_error(L, "invalid mode " LUA_QL("%s")
                          " (should match " LUA_QL("[rwa]%%+?b?") ")", mode);
   *pf = fopen(filename, mode);
-  return (*pf == NULL) ? pushresult(L, 0, filename) : 1;
+  return (*pf == NULL) ? luaL_fileresult(L, 0, filename) : 1;
 }
 
 
@@ -309,7 +317,7 @@ static int g_read (lua_State *L, FILE *f, int first) {
     }
   }
   if (ferror(f))
-    return pushresult(L, 0, NULL);
+    return luaL_fileresult(L, 0, NULL);
   if (!success) {
     lua_pop(L, 1);  /* remove last result */
     lua_pushnil(L);  /* push nil instead */
@@ -386,7 +394,7 @@ static int f_write (lua_State *L) {
     lua_pushvalue(L, 1);
     return 1;
   }
-  else return pushresult(L, status, NULL);
+  else return luaL_fileresult(L, status, NULL);
 }
 
 
