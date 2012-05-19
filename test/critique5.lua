@@ -4,14 +4,14 @@ local _P = package.loaded
 --     _P0[k] = v
 -- end
 
-; (function(_ENV)
+; (function()
   local require = require
   local module = module
   local print = print
   local _P = package.loaded
   module('yourmodule.two');
 
-  (function(_ENV)
+  (function()
     module('mymodule.one')
     return _M
   end)(_ENV)

@@ -1,7 +1,7 @@
-(function(_ENV)
+(function()
   module("mymodule", package.seeall);
 
-  (function(_ENV)
+  (function()
     module("test.more")
     function hello() return 1+2 end
   end)(_ENV)

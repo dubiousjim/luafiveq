@@ -1,9 +1,9 @@
 function test() return 1+2 end
 
-; (function(_ENV)
+; (function()
   module("mymodule", package.seeall);
 
-  (function(_ENV)
+  (function()
     module("test.more") -- fails: name conflict for module 'test.more'
     function hello() return 1+2 end
   end)(_ENV)
