@@ -48,32 +48,8 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define api_check(L, cond, msg)	lua_assert((cond) && msg)
 #endif
 
-/* ----- adapted from lua-5.2.0 lua.h: ----- */
 
-#define LUA_OK 0
-
-#define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
-/* lua_getglobal(L, key): pushes _G[key] onto stack in both versions */
-/* lua_setglobal(L, key): _G[key] = pops[-1] from stack in both versions */
-
-
-/* ----- adapted from lua-5.2.0 lapi.c: ----- */
-
-int lua_absindex (lua_State *L, int idx);
-void lua_copy (lua_State *L, int from, int to);
-
-/* the 5.2.0 version can also assign nil, but setfenv and this backport only
- * assign tables */
-void lua_setuservalue (lua_State *L, int idx);
-void lua_getuservalue (lua_State *L, int idx);
-
-void lua_rawgetp (lua_State *L, int idx, const void *p);
-void lua_rawsetp (lua_State *L, int idx, const void *p);
-
-
-/* #include "unsigned.h" */
-
-/* ----- adapted from lua-5.2.0 luaconf.h: ----- */
+/* ----- from lua-5.2.0 luaconf.h: ----- */
 #define LUA_INT32  LUAI_INT32
 /*
  * @@ LUA_UNSIGNED is the integral type used by lua_pushunsigned/lua_tounsigned.
@@ -83,6 +59,29 @@ void lua_rawsetp (lua_State *L, int idx, const void *p);
 
 /* ----- from lua-5.2.0 lua.h: ----- */
 typedef LUA_UNSIGNED lua_Unsigned;
+
+
+#define LUA_OK 0
+
+/* 5.2 uses (1), but in 5.1 that's used by the luaL_ref system */
+#define LUA_RIDX_MAINTHREAD (-3)
+
+
+#define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
+/* lua_getglobal(L, key): pushes _G[key] onto stack in both versions */
+/* lua_setglobal(L, key): _G[key] = pops[-1] from stack in both versions */
+
+
+
+int lua_absindex (lua_State *L, int idx);
+void lua_copy (lua_State *L, int from, int to);
+
+void lua_setuservalue (lua_State *L, int idx);
+void lua_getuservalue (lua_State *L, int idx);
+
+void lua_rawgetp (lua_State *L, int idx, const void *p);
+void lua_rawsetp (lua_State *L, int idx, const void *p);
+
 
 
 
@@ -114,7 +113,7 @@ extern int lua_compare (lua_State *L, int idx1, int idx2, int op);
 extern void lua_arith (lua_State *L, int op);
 
 
-/* ----- adapted from lua-5.2.0 lauxlib.c: ----- */
+/* ----- from lua-5.2.0 lauxlib.c: ----- */
 
 extern lua_Unsigned luaL_checkunsigned (lua_State *L, int arg);
 extern lua_Unsigned luaL_optunsigned (lua_State *L, int narg, lua_Unsigned def);
@@ -183,8 +182,6 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *A, int nup);
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
         luaopen_lib, int gidx);
 
-/* 5.2 uses (1), but in 5.1 that's used by the luaL_ref system */
-#define LUA_RIDX_MAINTHREAD (-3)
 
 /* ----------- for 5.2 ---------- */
 #elif LUA_VERSION_NUM == 502
@@ -200,6 +197,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 #endif
 
 
+
 #define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), \
         lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
 
@@ -210,6 +208,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 #define lua_lessthan(L,idx1,idx2)	lua_compare(L,(idx1),(idx2),LUA_OPLT)
 
 extern int luaL_typerror (lua_State *L, int narg, const char *tname);
+
 
 /* pre-5.1 stuff */
 
