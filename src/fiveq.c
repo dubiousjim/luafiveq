@@ -159,7 +159,7 @@ static int newproxy (lua_State *L) {
 }
 
 
-/* expects REGISTRY[_LOADED] at top of stack */
+/* expects registry[_LOADED] at top of stack */
 static void require(lua_State *L, const char *modname, lua_CFunction openf) {
   lua_getfield(L, -1, modname);
   if (lua_isnil(L, -1)) {
@@ -491,7 +491,7 @@ extern int luaopen_fiveq (lua_State *L) {
   set1func(L, "searchpath", ll_searchpath);
   lua_pop(L, 1);  /* pop package library */
 
-  lua_pop(L, 1);  /* pop REG._LOADED */
+  lua_pop(L, 1);  /* pop registry[_LOADED] */
 
   /* redefines ipairs and pairs, returns 0 */
   lua_pushcfunction(L, luaopen_fiveq_pairs);
@@ -693,7 +693,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_setfield(L, -2, "loaders");  /* export alias to package library */
   lua_pop(L, 1);  /* pop package library */
 
-  lua_pop(L, 1);  /* pop REG._LOADED */
+  lua_pop(L, 1);  /* pop registry[_LOADED] */
 
 # ifdef LUA_FIVEQ_PLUS
 

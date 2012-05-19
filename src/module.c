@@ -23,7 +23,7 @@
  *
  * Following the native design, we use the global "package" table as upvalue(1)
  * (in 5.1.4, it's the function's env). But other designs are also reasonable:
- * package.loaded is already accessible as REG._LOADED, and we only need
+ * package.loaded is already accessible as registry[_LOADED], and we only need
  * additional access to package.searchers: why not make that table directly be
  * the upvalue/env?
  */
