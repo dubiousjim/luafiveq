@@ -13,10 +13,10 @@ Differences affecting only the Lua API
 --------------------------------------
 
     1.  os.exit honors optional `close` argument [patch]
-        this will close the lua_State before exiting, so finalizers will run.
-        The Lua interpreter already does this when exiting normally, but other
-        applications embedding Lua may not; and you may want this behavior when
-        exiting with non-zero status.
+        this will call lua_close before exiting, so finalizers will run.
+        The Lua interpreter already calls lua_close this when exiting normally,
+        but other applications embedding Lua may not; and you may want this
+        behavior when using os.exit (to force non-zero exit statuses).
 
     2.  Lua interpreter honors __tostring on error objects [patch]
 
@@ -102,19 +102,15 @@ These functions include:
 
 Other differences are:
 
-   20.  LUA_ENVIRONINDEX and LUA_GLOBALSINDEX are not available in 5.2.
-        LUA_RIDX_MAINTHREAD and LUA_RIDX_GLOBALS *are* backported to Lua 5.1,
-        but these macros expand to different literal values.
+   20.  lua_version and luaL_checkversion have not been backported.
 
-   21.  lua_version and luaL_checkversion have not been backported.
-
-   22.  the new-style handling of luaL_Buffer has not been backported, and
+   21.  the new-style handling of luaL_Buffer has not been backported, and
         luaL_prepbuffsize and luaL_buffinitsize are not present.
 
-   23.  bool lua_checkstack(L, addl) never raises error in 5.2;
+   22.  bool lua_checkstack(L, addl) never raises error in 5.2;
         also, void luaL_checkstack(L, addl, "message") now permits NULL message
 
-   24.  lua_getfenv and lua_setfenv are not available in 5.2. However,
+   23.  lua_getfenv and lua_setfenv are not available in 5.2. However,
         some of their functionality is replaced by lua_getuservalue and
         lua_setuservalue. And when LUA_FIVEQ_PLUS is defined, we also export:
 
@@ -124,6 +120,10 @@ Other differences are:
         which provide a different part of the functionality; see the BENEFITS-C
         file.
 
+   24.  LUA_ENVIRONINDEX and LUA_GLOBALSINDEX are not available in 5.2.
+        LUA_RIDX_MAINTHREAD and LUA_RIDX_GLOBALS *are* backported to Lua 5.1,
+        but these macros expand to different literal values.
+
 
 Differences affecting both Lua and C
 ------------------------------------
@@ -131,7 +131,7 @@ Differences affecting both Lua and C
    25.  in 5.2, lua_pushcclosure(L, f, 0) (and so too lua_pushcfunction and
         lua_register) create light C functions. These behave like light
         userdata with respect to equality and weak tables.
-
+        
    26.  in 5.2, weak-keyed tables are ephemerons
 
    27.  5.2 has emergency garbage collection [patch]
@@ -155,8 +155,9 @@ Differences affecting both Lua and C
         different types [patch]
 
    32.  in 5.2, an iterator function can yield while being used by a `for k in
-        ...` loop [patch]; you can also yield out of a pcall or from a
-        metamethod. The C functions lua_callk, lua_pcallk, lua_yieldk, and
+        ...` loop [patch]; you can also yield out of a [x]pcall or from a
+        metamethod.
+        The C functions lua_callk, lua_pcallk, lua_yieldk, and
         lua_getctx have that enable this are not backported.
 
    33.  in 5.1, the stack `level` count used by the the Lua error() function
