@@ -299,14 +299,14 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
           lua_setupvalue(L, -2, 1);
       } else {
         /* explicitly search for _ENV upvalue; will fail if debugging info is stripped */
-      for(i=1;;i++) {
-          var = lua_getupvalue(L, -2, i);
-          if (!var || strcmp("_ENV", var)==0)
-              break;
-          lua_pop(L, 1);
-      }
-      if (var) {
-          lua_pop(L, 1); /* discard existing upvalue */
+        for(i=1;;i++) {
+            var = lua_getupvalue(L, -2, i);
+            if (!var || strcmp("_ENV", var)==0)
+                break;
+            lua_pop(L, 1);
+        }
+        if (var) {
+            lua_pop(L, 1); /* discard existing upvalue */
             // stack[+1]=f, stack[+2]=newenv
             lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
             lua_getfield(L, -1, "newclosure");
@@ -689,7 +689,7 @@ extern void luaL_traceback (lua_State *L, lua_State *L1, const char *msg, int le
             if (msg == NULL)
                 lua_pushliteral(L1, "");
             else
-                lua_pushstring(L1, msg);        
+                lua_pushstring(L1, msg);
             lua_pushinteger(L1, level + 1);
             lua_call(L1, 3, 1); /* debug.traceback(thread, msg, level) */
             lua_xmove(L1, L, 1);
