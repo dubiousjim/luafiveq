@@ -197,8 +197,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 #endif
 
 
-
-/* FIXME does this need an initial lua_checkstack? */
+/* ----- from lua-5.2.0 luaconf.h: ----- */
 #define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), \
         lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
 
@@ -207,6 +206,8 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 
 #define lua_equal(L,idx1,idx2)		lua_compare(L,(idx1),(idx2),LUA_OPEQ)
 #define lua_lessthan(L,idx1,idx2)	lua_compare(L,(idx1),(idx2),LUA_OPLT)
+
+
 
 extern int luaL_typerror (lua_State *L, int narg, const char *tname);
 
