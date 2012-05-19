@@ -99,7 +99,7 @@ The following functions are added:
         table
 
 Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
-    Arguments are converted from lua_Numbers to unsigned int32s.
+    Arguments are numerically converted from lua_Numbers to unsigned int32s.
     bit32.bnot(0) is 0xffffffff which is > 0.
     Functions included: band, bor, bxor, bnot, btest,
     lshift, rshift, arshift, lrotate, rrotate, replace, extract
@@ -107,7 +107,8 @@ Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
     btest: is band of all arguments nonzero?
     shifts and rotates also honor negative displacements (lshift->rshift)
     extract(base, bitstart, [bitwidth]) -- bits numbered 31..0, width counts <<
-    replace(base, new, bitstart, [bitwidth]) -- new masked at left to needed width
+    replace(base, new, bitstart, [bitwidth]) -- masking new at right to needed
+    width
 
 
 Finally, the global `_fiveq` is set to true.
