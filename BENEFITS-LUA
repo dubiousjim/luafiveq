@@ -24,6 +24,27 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
         Additionally, os.execute() with no arguments returns true if /bin/sh is
        available, else false.
 
+        Examples:
+        $ lua-5.1 -e 'os.exit(3)'; echo $?
+        3
+        $ lua-5.1 -e 'print(os.execute([[lua-5.1 -e "os.exit(3)"]]))'
+        768
+        $ lua-5.2 -e 'print(os.execute([[lua-5.1 -e "os.exit(3)"]]))'
+        nil  exit  3
+        $ perl -e 'print(system(qq(perl -e "exit(3)")),"\n")'
+        768
+        $ python -c 'import os; print(os.system("python -c \
+            \"import os; os._exit(3)\""))'
+        768
+
+        > f = io.popen "ls"
+        > list = f:read "*a"  -- read all the output
+        > print (#list)
+        143
+        > = f:close()
+        true  exit  0
+
+
     io.open:
         will sanitize its mode string against "[rwa]%+?b?"
 
