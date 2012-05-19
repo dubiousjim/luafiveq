@@ -8,7 +8,7 @@
  *      hash.xor(string1, equallengthstring2)
  *      hash.unbox(obj)   ; for gc-able objects, convert to lightuserdata
  *                        ; for others, return unchanged
- *      hash.pointer(obj) ; for gc-able objects and lightuserdata, return "%p"
+ *      hash.pstring(obj) ; for gc-able objects and lightuserdata, return "%p"
  *                        ; for others, return nil
  */
 
@@ -233,7 +233,7 @@ static int unbox (lua_State *L) {
     return 1;
 }
 
-static int pointer (lua_State *L) {
+static int pstring (lua_State *L) {
     const void *p = lua_topointer(L, 1);
     if (p != NULL) { // && !lua_islightuserdata(L, 1)) {
         lua_pushfstring(L, "%p", p);
@@ -253,7 +253,7 @@ static const luaL_Reg hlib[] = {
   {"unset", unsethash},
   {"xor", ex_or},
   {"unbox", unbox},
-  {"pointer", pointer},
+  {"pstring", pstring},
   {NULL, NULL}
 };
 

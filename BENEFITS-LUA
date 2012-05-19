@@ -725,7 +725,7 @@ The `hash` library has the following methods:
                 A similar technique is used by the upvalueid functions in
                 Lua 5.2.
 
-        * hash.pointer(obj)
+        * hash.pstring(obj)
                 If obj is of a gc-able type, or is a light userdatum,
                 return the string that lua_pushfstring would return using
                 format "%p". For other objects, return nil.
