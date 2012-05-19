@@ -1,5 +1,5 @@
 /*
- * fiveq.c: elements of Lua 5.2's libraries backported to lua 5.1.4, and
+ * fiveq.c: elements of Lua 5.2's libraries backported to lua 5.1, and
  * vice-versa
  */
 
@@ -205,7 +205,7 @@ extern int luaopen_fiveq_hash (lua_State *L);
 extern int luaopen_fiveq_struct (lua_State *L);
 
 
-/* ----------- for 5.1.4 ---------- */
+/* ----------- for 5.1 ---------- */
 #if LUA_VERSION_NUM == 501
 
 
@@ -569,7 +569,7 @@ extern int luaopen_fiveq (lua_State *L) {
 
 
 
-/* ----------- for 5.2.0 ---------- */
+/* ----------- for 5.2 ---------- */
 #elif LUA_VERSION_NUM == 502
 
 static int table_maxn (lua_State *L) {

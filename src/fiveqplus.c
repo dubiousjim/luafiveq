@@ -1,5 +1,5 @@
 /*
- * fiveqplus.c: elements of Lua 5.2's libraries backported to lua 5.1.4, and vice-versa
+ * fiveqplus.c: elements of Lua 5.2's libraries backported to lua 5.1, and vice-versa
  */
 
 #define LUA_FIVEQ_PLUS

@@ -1,5 +1,5 @@
 /*
- * fiveq.h: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
+ * fiveq.h: elements of Lua 5.2's API backported to lua 5.1, and vice-versa
  * includes luaconf.h, lua.h, lauxlib.h, [unsigned.h]
  */
 
@@ -37,7 +37,7 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define lua_assert(cond) ((void)0)
 #endif
 
-/* ----------- for 5.1.4 ---------- */
+/* ----------- for 5.1 ---------- */
 #if LUA_VERSION_NUM == 501
 
 /* from luaconf.h and llimits.h, updated to be more 5.2-like, omitting check_exp */
@@ -138,7 +138,7 @@ extern int luaL_len (lua_State *L, int idx);
 
 /*
  * luaL_Buffer b;
- * char *luaL_buffinitsize(L, &b, sz) is not available in 5.1.4
+ * char *luaL_buffinitsize(L, &b, sz) is not available in 5.1
  *   equiv to: (luaL_buffinit(L, &b), luaL_prepbuffsize(&b, sz) <-- also new)
  * char *luaL_prepbuffer(&b) -- reserves LUAL_BUFFERSIZE
  * -- copy string to that buffer
@@ -193,10 +193,10 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
         luaopen_lib, int gidx);
 
-/* 5.2 uses (1), but in 5.1.4 that's used by the luaL_ref system */
+/* 5.2 uses (1), but in 5.1 that's used by the luaL_ref system */
 #define LUA_RIDX_MAINTHREAD (-3)
 
-/* ----------- for 5.2.0 ---------- */
+/* ----------- for 5.2 ---------- */
 #elif LUA_VERSION_NUM == 502
 
 
@@ -243,7 +243,7 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname);
 
 
 # ifdef LUA_FIVEQ_PLUS
-/* we replace 5.2.0's requiref with a version that will write to stack[gidx]
+/* we replace 5.2's requiref with a version that will write to stack[gidx]
  * when gidx is other than 0 or 1 */
 #  define luaL_requiref luaQ_requiref
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction

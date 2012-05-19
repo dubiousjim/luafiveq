@@ -1,5 +1,5 @@
 /*
- * Hashing library for Lua 5.1.4.
+ * Hashing library for Lua 5.1 and 5.2.
  * Used by tuple.lua and multiset.lua.
  * Exports:
  *      hash.tuple(...)

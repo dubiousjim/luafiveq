@@ -1,5 +1,5 @@
 /*
- * unsigned.h: elements of Lua 5.2's API backported to Lua 5.1.4, and vice-versa
+ * unsigned.h: elements of Lua 5.2's API backported to Lua 5.1, and vice-versa
  * used by bitlib.c, hash.c, and fiveq.c
  */
 
