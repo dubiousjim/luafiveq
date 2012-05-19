@@ -26,15 +26,18 @@ Differences affecting only the Lua API
     4.  5.2 accepts hex float literals, and "%a" and "%A" options to
         string.format
 
-    5.  5.2 permits "\xff" escapes in strings (5.1 only permits "\255")
+    5.  5.2 permits "\xff" escapes in strings
+        5.1 only permits "\255"
 
     6.  in 5.2 only, "\z" skips any following whitespace in strings
+        "\" followed by newline inserts a literal newline, which otherwise
+        gives syntax error for unterminated string
 
-    7.  in 5.2 only, patterns may contain "\0" ("%z" is deprecated but still
-        works)
+    7.  in 5.2 only, patterns may contain "\0"
+        "%z" is deprecated but still works
 
     8.  new pattern "%g" matches all printable chars except space
-        (like POSIX's [:graph:])
+        like POSIX's [:graph:]
 
     9.  in 5.2 only, string.gsub complains if replacement has %c
         where c not in [%0-9]
@@ -49,25 +52,26 @@ Differences affecting only the Lua API
 
    12.  empty statements (;;)
 
-   13.  goto statements and ::labels::
+   13.  ::labels:: and gotos
         can jump to any visible label that doesn't involve entering a local
         variable's scope
 
    14.  in 5.2 only, breaks can appear mid-block
-        (so too can gotos, but not returns)
+        so too can gotos, but not returns
 
    nn.  in 5.2, debug.getupvalue and debug.setupvalue also have access to
-        upvalues of C functions.
+        upvalues of C functions
 
    nn.  in 5.2, coroutines can have C functions as their entry point:
         for example: coroutine.wrap(print)(...)
 
    15.  in 5.2 only, coroutine.running from main thread returns thread,true
-        instead of nil; for both versions, use:
+        instead of nil
+        to cover both versions, use:
             local thread,ismain = coroutine.running()
             if not thread then ismain = true end
 
-   16.  link-only behavior of package.loadlib(path, openfuncname) when
+   16.  in 5.2, package.loadlib(path, openfuncname) only links when
         `openfuncname` is "*"
 
 
@@ -94,16 +98,16 @@ These functions include:
         *   lua_pushlstring(L, string, len)
 
         In Lua 5.2.0 these return a const char *, pointing to Lua's internal
-        copy of the string, instead of void (lua_pushfstring always
-        behaved this way).
+        copy of the string, instead of void
+        lua_pushfstring always behaved this way
 
    18.  int lua_resume(L, lua_State *from, int narg) expects an addtional `from`
         parameter in 5.2, which should be NULL or the thread doing the
         call
 
    19.  lua_load expects an additional `mode` parameter, which can be any of
-        "t", "b", "bt" or NULL (which is treated as "bt"). Pass "t" to disable
-        loading of bytecode; or NULL for the old behavior.
+        "t", "b", "bt" or NULL (which is treated as "bt")
+        Pass "t" to disable loading of bytecode; or NULL for the old behavior.
 
         Also, only in 5.2, single upvalues are assigned the value of
         registry[LUA_RIDX_GLOBALS].
@@ -118,6 +122,11 @@ Other differences are:
    22.  bool lua_checkstack(L, addl) never raises error in 5.2;
         also, void luaL_checkstack(L, addl, "message") now permits NULL message
 
+   nn.  luaL_execresult and luaL_fileresult are implemented and used in
+        src/io.c, but aren't exposed in fiveq.h.
+
+   nn.  in 5.2 only, lua_pushfstring raises errors about invalid format strings.
+
    23.  lua_getfenv and lua_setfenv are not available in 5.2. However,
         some of their functionality is replaced by lua_getuservalue and
         lua_setuservalue. And when LUA_FIVEQ_PLUS is defined, we also export:
@@ -131,11 +140,6 @@ Other differences are:
    24.  LUA_ENVIRONINDEX and LUA_GLOBALSINDEX are not available in 5.2.
         LUA_RIDX_MAINTHREAD and LUA_RIDX_GLOBALS *are* backported to Lua 5.1,
         but these macros expand to different literal values.
-
-   nn.  luaL_execresult and luaL_fileresult are implemented and used in
-        src/io.c, but aren't exposed in fiveq.h.
-
-   nn.  in 5.2 only, lua_pushfstring raises errors about invalid format strings.
 
 
 Differences affecting both Lua and C
@@ -153,7 +157,7 @@ Differences affecting both Lua and C
    27.  5.2 has emergency garbage collection [patch]
 
    28.  in 5.2, the Lua function collectgarbage also accepts "isrunning",
-        "generational", and "incremental" commands and the "count" command
+        "generational", and "incremental" commands; and the "count" command
         returns two values Similarly, the C function lua_gc also accepts
         LUA_GCISRUNNING, LUA_GCGEN and LUA_GCINC.
 
@@ -161,8 +165,9 @@ Differences affecting both Lua and C
 
    29.  in 5.2, some __gc element needs to be present in a metatable-to-be
         *before* calling lua_setmetatable/luaL_setmetatable (or in Lua,
-        setmetatable/debug.setmetatable), else it won't be honored.
-        Afterwards, any *changes* to the __gc element are honored.
+        setmetatable/debug.setmetatable), else no finalizer will be called
+        on that object. Afterwards, any *changes* to the __gc element are
+        honored.
 
         The version of newproxy we provide in 5.2 fiveq (and also in 5.1
         fiveqplus) will accept a initial __gc argument.
@@ -180,7 +185,7 @@ Differences affecting both Lua and C
         ...` loop [patch]; you can also yield out of a [x]pcall or from a
         metamethod.
         The C functions lua_callk, lua_pcallk, lua_yieldk, and
-        lua_getctx have that enable this are not backported.
+        lua_getctx that enable this are not backported.
 
    33.  in 5.1, the stack `level` count used by the the Lua error() function
         and several functions in the debug library, and the C functions
@@ -191,17 +196,17 @@ Differences affecting both Lua and C
         lua_upvaluejoin have been backported.
         debug.upvalueid(func, idx) returns lightuserdatum, these can be
         compared to check for shared upvalues
-        debug.upvaluejoin(func1, idx1, func2, idx2) makes
-        f1's idx1 alias:= f2's idx2
+        debug.upvaluejoin(lua_func1, idx1, lua_func2, idx2) makes
+        func1's idx1 alias:= func2's idx2
 
-   35.  in 5.2 only, debug.getlocal([thread], f, idx) with -1,-2,... idx gets
-        name and values of varargs. Implicit variable names start with '('.
+   35.  in 5.2 only, debug.getlocal([thread], f, idx) with a -1,-2,... idx gets
+        (names and) values of varargs. Implicit variable names start with '('.
         debug.setlocal([thread], flevel, idx, value) and the C functions
         lua_getlocal and lua_setlocal also handle negative idx.
 
-   36.  in 5.2 only, debug.getlocal can retrieve names when `f` is a function
-        instead of a stack level; and lua_getlocal also accepts ar == NULL and
-        a Lua function object at stack[-1].
+   36.  in 5.2 only, debug.getlocal can retrieve names (only) when `f` is a
+        function instead of a stack level; and lua_getlocal also accepts
+        ar == NULL and a Lua function object at stack[-1].
 
    37.  in 5.1, debug.sethook honors a "tail return" hook, and LUA_HOOKTAILRET
         is a possible value for the ar->event argument of a lua_Hook function
