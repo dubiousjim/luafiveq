@@ -11,15 +11,15 @@ are no longer available at their original locations.
 
 1.  Emergency Garbage Collector
     See description at: http://lua-users.org/wiki/EmergencyGarbageCollector
-    Author: RobertGabrielJakabosky
+    Author: Robert Gabriel Jakabosky
     Derived from: http://lua-users.org/files/wiki_insecure/power_patches/5.1/emergency_gc-5.1.4-r6.patch, posted 7 Dec 2010
     Updated: 17 May 2012 by dubiousjim@gmail.com to apply against Lua 5.1.5.
 
 
 2.  Yieldable for-loops
     Description:
-        Modifies the code generator so that the iterator in for ... in loops can
-        call yield. Details and test code are available at
+        Modifies the code generator so that the iterator in `for k in ...`
+        loops can call yield. Details and test code are available at
         <http://lua-users.org/wiki/YieldableForLoops>.
 
         Note that the current version of the patch orders op codes so as to
@@ -27,7 +27,7 @@ are no longer available at their original locations.
         LUA_COMPAT_TFORLOOP is defined in luaconf.h. This adds a few
         instructions to the VM, and quite a bit of complexity to the patch,
         which would otherwise only be about 25 lines. 
-    Author: RiciLake
+    Author: Rici Lake
     Original last posted at http://primero.ricilake.net/lua/ on 1 Sep 2007, no
     longer available
     This version retrieved and updated 17 May 2012 by dubiousjim@gmail.com to
@@ -39,9 +39,11 @@ are no longer available at their original locations.
 
 3.  Make os.exit close lua_State
     Description:
-        If an optional second argument is true, closes the Lua state before
-        exiting (so finalizers will be run). The lua interpreter already does
-        this, but applications embedding Lua may not.
+        If an optional second argument is true, calls lua_Close before
+        exiting, so finalizers will be run.
+        The Lua interpreter already calls lua_close this when exiting normally,
+        but other applications embedding Lua may not; and you may want this
+        behavior when using os.exit (to force non-zero exit statuses).
 
         This behavior cannot be provided by a library, but only by patching the
         Lua source and rebuilding.
@@ -132,7 +134,7 @@ are no longer available at their original locations.
     Description:
         Allows \x00..\xFFFF (hex) and \u0000..\uFFFF (UTF-8 encoded) characters
         within strings.
-    Author: AskoKauppi
+    Author: Asko Kauppi
     Original last posted at svn://slugak.dyndns.org/public/lua-patches/ on
         12 Jan 2006, no longer available
     I don't have any version of this patch.
