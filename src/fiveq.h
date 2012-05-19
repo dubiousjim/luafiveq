@@ -123,6 +123,7 @@ extern const char *luaL_tolstring (lua_State *L, int idx, size_t *len);
 
 extern int luaL_len (lua_State *L, int idx);
 
+void luaL_traceback (lua_State *L, lua_State *L1, const char *msg, int level);
 
 /*
  * luaL_Buffer b;

@@ -70,7 +70,60 @@ void lua_rawsetp (lua_State *L, int idx, const void *p) {
         lua_rawset(L, idx - 1);
 }
 
+extern void luaL_traceback (lua_State *L, lua_State *L1, const char *msg, int level) {
+    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+    if (!lua_isnil(L, -1)) {
+        lua_getfield(L, -1, "traceback");
+        if (lua_type(L, -1) == LUA_TFUNCTION) {
+            /* L stack[+1] = registry[_fiveq], [+2] = debug.traceback */
+            lua_xmove(L, L1, 1);
+            lua_pushthread(L1);
+            if (msg == NULL)
+                lua_pushliteral(L1, "");
+            else
+                lua_pushstring(L1, msg);        
+            lua_pushinteger(L1, level + 1);
+            lua_call(L1, 3, 1); /* debug.traceback(thread, msg, level) */
+            lua_xmove(L1, L, 1);
+            if (msg == NULL) {
+                lua_pushstring(L, lua_tostring(L, -1) + 1);
+                lua_replace(L, -2);
+            }
+            /* L stack[+1] = registry[_fiveq], [+2] = traceback result */
+            lua_replace(L, -2);
+            return;
+        }
+    }
+    luaL_error(L, "couldn't find traceback function in registry");
+}
+
 #endif
+
+
+/* undocumented */
+extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
+    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+    if (!lua_isnil(L, -1)) {
+        char *msg;
+        va_list ap;
+        if ((msg = malloc(256)) != NULL) {
+            va_start(ap, fmt);
+            (void) vsnprintf(msg, 256, fmt, ap);
+            va_end(ap);
+            lua_getfield(L, -1, "write");
+            lua_getfield(L, -2, "stderr"); /* io.stderr:write(...) */
+            lua_pushstring(L, "\n");
+            lua_pushvalue(L, -3);
+            lua_pushvalue(L, -3); /* io.stderr:write(...) */
+            luaL_traceback(L, L, NULL, level);
+            free(msg);
+            lua_call(L, 2, 0); /* write traceback string, discard return value */
+            lua_call(L, 2, 0); /* write newline, discard return value */
+        }
+    }
+    lua_pop(L, 1); /* discard _fiveq */
+    return;
+}
 
 
 /*
@@ -184,34 +237,6 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
     return NULL;
 }
 
-
-/* undocumented */
-extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
-    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
-    if (!lua_isnil(L, -1)) {
-        char *msg;
-        va_list ap;
-        if ((msg = malloc(256)) != NULL) {
-            va_start(ap, fmt);
-            (void) vsnprintf(msg, 256, fmt, ap);
-            va_end(ap);
-            lua_getfield(L, -1, "write");
-            lua_getfield(L, -2, "stderr"); /* io.stderr:write(...) */
-            lua_pushstring(L, "\n");
-            lua_pushvalue(L, -3);
-            lua_pushvalue(L, -3); /* io.stderr:write(...) */
-            lua_getfield(L, -6, "traceback"); /* debug.traceback(...) */
-            lua_pushstring(L, msg);
-            free(msg);
-            lua_pushinteger(L, level);
-            lua_call(L, 2, 1); /* debug.traceback(msg, level) */
-            lua_call(L, 2, 0); /* write traceback string, discard return value */
-            lua_call(L, 2, 0); /* write newline, discard return value */
-        }
-    }
-    lua_pop(L, 1); /* discard _fiveq */
-    return;
-}
 
 
 extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
