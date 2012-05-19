@@ -437,15 +437,14 @@ extern int luaopen_fiveq_module (lua_State *L) {
 
     lua_pushcclosure(L, ll_require_plus, 1);
 
-    /* TODO: don't use reserved name */
-    lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
+    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
     lua_pushvalue(L, -2);
     lua_pushinteger(L, 1);
-    lua_settable(L, -3); /* _FIVEQ[our register]=1 */
+    lua_settable(L, -3); /* _fiveq[our register]=1 */
     lua_getglobal(L, "require");
     lua_pushinteger(L, 1);
-    lua_settable(L, -3); /* FIVEQ[native register]=1 */
-    lua_pop(L, 1); /* pop FIVEQ */
+    lua_settable(L, -3); /* _fiveq[native register]=1 */
+    lua_pop(L, 1); /* pop _fiveq */
 
     // stack[1]=name, stack[2]=ll_require_plus
     lua_setglobal(L, "require");

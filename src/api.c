@@ -123,8 +123,7 @@ extern const char *luaQ_setdeepvalue (lua_State *L, int idx, const char
 
 /* undocumented */
 extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
-    /* TODO: don't use reserved name */
-    lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
+    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
     if (!lua_isnil(L, -1)) {
         char *msg;
         va_list ap;
@@ -146,7 +145,7 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
             lua_call(L, 2, 0); /* write newline, discard return value */
         }
     }
-    lua_pop(L, 1); /* discard _FIVEQ */
+    lua_pop(L, 1); /* discard _fiveq */
     return;
 }
 
@@ -159,8 +158,7 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
     if (lua_getstack(L, level, &ar) == 0 || lua_getinfo(L, "f", &ar) == 0)
         luaL_error(L, LUA_QS " couldn't identify the calling function", fname ? fname : "?");
     if (level == 2 && fname && strcmp("module", fname) == 0) {
-        /* TODO: don't use reserved name */
-        lua_getfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
+        lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
         lua_pushvalue(L, -2);
         lua_rawget(L, -2);
         if (lua_tointeger(L, -1) == 1) {
