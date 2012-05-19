@@ -109,7 +109,25 @@ Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
     extract(base, bitstart, [bitwidth]) -- bits numbered 31..0, width counts <<
     replace(base, new, bitstart, [bitwidth]) -- new masked at left to needed width
 
+
 Finally, the global _FIVEQ is set to true.
+
+
+The following features were first documented in Lua 5.2, but are already present
+in the basic Lua 5.1.4 implementation:
+
+    %f[set] "frontier" patterns:
+        %f[%w]word%f[%W] will also match at start/end of string
+    select(index, ...):
+         honors negative index; always returns from index until end
+    string.sub(s, start, stop) and string.byte(s, start, stop):
+        after translating negative start/stop, clip them to range 1..#s
+    io.lines and file:lines:
+        raise errors instead of returning nil,msg
+    collectgarbage:
+        when called with no arguments, defaults to "collect"
+    package.config
+
 
 For features that aren't backported from Lua 5.2, see the accompanying file
 LIMITATIONS.
