@@ -9,6 +9,11 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
     pairs and ipairs:
         will honor the __pairs and __ipairs metamethods
 
+        At one point in development of Lua 5.2, ipairs was deprecated; also
+        at one point, ipairs always ran until #tbl, which honors __len and
+        might be after the first nil anyway. Both of these changes were
+        retracted by the final release of Lua 5.2, and are ignored here.
+
     os.execute and io.popen:
        os.execute and the close method of the object returned by io.popen will
        return a triple, as in Lua 5.2. The first value is true if the close was
