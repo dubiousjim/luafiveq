@@ -249,9 +249,9 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
 #if LUA_VERSION_NUM == 501 || defined(LUA_FIVEQ_PLUS) || \
     !defined(LUA_COMPAT_MODULE)
 
-static int libsize (const luaL_Reg *l) {
+static int libsize (const luaL_Reg *A) {
   int size = 0;
-  for (; l && l->name; l++) size++;
+  for (; A && A->name; A++) size++;
   return size;
 }
 
@@ -317,7 +317,7 @@ extern void luaL_requiref (lua_State *L, const char *libname,
 # if defined(LUA_FIVEQ_PLUS) || (LUA_VERSION_NUM == 501 && \
         !defined(LUA_COMPAT_OPENLIB)) || (LUA_VERSION_NUM == 502 && \
         !defined(LUA_COMPAT_MODULE))
-extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
+extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *A,
         int nup) {
 #  if LUA_VERSION_NUM == 502
     luaL_checkversion(L);
@@ -326,25 +326,25 @@ extern void luaL_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
 #  if defined(LUA_FIVEQ_PLUS)
         /* check whether lib already exists, writing to caller's environment if
          * not */
-        luaQ_pushmodule(L, libname, libsize(l), 2, NULL);
+        luaQ_pushmodule(L, libname, libsize(A), 2, NULL);
 #  else
         /* check whether lib already exists, writing to global environment if
          * not */
-        luaQ_pushmodule(L, libname, libsize(l), 0, NULL);
+        luaQ_pushmodule(L, libname, libsize(A), 0, NULL);
 #  endif
         lua_insert(L, -(nup + 1));  /* move library table to below upvalues */
     }
-    if (l)
-        luaL_setfuncs(L, l, nup);
+    if (A)
+        luaL_setfuncs(L, A, nup);
     else
         lua_pop(L, nup);  /* remove upvalues */
 }
 # elif LUA_VERSION_NUM == 501
 #  undef luaL_openlib
-extern void luaQ_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
+extern void luaQ_openlib (lua_State *L, const char *libname, const luaL_Reg *A,
         int nup) {
-  if (l)
-    luaL_openlib(L, libname, l, nup);
+  if (A)
+    luaL_openlib(L, libname, A, nup);
   else {
     const luaL_Reg empty[] = {
       {NULL, NULL}
@@ -627,14 +627,14 @@ extern void luaL_setmetatable (lua_State *L, const char *tname) {
 }
 
 
-extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
+extern void luaL_setfuncs (lua_State *L, const luaL_Reg *A, int nup) {
   luaL_checkstack(L, nup, "too many upvalues");
-  for (; l->name != NULL; l++) {  /* fill the table with given functions */
+  for (; A->name != NULL; A++) {  /* fill the table with given functions */
     int i;
     for (i=0; i < nup; i++)  /* copy upvalues to the top */
       lua_pushvalue(L, -nup);
-    lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
-    lua_setfield(L, -(nup + 2), l->name);
+    lua_pushcclosure(L, A->func, nup);  /* closure with those upvalues */
+    lua_setfield(L, -(nup + 2), A->name);
   }
   lua_pop(L, nup);  /* remove upvalues */
 }
