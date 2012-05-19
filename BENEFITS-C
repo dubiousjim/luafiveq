@@ -4,66 +4,77 @@ BENEFITS-C
 What do I get when I #include "fiveq.h" and link against fiveq.a?
 -----------------------------------------------------------------
 
-Fiveq backports most of Lua 5.2's C API to Lua 5.1.4, and vice-versa, with
-the following limitations.
+Fiveq backports most of Lua 5.2's C API to Lua 5.1.4, and vice-versa. For
+missing features, see the accompanying file LIMITATIONS.
 
-(See accompanying file LIMITATIONS.)
-
-
-Here is the complete list of interfaces that are provided to Lua 5.1.4:
+Here is the complete list of interfaces that are provided to Lua 5.1:
 
  *   lua_pushglobaltable
  *   lua_absindex
  *   lua_copy
- *
+        like lua_replace but don't pop element from top
+
  *   lua_tonumberx
  *   lua_tointegerx
  *   typedef lua_Unsigned
+ *   lua_tounsigned
+ *   lua_tounsignedx
+ *   luaL_optunsigned
+ *   luaL_checkunsigned
  *   lua_number2unsigned
  *   lua_unsigned2number
- *   lua_tounsignedx
- *   lua_tounsigned
- *   luaL_checkunsigned
- *   luaL_optunsigned
- *   lua_compare
+
  *   lua_arith
- *
+ *   lua_compare
+        replacement for lua_equal and lua_lessthan; all three honor metamethods
  *   lua_rawlen
- *   lua_len
- *   luaL_len
- *   luaL_tolstring
+        replacement for lua_objlen, though doesn't return strlen of a number
+ *   void lua_len(L, idx)
+        implements # operator, honors __len, pushes any result to stack
+ *   int luaL_len(L, idx)
+        lua_len --> luaL_checkint on result (converting/returning int)
+        leaves nothing on stack
+ *   const char *luaL_tolstring(L, idx, size_t *len)
+        implements native tostring(), result is both returned and pushed,
+        honors __tostring
+
  *   luaL_pushresultsize
- *
- *   lua_getuservalue
- *   lua_setuservalue
- *   lua_rawgetp
- *   lua_rawsetp
+
  *   luaL_testudata
  *   luaL_setmetatable
- *
- *   luaL_getsubtable -- see also luaQ_getdeeptable, below
- *
- *   luaL_requiref -- calls luaopen_foo and saves result in _G or optionally on
- *                    stack; see below
+ *   lua_rawgetp
+ *   lua_rawsetp
+ *   lua_getuservalue
+ *   lua_setuservalue
+
+ *   bool luaL_getsubtable(L, idx, "field")
+        shallowly ensures stack[idx]["field"] is a table and pushes to stack
+        returns true if already existed, or false if newly allocated
+        see also luaQ_getdeeptable, below
+
+ *   luaL_requiref
+        calls luaopen_foo and saves result in _G or optionally on stack; see below
  *   luaL_newlibtable
  *   luaL_setfuncs -- part of luaL_openlib
  *   luaL_newlib -- calls luaL_newlibtable then luaL_setfuncs
  *   luaL_pushmodule -- part of `module` and luaL_openlib/register; see below
  *   luaL_openlib -- generalizes luaL_register; already exposed if Lua was
- *                   compiled with LUA_COMPAT_OPENLIB
+                     compiled with LUA_COMPAT_OPENLIB
+
 
 
 Here is the complete list of interfaces that are provided to Lua 5.2:
 
- *   luaL_typerror
- *   lua_objlen -- already exposed if Lua was compiled with LUA_COMPAT_ALL
- *   lua_strlen -- already exposed if Lua was compiled with LUA_COMPAT_ALL
  *   lua_equal -- already exposed if Lua was compiled with LUA_COMPAT_ALL
  *   lua_lessthan -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+ *   lua_objlen -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+ *   lua_strlen -- already exposed if Lua was compiled with LUA_COMPAT_ALL
+
  *   lua_cpcall -- already exposed if Lua was compiled with LUA_COMPAT_ALL
- *
+ *   luaL_typerror
+
  *   luaL_pushmodule -- already exposed if Lua was compiled with
- *                   LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which implies it)
+                     LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which implies it)
  *   luaL_openlib -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
  *   luaL_register -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
 
@@ -73,12 +84,12 @@ from Lua 5.1 are needed to keep it working):
 
  *   luaL_getn -- just aliases lua_rawlen
  *   luaL_setn -- noop
- *   luaL_reg
- *   lua_open
  *   lua_getregistry
  *   lua_getgccount
  *   lua_Chunkreader
  *   lua_Chunkwriter
+ *   lua_open
+ *   luaL_reg
  *   luaL_putchar
  *   lua_ref
  *   lua_unref
