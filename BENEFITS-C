@@ -45,6 +45,7 @@ Here is the complete list of interfaces that are provided to Lua 5.1:
  *   lua_rawsetp
  *   lua_getuservalue
  *   lua_setuservalue
+        the 5.2 version can assign tables or nils, this version only tables
 
  *   bool luaL_getsubtable(L, idx, "field")
         shallowly ensures stack[idx]["field"] is a table and pushes to stack
