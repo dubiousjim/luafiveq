@@ -78,6 +78,32 @@ void lua_rawsetp (lua_State *L, int idx, const void *p) {
 #endif
 
 
+/* undocumented, always exported but only in fiveq.h when LUA_FIVEQ_PLUS */
+extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
+    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+    if (!lua_isnil(L, -1)) {
+        char *msg;
+        va_list ap;
+        if ((msg = malloc(256)) != NULL) {
+            va_start(ap, fmt);
+            (void) vsnprintf(msg, 256, fmt, ap);
+            va_end(ap);
+            lua_getfield(L, -1, "write");
+            lua_getfield(L, -2, "stderr"); /* io.stderr:write(...) */
+            lua_pushstring(L, "\n");
+            lua_pushvalue(L, -3);
+            lua_pushvalue(L, -3); /* io.stderr:write(...) */
+            luaL_traceback(L, L, msg, level);
+            free(msg);
+            lua_call(L, 2, 0); /* write traceback string, discard return value */
+            lua_call(L, 2, 0); /* write newline, discard return value */
+        }
+    }
+    lua_pop(L, 1); /* discard _fiveq */
+    return;
+}
+
+
 /*
  * Based on luaL_findtable from lauxlib.c.
  */
@@ -739,30 +765,4 @@ extern void luaQ_checklib (lua_State *L, const char *libname) {
     if (lua_isnil(L, -1))
         luaL_error(L, "can't open " LUA_QS " library", libname);
     lua_replace(L, -2);
-}
-
-
-/* undocumented, always exported but only in fiveq.h when LUA_FIVEQ_PLUS */
-extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
-    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
-    if (!lua_isnil(L, -1)) {
-        char *msg;
-        va_list ap;
-        if ((msg = malloc(256)) != NULL) {
-            va_start(ap, fmt);
-            (void) vsnprintf(msg, 256, fmt, ap);
-            va_end(ap);
-            lua_getfield(L, -1, "write");
-            lua_getfield(L, -2, "stderr"); /* io.stderr:write(...) */
-            lua_pushstring(L, "\n");
-            lua_pushvalue(L, -3);
-            lua_pushvalue(L, -3); /* io.stderr:write(...) */
-            luaL_traceback(L, L, NULL, level);
-            free(msg);
-            lua_call(L, 2, 0); /* write traceback string, discard return value */
-            lua_call(L, 2, 0); /* write newline, discard return value */
-        }
-    }
-    lua_pop(L, 1); /* discard _fiveq */
-    return;
 }
