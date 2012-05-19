@@ -50,7 +50,10 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define api_check(L, cond, msg)	lua_assert((cond) && msg)
 #endif
 
-#include "unsigned.h"
+/* #include "unsigned.h" */
+#define LUA_INT32  LUAI_INT32
+#define LUA_UNSIGNED    unsigned LUA_INT32
+typedef LUA_UNSIGNED lua_Unsigned;
 
 
 /* ----- adapted from lua-5.2.0 lua.h: ----- */

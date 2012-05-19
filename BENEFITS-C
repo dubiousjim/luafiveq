@@ -21,8 +21,6 @@ Here is the complete list of interfaces that are provided to Lua 5.1:
  *   lua_tounsignedx
  *   luaL_optunsigned
  *   luaL_checkunsigned
- *   lua_number2unsigned
- *   lua_unsigned2number
 
  *   lua_arith
  *   lua_compare
