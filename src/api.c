@@ -80,7 +80,7 @@ void lua_rawsetp (lua_State *L, int idx, const void *p) {
 
 /* undocumented, always exported but only in fiveq.h when LUA_FIVEQ_PLUS */
 extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
-    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+    lua_getfield(L, LUA_REGISTRYINDEX, "fiveq");
     if (!lua_isnil(L, -1)) {
         char *msg;
         va_list ap;
@@ -99,7 +99,7 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...) {
             lua_call(L, 2, 0); /* write newline, discard return value */
         }
     }
-    lua_pop(L, 1); /* discard _fiveq */
+    lua_pop(L, 1); /* discard fiveq */
     return;
 }
 
@@ -225,7 +225,7 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
     if (lua_getstack(L, level, &ar) == 0 || lua_getinfo(L, "f", &ar) == 0)
         luaL_error(L, LUA_QS " couldn't identify the calling function", fname ? fname : "?");
     if (level == 2 && fname && strcmp("module", fname) == 0) {
-        lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+        lua_getfield(L, LUA_REGISTRYINDEX, "fiveq");
         lua_pushvalue(L, -2);
         lua_rawget(L, -2);
         if (lua_tointeger(L, -1) == 1) {
@@ -308,9 +308,9 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
         if (var) {
             lua_pop(L, 1); /* discard existing upvalue */
             // stack[+1]=f, stack[+2]=newenv
-            lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+            lua_getfield(L, LUA_REGISTRYINDEX, "fiveq");
             lua_getfield(L, -1, "newclosure");
-            // stack[+1]=f, stack[+2]=newenv, stack[+3]=_fiveq, stack[+4]=newclosure
+            // stack[+1]=f, stack[+2]=newenv, stack[+3]=fiveq, stack[+4]=newclosure
             lua_replace(L, -2);
             lua_call(L, 0, 1);
             // stack[+1]=f, stack[+2]=newenv, stack[+3]=closure
@@ -679,11 +679,11 @@ extern int luaL_len (lua_State *L, int idx) {
 
 
 extern void luaL_traceback (lua_State *L, lua_State *L1, const char *msg, int level) {
-    lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+    lua_getfield(L, LUA_REGISTRYINDEX, "fiveq");
     if (!lua_isnil(L, -1)) {
         lua_getfield(L, -1, "traceback");
         if (lua_type(L, -1) == LUA_TFUNCTION) {
-            /* L stack[+1] = registry[_fiveq], [+2] = debug.traceback */
+            /* L stack[+1] = registry[fiveq], [+2] = debug.traceback */
             lua_xmove(L, L1, 1);
             lua_pushthread(L1);
             if (msg == NULL)
@@ -697,7 +697,7 @@ extern void luaL_traceback (lua_State *L, lua_State *L1, const char *msg, int le
                 lua_pushstring(L, lua_tostring(L, -1) + 1);
                 lua_replace(L, -2);
             }
-            /* L stack[+1] = registry[_fiveq], [+2] = traceback result */
+            /* L stack[+1] = registry[fiveq], [+2] = traceback result */
             lua_replace(L, -2);
             return;
         }
