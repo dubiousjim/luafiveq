@@ -76,7 +76,7 @@ install:
 	@${MAKE} install-502 LUA_VERSION_NUM=502
 
 clean:
-	rm -f core core.* *.o *.so *.a
+	rm -f *.core *.o *.so *.a
 
 
 
