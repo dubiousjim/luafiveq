@@ -10,6 +10,7 @@
 
 #if LUA_VERSION_NUM == 501
 
+#if 0
 /* ----- adapted from lua-5.2.0 luaconf.h: ----- */
 
 /* the following operations need the math library */
@@ -28,6 +29,7 @@
 #define luai_numle(L,a,b)	((a)<=(b))
 #define luai_numisnan(L,a)	(!luai_numeq((a), (a)))
 
+#endif
 
 /* ----- adapted from lua-5.2.0 lapi.c: ----- */
 
