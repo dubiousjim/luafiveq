@@ -468,8 +468,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pop(L, 1); /* pop io library */
   lua_getfield(L, -2, "traceback");
   lua_setfield(L, -2, "traceback");
-  /* TODO: don't use reserved name */
-  lua_setfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
+  lua_setfield(L, LUA_REGISTRYINDEX, "_fiveq");
 
 # ifdef LUA_FIVEQ_PLUS
   /* newproxy needs a weaktable as upvalue */
@@ -538,13 +537,12 @@ extern int luaopen_fiveq (lua_State *L) {
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
   lua_pushstring(L, "plus");
-  /* TODO: don't use reserved name */
-  lua_setglobal(L, "_FIVEQ");
+  lua_setglobal(L, "_fiveq");
 
 # else
 
   lua_pushboolean(L, 1);
-  lua_setglobal(L, "_FIVEQ");
+  lua_setglobal(L, "_fiveq");
 
 # endif
 
@@ -671,8 +669,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pop(L, 1); /* pop io library */
   lua_getfield(L, -2, "traceback");
   lua_setfield(L, -2, "traceback");
-  /* TODO: don't use reserved name */
-  lua_setfield(L, LUA_REGISTRYINDEX, "_FIVEQ");
+  lua_setfield(L, LUA_REGISTRYINDEX, "_fiveq");
 
 # ifdef LUA_FIVEQ_PLUS
   lua_register(L, "getfenv", getfenv);  /* export to _G */
@@ -726,8 +723,7 @@ extern int luaopen_fiveq (lua_State *L) {
   luaL_requiref(L, "struct", luaopen_fiveq_struct, 1);
 
   lua_pushstring(L, "plus");
-  /* TODO: don't use reserved name */
-  lua_setglobal(L, "_FIVEQ");
+  lua_setglobal(L, "_fiveq");
 
 # else
 
@@ -737,7 +733,7 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_call(L, 1, 0);
 
   lua_pushboolean(L, 1);
-  lua_setglobal(L, "_FIVEQ");
+  lua_setglobal(L, "_fiveq");
 
 # endif
 
