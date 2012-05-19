@@ -304,25 +304,29 @@ changes:
     by changing two `#ifdef 1`s in api.c to `#ifdef 0`.)
 
 
-    error is modified so as to accept more than two arguments. Its first
-        argument is used together with the third and subsequent arguments
-        to construct an error message using string.format. Its second
+    error is modified so as to accept more than two arguments:
+            error(fmt, level, args ...)
+        Its first argument is used together with the third and subsequent
+        arguments to construct an error message using string.format. Its second
         argument continues to specify the stack level to which to attribute the
-        error, with level 1 being the function that calls error. Use 0
-        to suppress the addition of any error position.
+        error, with level 1 being the function that calls error. Use 0 to
+        suppress the addition of any error position.
 
 
-    assert is modified so as to accept more than two arguments. If its first
-        argument is true-like, all arguments are returned; else its second
-        argument is used together with the third and subsequent arguments to
-        construct an error message using string.format.
+    assert is modified so as to accept more than two arguments:
+            assert(test, fmt, args ...)
+        If its `test` argument is true-like, all arguments are returned; else
+        its second argument is used together with the third and subsequent
+        arguments to construct an error message using string.format.
 
 
     an additional global function `check` is provided; this is somewhat akin
-        to assert. One difference is that check expects a new second argument
-        that identifies the position of the checked object in an argument list.
-        If check's first argument is true-like, then that argument (and it
-        alone) is returned, else the third argument is used as a format string
+        to assert:
+            check(test, arg#, fmt, args ...)
+        One difference is that check expects a second argument `arg#` that
+        identifies the position of the checked object in an argument list. If
+        check's `test` argument is true-like, then that argument (and it alone)
+        is returned, else the third argument is used as a format string
         together with all subsequent arguments. For example:
 
             > function example(arg) local x = check(arg, 1, "foo %s", "bar") end
