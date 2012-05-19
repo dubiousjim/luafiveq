@@ -1,0 +1,77 @@
+LIMITATIONS
+===========
+
+Differences in C
+----------------
+
+Some functions have a different signature in 5.2; if your code depends
+on the differences you'll need to add conditional compilation directives like:
+
+        #if LUA_VERSION_NUM == 501
+        ...
+        #elif LUA_VERSION_NUM == 502 
+        ...
+        #endif
+
+These functions include:
+
+    1. all three of:
+
+       *   lua_pushlstring(L, string, len)
+       *   lua_pushstring(L, nulterminated_string)
+       *   the macro lua_pushliteral(L, "string")
+
+       in Lua 5.2.0 these return a const char *, pointing to Lua's internal
+       copy of the string, instead of void
+
+    2. lua_resume(L, lua_State *from, int narg) expects an addtional `from`
+       parameter in Lua 5.2.0, which should be NULL or the thread doing the
+       call
+
+    3. lua_load expects an additional `mode` parameter, which can be any of "t",
+       "b", "bt" or NULL (which is treated as "bt")
+
+Another difference is:
+
+    4. in 5.1.4's lua_getstack(L, level, &ar), the `level` argument also
+       increments for Lua tail calls; in 5.2.0 it doesn't
+
+These have not been backported to Lua 5.1.4:
+
+    5. LUA_RIDX_MAINTHREAD, LUA_RIDX_GLOBALS
+    6. luaL_buffinitsize, luaL_prepbuffsize
+    7. lua_version, luaL_checkversion
+    8. luaL_traceback
+
+These have not been forward-ported to Lua 5.2:
+
+    9. LUA_ENVIRONINDEX, LUA_GLOBALSINDEX
+   10. lua_getfenv, lua_setfenv
+
+However, lua_getuservalue and lua_setuservalue do offer part of the functionality
+of lua_getfenv and lua_setfenv. And when LUA_FIVEQ_PLUS is defined, we also
+export:
+
+     extern void luaQ_getfenv (lua_State *L, int level, const char *fname);
+     extern void luaQ_setfenv (lua_State *L, int level, const char *fname);
+
+which provide a different part of the functionality; see below.
+
+
+Differences in Lua
+------------------
+
+
+Note that the following facilities from Lua 5.2 have not been backported:
+        * debug.upvalueid, debug.upvaluejoin
+        * new behavior of coroutine.running when called from main thread
+        * new behavior of collectgarbage, load, package.loadlib,
+          string.format, debug.getlocal, debug.setlocal, debug.sethook
+        * ability to yield across C functions
+        * honoring __lt, __le metamethods for different types
+        * tables honoring __len
+        * string.format honoring __tostring for "%s"
+        * os.exit honoring optional `close` argument
+        * __tostring honored on error objects 
+
+Patches exist to incorporate the last six into Lua 5.1. See the PATCHES file.
