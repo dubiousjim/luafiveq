@@ -110,7 +110,7 @@ Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
     replace(base, new, bitstart, [bitwidth]) -- new masked at left to needed width
 
 
-Finally, the global _FIVEQ is set to true.
+Finally, the global `_fiveq` is set to true.
 
 
 The following features were first documented in Lua 5.2, but are already present
@@ -170,7 +170,7 @@ functions are added:
         only available for userdata
         (see also the global getfenv provided under fiveqplus, below)
 
-Additionally, the global _FIVEQ is set to true.
+Additionally, the global `_fiveq` is set to true.
 
 
 
@@ -180,7 +180,7 @@ What do I get when I instead require "fiveqplus"?
 You get all the modifications and additions from fiveq, with the following
 changes:
 
-    The global _FIVEQ is set to "plus" rather than true.
+    The global `_fiveq` is set to "plus" rather than true.
 
     an additional function math.trunc is provided
 
