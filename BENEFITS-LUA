@@ -107,8 +107,8 @@ Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
     btest: is band of all arguments nonzero?
     shifts and rotates also honor negative displacements (lshift->rshift)
     extract(base, bitstart, [bitwidth]) -- bits numbered 31..0, width counts <<
-    replace(base, new, bitstart, [bitwidth]) -- masking new at right to needed
-    width
+    replace(base, new, bitstart, [bitwidth]) -- where new is masked from the
+    right to needed width
 
 
 Finally, the global `_fiveq` is set to true.
@@ -119,14 +119,19 @@ in the basic Lua 5.1.4 implementation:
 
     %f[set] "frontier" patterns:
         %f[%w]word%f[%W] will also match at start/end of string
+
     select(index, ...):
          honors negative index; always returns from index until end
+
     string.sub(s, start, stop) and string.byte(s, start, stop):
         after translating negative start/stop, clip them to range 1..#s
+
     io.lines and file:lines:
         raise errors instead of returning nil,msg
+
     collectgarbage:
         when called with no arguments, defaults to "collect"
+
     package.config
 
 
@@ -258,7 +263,7 @@ changes:
         not supply.)
 
         io.lines and file:lines() can be thought of as a specific application
-        of singles(..). (But we don't in fact add an __singles metamethod to
+        of singles(...). (But we don't in fact add an __singles metamethod to
         the metatable for files.)
 
 
@@ -271,7 +276,7 @@ changes:
         Compare: bool luaL_getmetafield(L, idx, "field").
 
         A special whitelist of fields are handled even if obj's metatable was
-        made opaque (by giving it a __metatable metamethod). Currently the
+        made opaque by giving it a __metatable metamethod. Currently the
         whitelist is:
             __len
             __eq
@@ -288,7 +293,7 @@ changes:
     in Lua 5.2, an additional global function getfenv is provided, that
         provides some of the functionality of the global function of the
         same name in Lua 5.1. When called with argument 0, it returns the
-        global table _G (even if that's not available through any local binding).
+        global table (even if that's not available through any local binding).
         When called with an argument n > 0, it returns the environment of the
         function at stack level n. The function calling getfenv is at stack
         level 1.
@@ -302,7 +307,7 @@ changes:
     (For consistency, I wish they had used key "#" for table.pack, instead of
     "n"---even though it's harder to write tbl["#"] than to write tbl.n. If
     your preferences are like mine, you can effect this change under fiveqplus
-    by changing two `#ifdef 1`s in api.c to `#ifdef 0`.)
+    by compiling with -DLUA_FIVEQ_ALTPACK.)
 
 
     error is modified so as to accept more than two arguments:
@@ -567,17 +572,29 @@ changes.
     Lua 5.2 provides a version of module and package.seeall if compiled with
         LUA_COMPAT_MODULE, however this version just blindly assumes that
         _ENV is upvalue #1, which is not always true. We replace with
-        the fiveq version, which explicitly checks which local or upvalue
+        the fiveq version, which more explicitly checks which local or upvalue
         is named _ENV.
 
-    fiveqplus uses the caller's environment (in Lua 5.2, _ENV) in place of
-        _G. It also does some behind-the-scenes magic to cooperate with
-        fiveqplus's enhanced package.seeall.
+    where necessary, fiveqplus queries and writes to *the caller's environment*
+        (in Lua 5.2, _ENV) instead of _G. You can suppress this behavior in 5.2,
+        by setting the caller's environment to nil when the module is required:
+            local n
+            local require = require
+            do
+                local _ENV = nil
+                n = require "name"
+            end
+            assert(n and not _ENV.name and not _G.name)
+
+    fiveqplus also does some behind-the-scenes
+        magic to cooperate with fiveqplus's enhanced package.seeall.
 
     Our code is adapted from the Lua sources and
         <http://lua-users.org/wiki/ModuleDefinition>. It addresses most
         of the concerns raised at
         <http://lua-users.org/wiki/LuaModuleFunctionCritiqued>.
+
+    See the accompanying file test/module.lua for more details.
 
 
  * package.seeall
@@ -617,8 +634,8 @@ changes.
             function beta()
                print(x, y) -- will succeed
                x, y = false, false -- will also succeed
-               z = false -- would fail
-               print(z) -- would also fail
+               print(z) -- would fail
+               z = false -- would also fail
             end
         end
 
@@ -696,12 +713,18 @@ The `hash` library has the following methods:
                 Taken from Roberto Ierusalimschy's md5lib.
 
         * hash.unbox(obj)
-                If obj is of a gc-able type, return a lightuserdatum that
+                If obj is of a gc-able type, return a light userdatum that
                 points to the same block of memory. For other objects,
                 return them unchanged.
 
+                Light userdata behave differently than gc-able objects with
+                respect to weak tables. Their use here is to serve as a
+                unique identifier for the object they're derived from.
+                A similar technique is used by the upvalueid functions in
+                Lua 5.2.
+
         * hash.pointer(obj)
-                If obj is of a gc-able type, or is a lightuserdatum,
+                If obj is of a gc-able type, or is a light userdatum,
                 return the string that lua_pushfstring would return using
                 format "%p". For other objects, return nil.
 

@@ -194,7 +194,7 @@ Differences affecting both Lua and C
 
    40.  None of: debug.upvalueid, debug.upvaluejoin, lua_upvalueid,
         lua_upvaluejoin have been backported.
-        debug.upvalueid(func, idx) returns lightuserdatum, these can be
+        debug.upvalueid(func, idx) returns light userdatum, these can be
         compared to check for shared upvalues
         debug.upvaluejoin(lua_func1, idx1, lua_func2, idx2) makes
         func1's idx1 alias:= func2's idx2
