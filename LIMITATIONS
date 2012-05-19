@@ -39,7 +39,7 @@ Differences affecting only the Lua API
     9.  in 5.2 only, string.gsub complains if replacement has %c
         where c not in [%0-9]
 
-   10.  in 5.2, can print \0s [patch]
+   10.  in 5.2, can print "\0" [patch]
         io.write does this in both versions
 
    11.  in 5.2 only, the Lua interpreter accepts a -E option to ignore
