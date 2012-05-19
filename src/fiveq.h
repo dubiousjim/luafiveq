@@ -37,8 +37,6 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define lua_assert(cond) ((void)0)
 #endif
 
-#define LUA_OK 0
-
 /* ----------- for 5.1 ---------- */
 #if LUA_VERSION_NUM == 501
 
@@ -51,6 +49,8 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #endif
 
 /* ----- adapted from lua-5.2.0 lua.h: ----- */
+
+#define LUA_OK 0
 
 #define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
 /* lua_getglobal(L, key): pushes _G[key] onto stack in both versions */
