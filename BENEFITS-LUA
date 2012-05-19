@@ -87,7 +87,9 @@ The following functions are added:
     package.searchers:
         alias for package.loaders
 
-    package.searchpath
+    package.searchpath(base, path, [".", "/"])
+        searches supplied path for a readable file in same way require does,
+        replacing any "." in base with "/"
 
     debug.getuservalue:
         returns nil if argument isn't a full userdatum, else nil or a table
