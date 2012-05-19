@@ -1,5 +1,5 @@
 /*
- * api.c: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
+ * api.c: elements of Lua 5.2's API backported to lua 5.1, and vice-versa
  */
 
 #include <string.h>
@@ -195,6 +195,7 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
       /* luaL_error(L, "couldn't identify the calling function's _ENV"); */
       lua_pushglobaltable(L);
     }
+    /* TODO we retrieved a value but what if it's not a table? */
 #endif
     lua_remove(L, -2);  /* remove function */
   }
@@ -235,6 +236,8 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
       if (var) {
           lua_pop(L, 1); /* discard existing upvalue */
           /* printf(LUA_QS " setting upvalue #%d at level %d\n", fname, i, level); */
+          /* TODO break upvalue */
+          /* TODO what if debugging info has been stripped? */
           lua_setupvalue(L, -2, i);
       } else if (strcmp("main", ar.what) == 0) {
           luaL_error(L, LUA_QS " found no _ENV in main chunk at level %d", fname, level+1);
@@ -267,13 +270,21 @@ extern void luaQ_pushmodule (lua_State *L, const char *modname, int szhint,
         lua_pop(L, 1);  /* remove previous result */
         /* try environment variable (and create one if it does not exist) */
         luaQ_getfenv(L, level, caller);
-        // stack[top+1]=_LOADED, [+2]=caller
-        if (luaQ_getdeeptable(L, -1, modname, szhint, NULL) != NULL)
-            luaL_error(L, "name conflict for module " LUA_QS, modname);
-        // stack[top+1]=_LOADED, [+2]=caller, [+3]=possibly new caller[modname]
+        if (lua_type(L, -1) == LUA_TTABLE) {
+            // stack[top+1]=_LOADED, [+2]=caller
+            if (luaQ_getdeeptable(L, -1, modname, szhint, NULL) != NULL)
+                luaL_error(L, "name conflict for module " LUA_QS, modname);
+            // stack[top+1]=_LOADED, [+2]=caller, [+3]=possibly new caller[modname]
+            lua_remove(L, -2);  /* remove caller table */
+        }
+        else {
+            /* _ENV isn't a table */
+            lua_pop(L, 1);
+            lua_newtable(L);
+        }
         lua_pushvalue(L, -1);
-        lua_setfield(L, -4, modname);  /* _LOADED[modname] = new table */
-        lua_remove(L, -2); /* remove caller table */
+        lua_setfield(L, -3, modname);  /* _LOADED[modname] = new table */
+        // stack[top+1]=_LOADED, [+2]=_LOADED[modname]
     }
     lua_remove(L, -2);  /* remove _LOADED table */
 }
@@ -356,7 +367,7 @@ extern void luaQ_openlib (lua_State *L, const char *libname, const luaL_Reg *l,
 # endif
 
 
-/* ----------- for 5.1.4 ---------- */
+/* ----------- for 5.1 ---------- */
 #if LUA_VERSION_NUM == 501
 
 /* ----- adapted from lua-5.2.0 lapi.c: ----- */

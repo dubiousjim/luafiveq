@@ -1,5 +1,5 @@
 /*
- * fiveq.h: elements of Lua 5.2's API backported to lua 5.1.4, and vice-versa
+ * fiveq.h: elements of Lua 5.2's API backported to lua 5.1, and vice-versa
  * includes luaconf.h, lua.h, lauxlib.h, [unsigned.h]
  */
 
@@ -37,7 +37,9 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define lua_assert(cond) ((void)0)
 #endif
 
-/* ----------- for 5.1.4 ---------- */
+#define LUA_OK 0
+
+/* ----------- for 5.1 ---------- */
 #if LUA_VERSION_NUM == 501
 
 /* from luaconf.h and llimits.h, updated to be more 5.2-like, omitting check_exp */
@@ -60,24 +62,30 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 
 /* ----- adapted from lua-5.2.0 lapi.c: ----- */
 
+/* FIXME */
 #define lua_absindex(L,idx)	((idx) > 0 || (idx) <= LUA_REGISTRYINDEX ? \
         (idx) : lua_gettop(L) + (idx) + 1)
 
+/* FIXME make macros with repeated arguments functions */
 #define lua_copy(L,from,to)   (lua_pushvalue(L, (from)), \
     lua_replace(L, ((to) > 0) ? (to) : (to) -1))
 
+/* FIXME */
 #define lua_getuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
             LUA_TUSERDATA, "userdata expected"), lua_getfenv(L, (idx)))
             
 /* the 5.2.0 version can also assign nil, but setfenv and this macro only
  * assign tables */
+/* FIXME */
 #define lua_setuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
             LUA_TUSERDATA, "userdata expected"), (void)lua_setfenv(L, (idx)))
 
+/* FIXME */
 #define lua_rawgetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
     "table expected"), lua_pushlightuserdata(L, (p)), \
     lua_rawget(L, ((idx) > 0) ? (idx) : (idx) -1)) 
 
+/* FIXME */
 #define lua_rawsetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
     "table expected"), lua_pushlightuserdata(L, (p)), lua_insert(L, -2), \
     lua_rawset(L, ((idx) > 0) ? (idx) : (idx) -1))
@@ -108,6 +116,7 @@ extern void lua_len (lua_State *L, int idx);
 
 /* the following operations need the math library */
 #include <math.h>
+/* FIXME */
 #define luai_nummod(L,a,b)	((a) - floor((a)/(b))*(b))
 #define luai_numpow(L,a,b)	(pow((a),(b)))
 
@@ -120,6 +129,7 @@ extern void lua_len (lua_State *L, int idx);
 #define luai_numeq(a,b)		((a)==(b))
 #define luai_numlt(L,a,b)	((a)<(b))
 #define luai_numle(L,a,b)	((a)<=(b))
+/* FIXME */
 #define luai_numisnan(L,a)	(!luai_numeq((a), (a)))
 
 extern int lua_compare (lua_State *L, int idx1, int idx2, int op);
@@ -138,7 +148,7 @@ extern int luaL_len (lua_State *L, int idx);
 
 /*
  * luaL_Buffer b;
- * char *luaL_buffinitsize(L, &b, sz) is not available in 5.1.4
+ * char *luaL_buffinitsize(L, &b, sz) is not available in 5.1
  *   equiv to: (luaL_buffinit(L, &b), luaL_prepbuffsize(&b, sz) <-- also new)
  * char *luaL_prepbuffer(&b) -- reserves LUAL_BUFFERSIZE
  * -- copy string to that buffer
@@ -155,7 +165,6 @@ extern int luaL_getsubtable (lua_State *L, int idx, const char *field);
 extern void *luaL_testudata (lua_State *L, int ud, const char *tname);
 
 extern void luaL_setmetatable (lua_State *L, const char *tname);
-
 
 
 # ifdef LUA_COMPAT_OPENLIB
@@ -188,12 +197,13 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
 
 #define luaL_newlibtable(L,l)   lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) \
         - 1)
+/* FIXME */
 #define luaL_newlib(L,l)	(luaL_newlibtable(L,l), luaL_setfuncs(L,(l),0))
 
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
         luaopen_lib, int gidx);
 
-/* 5.2 uses (1), but in 5.1.4 that's used by the luaL_ref system */
+/* 5.2 uses (1), but in 5.1 that's used by the luaL_ref system */
 #define LUA_RIDX_MAINTHREAD (-3)
 
 /* ----------- for 5.2.0 ---------- */
@@ -209,7 +219,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 #define api_check(L, cond, msg)	lua_assert((cond) && msg)
 #endif
 
-
+/* FIXME does this need an initial lua_checkstack? */
 #define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), \
         lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
 
