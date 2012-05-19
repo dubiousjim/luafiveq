@@ -379,7 +379,7 @@ The err library adds the following:
             * the standard return values from type(obj): "nil", "table",
               "boolean", and so on. Both full and light userdata satisfy
               "userdata". For "string" and "number", obj merely has to be
-              convertible to the type 
+              convertible to the type
             * "positive" if obj is convertible to a positive integer
             * "natural" if obj is convertible to a non-negative integer
             * "negative" if obj is convertible to a negative integer
@@ -524,7 +524,7 @@ changes.
         luaopen_name function may do so. Once package.loaded[name] is set,
         require "name" will always return that value without executing
         any other code or modifying any environment.
-    
+
     *   when libraries a and a.b both exist, requiring one of them does not
         automatically require the other.
 
@@ -575,7 +575,7 @@ changes.
 
     Our code is adapted from the Lua sources and
         <http://lua-users.org/wiki/ModuleDefinition>. It addresses most
-        of the concerns raised at 
+        of the concerns raised at
         <http://lua-users.org/wiki/LuaModuleFunctionCritiqued>.
 
 
@@ -589,9 +589,9 @@ changes.
         it will *not* be visible from outside functions indexing the module.
         Only variables written to the module's environment will be visible
         externally. For example:
-        
+
         function make_alpha()
-            module("alpha", package.seeall)  
+            module("alpha", package.seeall)
             x = true -- write to module's environment
             print(x) -- here print is visible
         end
@@ -620,7 +620,7 @@ changes.
                print(z) -- would also fail
             end
         end
- 
+
 
 
 Hash library
@@ -693,7 +693,7 @@ The `hash` library has the following methods:
                 If the strings are of equal length, returns a third string
                 which is the result of xor-ing their bytes.
                 Taken from Roberto Ierusalimschy's md5lib.
-        
+
         * hash.unbox(obj)
                 If obj is of a gc-able type, return a lightuserdatum that
                 points to the same block of memory. For other objects,

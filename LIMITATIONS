@@ -81,7 +81,7 @@ directives like:
 
         #if LUA_VERSION_NUM == 501
         ...
-        #elif LUA_VERSION_NUM == 502 
+        #elif LUA_VERSION_NUM == 502
         ...
         #endif
 
@@ -144,7 +144,7 @@ Differences affecting both Lua and C
    25.  in 5.2, lua_pushcclosure(L, f, 0) (and so too lua_pushcfunction and
         lua_register) create light C functions. These behave like light
         userdata with respect to equality and weak tables.
-        
+
         These still satisfy lua_iscfunction and have a lua_type of
         LUA_TFUNCTION.
 
@@ -163,7 +163,7 @@ Differences affecting both Lua and C
         *before* calling lua_setmetatable/luaL_setmetatable (or in Lua,
         setmetatable/debug.setmetatable), else it won't be honored.
         Afterwards, any *changes* to the __gc element are honored.
-    
+
         The version of newproxy we provide in 5.2 fiveq (and also in 5.1
         fiveqplus) will accept a initial __gc argument.
 

@@ -55,7 +55,7 @@ Here is the complete list of interfaces that are provided to Lua 5.1:
  *   luaL_requiref
         calls luaopen_foo and saves result in _G or optionally on stack; see below
  *   luaL_newlibtable
- *   luaL_setfuncs -- part of luaL_openlib ---- replacement for luaL_register?? FIXME
+ *   luaL_setfuncs -- part of luaL_openlib
  *   luaL_newlib -- calls luaL_newlibtable then luaL_setfuncs
  *   luaL_pushmodule -- part of `module` and luaL_openlib/register; see below
  *   luaL_openlib -- generalizes luaL_register; already exposed if Lua was
@@ -72,7 +72,7 @@ Here is the complete list of interfaces that are provided to Lua 5.2:
 
  *   lua_cpcall -- already exposed if Lua was compiled with LUA_COMPAT_ALL
  *   luaL_typerror
-  
+
  *   luaL_pushmodule -- already exposed if Lua was compiled with
                      LUA_COMPAT_MODULE (or LUA_COMPAT_ALL, which implies it)
  *   luaL_openlib -- already exposed if Lua was compiled with LUA_COMPAT_MODULE
@@ -266,7 +266,7 @@ sort out the differences. All of these C functions return void.
         Runs luaopen_libname and saves the return value to
         package.loaded[libname] and optionally also to global or
         caller's environment
-        
+
         * "libname" may be NULL, but this has no special effect
         * when gidx == 0: only save return value in package.loaded[libname]
         * when gidx == 1: also save the return value to key "libname" in
