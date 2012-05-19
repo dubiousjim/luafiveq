@@ -1,8 +1,33 @@
 LIMITATIONS
 ===========
 
-Differences in C
-----------------
+We list here functionality from Lua 5.2 that has not been backported, and a few
+cases where functionality from Lua 5.1 has not been forward-ported.
+
+Where `[patch]` is indicated, patches exist to incorporate some or all of Lua
+5.2's behavior into a custom compile of Lua 5.1. See the accompanying
+patches/README for more information.
+
+
+Differences affecting only the Lua API
+--------------------------------------
+
+Note that the following facilities from Lua 5.2 have not been backported:
+        * debug.upvalueid, debug.upvaluejoin
+        * new behavior of coroutine.running when called from main thread
+        * new behavior of collectgarbage, load, package.loadlib,
+          string.format, debug.getlocal, debug.setlocal, debug.sethook
+        * ability to yield across C functions
+        * honoring __lt, __le metamethods for different types
+        * tables honoring __len
+        * string.format honoring __tostring for "%s"
+        * os.exit honoring optional `close` argument
+        * __tostring honored on error objects 
+
+
+
+Differences affecting only the C API
+------------------------------------
 
 Some functions have a different signature in 5.2; if your code depends
 on the differences you'll need to add conditional compilation directives like:
@@ -58,20 +83,12 @@ export:
 which provide a different part of the functionality; see below.
 
 
-Differences in Lua
-------------------
+
+Differences affecting both Lua and C
+------------------------------------
 
 
-Note that the following facilities from Lua 5.2 have not been backported:
-        * debug.upvalueid, debug.upvaluejoin
-        * new behavior of coroutine.running when called from main thread
-        * new behavior of collectgarbage, load, package.loadlib,
-          string.format, debug.getlocal, debug.setlocal, debug.sethook
-        * ability to yield across C functions
-        * honoring __lt, __le metamethods for different types
-        * tables honoring __len
-        * string.format honoring __tostring for "%s"
-        * os.exit honoring optional `close` argument
-        * __tostring honored on error objects 
 
-Patches exist to incorporate the last six into Lua 5.1. See the PATCHES file.
+
+
+
