@@ -37,6 +37,8 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define lua_assert(cond) ((void)0)
 #endif
 
+#define LUA_OK 0
+
 /* ----------- for 5.1 ---------- */
 #if LUA_VERSION_NUM == 501
 
