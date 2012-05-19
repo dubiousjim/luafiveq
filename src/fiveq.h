@@ -59,34 +59,16 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 
 /* ----- adapted from lua-5.2.0 lapi.c: ----- */
 
-/* FIXME */
-#define lua_absindex(L,idx)	((idx) > 0 || (idx) <= LUA_REGISTRYINDEX ? \
-        (idx) : lua_gettop(L) + (idx) + 1)
+int lua_absindex (lua_State *L, int idx);
+void lua_copy (lua_State *L, int from, int to);
 
-/* FIXME make macros with repeated arguments functions */
-#define lua_copy(L,from,to)   (lua_pushvalue(L, (from)), \
-    lua_replace(L, ((to) > 0) ? (to) : (to) -1))
-
-/* FIXME */
-#define lua_getuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
-            LUA_TUSERDATA, "userdata expected"), lua_getfenv(L, (idx)))
-            
-/* the 5.2.0 version can also assign nil, but setfenv and this macro only
+/* the 5.2.0 version can also assign nil, but setfenv and this backport only
  * assign tables */
-/* FIXME */
-#define lua_setuservalue(L,idx)  (api_check(L, lua_type(L, (idx)) == \
-            LUA_TUSERDATA, "userdata expected"), (void)lua_setfenv(L, (idx)))
+void lua_setuservalue (lua_State *L, int idx);
+void lua_getuservalue (lua_State *L, int idx);
 
-/* FIXME */
-#define lua_rawgetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
-    "table expected"), lua_pushlightuserdata(L, (p)), \
-    lua_rawget(L, ((idx) > 0) ? (idx) : (idx) -1)) 
-
-/* FIXME */
-#define lua_rawsetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
-    "table expected"), lua_pushlightuserdata(L, (p)), lua_insert(L, -2), \
-    lua_rawset(L, ((idx) > 0) ? (idx) : (idx) -1))
-
+void lua_rawgetp (lua_State *L, int idx, const void *p);
+void lua_rawsetp (lua_State *L, int idx, const void *p);
 
 
 /* #include "unsigned.h" */

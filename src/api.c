@@ -24,6 +24,52 @@
 #define luai_numlt(L,a,b)	((a)<(b))
 #define luai_numle(L,a,b)	((a)<=(b))
 #define luai_numisnan(L,a)	(!luai_numeq((a), (a)))
+
+
+int lua_absindex (lua_State *L, int idx) {
+    if (idx >= 0 || idx <= LUA_REGISTRYINDEX)
+        return idx;
+    else
+        return lua_gettop(L) + idx + 1;
+}
+
+void lua_copy (lua_State *L, int from, int to) {
+    lua_pushvalue(L, from);
+    if (to >= 0)
+        lua_replace(L, to);
+    else
+        lua_replace(L, to - 1);
+}
+
+void lua_getuservalue (lua_State *L, int idx) {
+    api_check(L, lua_type(L, idx) == LUA_TUSERDATA, "userdata expected");
+    lua_getfenv(L, idx);
+}
+
+void lua_setuservalue (lua_State *L, int idx) {
+    api_check(L, lua_type(L, idx) == LUA_TUSERDATA, "userdata expected");
+    (void)lua_setfenv(L, idx);
+}
+
+void lua_rawgetp (lua_State *L, int idx, const void *p) {
+    api_check(L, lua_type(L, idx) == LUA_TTABLE, "table expected");
+    lua_pushlightuserdata(L, p);
+    if (idx >= 0)
+        lua_rawget(L, idx);
+    else
+        lua_rawget(L, idx - 1);
+}
+
+void lua_rawsetp (lua_State *L, int idx, const void *p) {
+    api_check(L, lua_type(L, idx) == LUA_TTABLE, "table expected");
+    lua_pushlightuserdata(L, p);
+    lua_insert(L, -2);
+    if (idx >= 0)
+        lua_rawset(L, idx);
+    else
+        lua_rawset(L, idx - 1);
+}
+
 #endif
 
 
