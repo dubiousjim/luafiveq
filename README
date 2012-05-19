@@ -11,7 +11,7 @@ equal, a library author shouldn't have to ask users to recompile Lua with
 specific flags. Also, the backwards-compatibility features Lua provides by
 default are less complete than they might be.
 
-On the other hand, nearly all of the functionality added to Lua 5.2 is in
+On the other hand, much of the functionality added to Lua 5.2 is in
 principle available to Lua 5.1, but there is no systematic way to make it
 available.
 
@@ -19,22 +19,23 @@ The fiveq libraries try to provide a common API base that's mostly the same
 between Lua 5.1 and Lua 5.2. Developers can write against whichever of the two
 APIs they wish, and deploy against either installation of Lua.
 
-These libraries provide additional features both to Lua and to C. To use the
-Lua features, end users need to first require "fiveq". To use the C
-features, a library packager merely needs to compile against fiveq;
-it does not need to be present on the end-user's system.
+These libraries provide additional functionality to both the Lua and the C
+API. To use the Lua features, end users need to first require "fiveq". To use
+the C features, a library packager merely needs to compile against fiveq; it
+does not need to be present on the end-user's system.
 
 The fiveq*plus* libraries provide a superset of what fiveq does. For
 specific benefits of each, see the files BENEFITS-C and BENEFITS-LUA.
-
+The file LIMITATIONS details differences that persist between Lua 5.1 and 5.2.
 
 
 Using fiveq
 -----------
 
 As we said, fiveq aims to provide the union of the Lua 5.1 and Lua 5.2 APIs,
-compilable under both versions of Lua. It's not possible to do this 100%, but
-it is possible to go quite far towards that target.
+compilable under both versions of Lua. As the LIMITATIONS file details, it's
+not possible to do this 100%, but it is possible to go substantially towards
+that target.
 
 Sample use cases:
 
@@ -65,7 +66,7 @@ to this:
 where ${LIBDIR} is the directory that contains your copy of libfiveq.a built
 for Lua 5.2. (The provided Makefile installs this in the same directory as your
 liblua.so.) Then most likely you'll be able to immediately compile the library
-for Lua 5.2. If not, see the HINTS file.
+for Lua 5.2. If not, consult the LIMITATIONS file.
 
 As we said above, for such use cases, the end user does *not* herself need to
 have fiveq installed. It's used only during compilation.
@@ -105,7 +106,7 @@ in her Lua source first, then she can go ahead and try:
         require "foo"
 
 The fiveq library exposes as much as possible the union of the Lua 5.1 and Lua
-5.2 APIs. This won't work 100%, but it comes close.
+5.2 APIs. As we said, this doesn't work 100%, but it comes close.
 
 
 5. Or, as with use case 3, suppose *you're* writing new Lua code, and you want
@@ -117,9 +118,12 @@ fiveq as a dependency, and just writing (mostly) against the Lua 5.2 API.
 Using fiveqplus
 ---------------
 
-Fiveqplus provides a superset of the functionality of fiveq. It adds in a
-few general-purpose extensions to the API that other C and Lua authors may want
-to standardize on. (Some of these are already used internally by fiveq.)
+Fiveqplus provides a superset of the functionality of fiveq. It adds in some
+general-purpose extensions to the API that other C and Lua authors may want to
+standardize on, including an improved module system. (Some of these extensions
+are already used internally by fiveq, which is the reason for bundling
+fiveqplus and fiveq in a single source distribution.) See the BENEFITS-LUA and
+BENEFITS-C files for details.
 
 To use fiveqplus in your Lua C libraries, merely add the line:
 
@@ -134,7 +138,8 @@ object code, and link against the fiveqplus.a library instead of fiveq.a:
     foo.so: foo.o
         ${CC} ${LDFLAGS} -o $^ -L ${LIBDIR} -lfiveqplus
 
-If you like, you can add the macro to your source instead:
+If you like, you can can add the macro directly to your source instead of
+compiling with -DLUA_FIVEQ_PLUS:
 
     #define LUA_FIVEQ_PLUS
     #include "fiveq.h"
