@@ -17,18 +17,18 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
     os.execute and io.popen:
        os.execute and the close method of the object returned by io.popen will
        return a triple, as in Lua 5.2. The first value is true if the close was
-       successful, else nil. The second value is "exit" if the process executed
+        successful, else nil. The second value is "exit" if the process terminated
        normally, else "signal". The third value is the exit code or signal that
        terminated the process.
 
-       Additionally, os.execute() with no arguments returns true if a shell is
+        Additionally, os.execute() with no arguments returns true if /bin/sh is
        available, else false.
 
     io.open:
-        will sanitize its mode string
+        will sanitize its mode string against "[rwa]%+?b?"
 
     io.read and file:read:
-        will accept an "*L" argument
+        will accept "*L" argument to preserve newlines
 
     io.lines and file:lines:
         will pass their arguments through to read (defaults to "*l")
@@ -37,18 +37,18 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
         will return file
 
     load:
-        will accept a string argument, like load in 5.2; ignores any
-        third `mode` argument, but does honor any fourth `env` argument (using
-        setfenv)
+        will accept a string argument, like `load` in 5.2; ignores any
+        third `mode` argument, but will honor any fourth `env` argument, using
+        setfenv
 
-    xpcall:
-        accepts more than two arguments, like pcall and xpcall in Lua 5.2
+    xpcall(f, handler, args...)
+        accepts args for f, like `pcall` and `xpcall` in Lua 5.2
 
-    string.rep:
+    string.rep(s, nrep, [sep])
         accepts an optional separator argument
 
     math.log:
-        accepts an optional base argument, uses efficient algorithm for base 2
+        accepts an optional `base` argument, uses efficient algorithm for base 2
 
 The following functions are added:
 
@@ -79,7 +79,7 @@ Additionally, a bit32 library is provided, with the same behavior as Lua 5.2's.
 
 Finally, the global _FIVEQ is set to true.
 
-For features not backported from Lua 5.2, see the accompanying file
+For features that aren't backported from Lua 5.2, see the accompanying file
 LIMITATIONS.
 
 
@@ -216,22 +216,28 @@ changes:
             debug.getmetafield(obj, "field")
 
         if obj is a table or userdata with a metatable, and the metatable has
-        key "field", this will return the value associated with that key. A
-        special whitelist of fields are handled even if obj's metatable was
-        made opaque (by giving it a __metatable metamethod). Currently
-        the whitelist is:
+        key "field", this will return the value associated with that key.
+        Compare: bool luaL_getmetafield(L, idx, "field").
+
+        A special whitelist of fields are handled even if obj's metatable was
+        made opaque (by giving it a __metatable metamethod). Currently the
+        whitelist is:
             __len
-            __reversed
-            __copy
             __eq
             __index
             __tostring
+            __copy
+            __reversed
+        The point is that one may want the opaque metatables, for
+        better encapsulation, but may also want to write generic functions in
+        Lua that should honor these metamethods. (As I do in my personal
+        Lua libraries.)
 
 
     in Lua 5.2, an additional global function getfenv is provided, that
         provides some of the functionality of the global function of the
         same name in Lua 5.1. When called with argument 0, it returns the
-        global table _G (even if it's not available through any local binding).
+        global table _G (even if that's not available through any local binding).
         When called with an argument n > 0, it returns the environment of the
         function at stack level n. The function calling getfenv is at stack
         level 1.
@@ -276,6 +282,7 @@ changes:
                 stdin:1: in function 'example'
                 stdin:1: in main chunk
                 [C]: ?
+
 
     an additional library `err` is provided with more specific error/checking
         functions to complement error, assert, and check; see description of
@@ -581,14 +588,14 @@ see them as distinct objects, and tbl[set1] and tbl[set2] may give different
 results.
 
 The nicest solution would be if Lua honored a __hash metamethod, and counted
-two objects as identical table keys if they had the same hash and also were
-equal according to __eq. But we don't have that.
+two objects as identical table keys if they generated the same hash and also
+were equal according to __eq. But we don't have that.
 
-The next best solution is to have a general-purpose hash library, and to intern
-extensional objects by their hash as they're created. Preferably we'd intern
+The next best solution is to generically expose hash functions, and to intern
+extensional objects by their hash as they're created. Preferably we intern
 them in weak tables, so that they can be gc'd when no other code refers to them
-anymore. But if such an object is still interned, then when we try to create
-another __eq object, we just re-use the original one. In this case, then, if
+anymore. But while such an object remains interned, then attempts to create
+another __eq object should instead re-use the interned one. In this case, then, if
 set1 and set2 did count as equal according to __eq, they will be the same Lua
 object, and can be relied on to be equivalent table keys, too.
 
@@ -596,7 +603,7 @@ I have implemented this technique for immutable tuples and immutable
 sets/multisets. I will provide those implementations separately. The fiveqplus
 libraries just provides the general tools with which such systems can be built.
 
-The hash library has the following methods:
+The `hash` library has the following methods:
 
         * hash.tuple(...)
                 Provides an int hash of its argument sequence. Objects that Lua
@@ -606,21 +613,20 @@ The hash library has the following methods:
                 hash.tuple() ~= hash.tuple(nil) ~= hash.tuple(nil, nil).
 
         * hash.set(seed, value, [count=1])
-                Provides a hash of seed together with (value annotated by
-                count). Here the order in which values are added does not
+                Provides a hash of seed together with value-as-annotated-by-
+                count. Here the order in which values are added does not
                 affect the hash. That is:
                   hash.set(hash.set(seed0, value1), value2) ==
                   hash.set(hash.set(seed0, value2), value1)
-                Although the intent of the optional annotation is to keep track
-                of the count of value, do not expect that:
+                If count is provided, it should be convertible to an integer
+                >= 1. The intent of the count annotation is to keep track of
+                the count of value in a multiset. But do not expect that:
                   hash.set(hash.set(seed0, value1), value1) ==
                   hash.set(seed0, value, 2)
-                In fact, since we achieve the commutativity for value1 and
-                value2 by using an xor-based hash, the result of hashing value1
-                twice with the same annotation will be as if it had never been
-                added to the hash at all.
-                If count is provided, it should be convertible to an integer
-                >= 1.
+                In fact, since we achieve commutativity by using an xor-based
+                hash, the result of hashing value1 twice with the same
+                annotation will be as if it had never been added to the hash at
+                all.
 
         * hash.unset(seed, value, [oldcount=1], [newcount=0])
                 If seed1 is the result of hash.set(seed0, value, oldcount)
@@ -649,9 +655,11 @@ Struct library
 --------------
 There are a number of libraries available for manipulating binary data in Lua.
 Roberto Ierusalimschy's struct library
-<http://www.inf.puc-rio.br/~roberto/struct/> is lightweight but still powerful.
+<http://www.inf.puc-rio.br/~roberto/struct/> is lightweight but still powerful,
+and is the basis we build on here.
+
 I made two major additions and some tweaks. One addition is a patch by Fleming
-Madsen (though I didn't include his c0/c<nothing> change.) The second addition
+Madsen (though I didn't include his c0/c<nothing> change). The second addition
 is exposing a "size" function to Lua, based on alien's implementation of
 struct.c. See <http://lua-users.org/wiki/StructurePacking> for links to both.
 The tweaks included cleaning up the behavior of c0, and inserting checks to
