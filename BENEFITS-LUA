@@ -293,14 +293,15 @@ changes:
         level 1.
         Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
 
-    table.pack saves the number of elements using key "#" instead of "n".
 
-    unpack and table.unpack look for the number of elements at key "#", and if
+    unpack and table.unpack look for the number of elements at key "n", and if
         that's not present, fall back to querying the object's length in a way
         that honors __len metamethods
 
-    (If you prefer to stay with key "n", just change two `#ifdef 0` in
-        api.c to `#ifdef 1`.)
+    (For consistency, I wish they had used key "#" for table.pack, instead of
+    "n"---even though it's harder to write tbl["#"] than to write tbl.n. If
+    your preferences are like mine, you can effect this change under fiveqplus
+    by changing two `#ifdef 1`s in api.c to `#ifdef 0`.)
 
 
     error is modified so as to accept more than two arguments. Its first
