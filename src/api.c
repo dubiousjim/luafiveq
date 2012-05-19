@@ -576,10 +576,10 @@ extern const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
 
 
 extern int luaL_len (lua_State *L, int idx) {
-  lua_len(L, idx);
+  lua_len(L, idx); /* stack[+1] = result */
   if (lua_isnumber(L, -1)) {
-    int len = lua_tonumber(L, -1);
-    lua_pop(L, 1); /* remove object */
+    int len = lua_tointeger(L, -1);
+    lua_pop(L, 1); /* remove lua_len result */
     return len;
   } else {
     return luaL_error(L, "object length is not a number");
