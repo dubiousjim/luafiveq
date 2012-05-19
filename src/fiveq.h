@@ -127,23 +127,6 @@ extern void lua_len (lua_State *L, int idx);
 #define LUA_OPPOW	5
 #define LUA_OPUNM	6
 
-/* the following operations need the math library */
-#include <math.h>
-/* FIXME */
-#define luai_nummod(L,a,b)	((a) - floor((a)/(b))*(b))
-#define luai_numpow(L,a,b)	(pow((a),(b)))
-
-/* these are quite standard operations */
-#define luai_numadd(L,a,b)	((a)+(b))
-#define luai_numsub(L,a,b)	((a)-(b))
-#define luai_nummul(L,a,b)	((a)*(b))
-#define luai_numdiv(L,a,b)	((a)/(b))
-#define luai_numunm(L,a)	(-(a))
-#define luai_numeq(a,b)		((a)==(b))
-#define luai_numlt(L,a,b)	((a)<(b))
-#define luai_numle(L,a,b)	((a)<=(b))
-/* FIXME */
-#define luai_numisnan(L,a)	(!luai_numeq((a), (a)))
 
 extern int lua_compare (lua_State *L, int idx1, int idx2, int op);
 extern void lua_arith (lua_State *L, int op);

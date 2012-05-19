@@ -8,6 +8,22 @@
 #include "fiveq.h"
 #include "unsigned.h"
 
+/* the following operations need the math library */
+#include <math.h>
+#define luai_nummod(L,a,b)	((a) - floor((a)/(b))*(b))
+#define luai_numpow(L,a,b)	(pow((a),(b)))
+
+/* these are quite standard operations */
+#define luai_numadd(L,a,b)	((a)+(b))
+#define luai_numsub(L,a,b)	((a)-(b))
+#define luai_nummul(L,a,b)	((a)*(b))
+#define luai_numdiv(L,a,b)	((a)/(b))
+#define luai_numunm(L,a)	(-(a))
+#define luai_numeq(a,b)		((a)==(b))
+#define luai_numlt(L,a,b)	((a)<(b))
+#define luai_numle(L,a,b)	((a)<=(b))
+#define luai_numisnan(L,a)	(!luai_numeq((a), (a)))
+
 
 /*
  * Based on luaL_findtable from lauxlib.c.
