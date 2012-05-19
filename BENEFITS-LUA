@@ -15,14 +15,14 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
         retracted by the final release of Lua 5.2, and are ignored here.
 
     os.execute and io.popen:
-       os.execute and the close method of the object returned by io.popen will
-       return a triple, as in Lua 5.2. The first value is true if the close was
+        os.execute and the close method of the object returned by io.popen will
+        return a triple, as in Lua 5.2. The first value is true if the close was
         successful, else nil. The second value is "exit" if the process terminated
-       normally, else "signal". The third value is the exit code or signal that
-       terminated the process.
+        normally, else "signal". The third value is the exit code or signal that
+        terminated the process.
 
         Additionally, os.execute() with no arguments returns true if /bin/sh is
-       available, else false.
+        available, else false.
 
         Examples:
         $ lua-5.1 -e 'os.exit(3)'; echo $?
@@ -671,13 +671,13 @@ The `hash` library has the following methods:
                 Provides a hash of seed together with value-as-annotated-by-
                 count. Here the order in which values are added does not
                 affect the hash. That is:
-                  hash.set(hash.set(seed0, value1), value2) ==
-                  hash.set(hash.set(seed0, value2), value1)
+                    hash.set(hash.set(seed0, value1), value2) ==
+                    hash.set(hash.set(seed0, value2), value1)
                 If count is provided, it should be convertible to an integer
                 >= 1. The intent of the count annotation is to keep track of
                 the count of value in a multiset. But do not expect that:
-                  hash.set(hash.set(seed0, value1), value1) ==
-                  hash.set(seed0, value, 2)
+                    hash.set(hash.set(seed0, value1), value1) ==
+                    hash.set(seed0, value, 2)
                 In fact, since we achieve commutativity by using an xor-based
                 hash, the result of hashing value1 twice with the same
                 annotation will be as if it had never been added to the hash at
