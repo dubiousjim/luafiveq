@@ -35,6 +35,7 @@
 /* ===== begin modifications to lbitlib.c ===== */
 
 #include "fiveq.h"
+#include "unsigned.h"
 
 /* also in api.c, but not exported */
 static void pushunsigned (lua_State *L, lua_Unsigned u) {
