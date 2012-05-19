@@ -8,6 +8,7 @@
 #include "fiveq.h"
 #include "unsigned.h"
 
+#if LUA_VERSION_NUM == 501
 /* the following operations need the math library */
 #include <math.h>
 #define luai_nummod(L,a,b)	((a) - floor((a)/(b))*(b))
@@ -23,6 +24,7 @@
 #define luai_numlt(L,a,b)	((a)<(b))
 #define luai_numle(L,a,b)	((a)<=(b))
 #define luai_numisnan(L,a)	(!luai_numeq((a), (a)))
+#endif
 
 
 /*
