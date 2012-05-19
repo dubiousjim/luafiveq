@@ -208,9 +208,10 @@ static int ll_module (lua_State *L) {
 #ifdef LUA_FIVEQ_PLUS
   /* temporarily set module[sentinel]=caller's _ENV for use by seeall decorator */
   luaQ_getfenv(L, 1, "module");
-        if (lua_type(L, -1) != LUA_TTABLE)
-            /* FIXME */
-            luaL_error(L, "hey hey 2");
+  if (lua_type(L, -1) != LUA_TTABLE) {
+      lua_pop(L, 1);
+      lua_newtable(L);
+  }
   lua_setfield(L, -2, sentinel);
 #endif
   /* set caller's fenv to module table */
@@ -381,8 +382,7 @@ static int ll_strict (lua_State *L) {
     lua_settop(L, 1);
     luaQ_getfenv(L, 2, "package.strict");
         if (lua_type(L, -1) != LUA_TTABLE)
-            /* FIXME */
-            luaL_error(L, "hey hey 3");
+            luaL_error(L, LUA_QS " couldn't get module's toplevel _ENV", "package.strict");
     if (!lua_getmetatable(L, 2)) {
         lua_createtable(L, 0, 2); /* create new metatable */
         lua_pushvalue(L, -1);
