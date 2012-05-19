@@ -170,6 +170,7 @@ extern void *luaL_testudata (lua_State *L, int ud, const char *tname);
 extern void luaL_setmetatable (lua_State *L, const char *tname);
 
 
+
 # ifdef LUA_COMPAT_OPENLIB
 /* luaL_openlib has already been exported, in place of luaI_openlib */
 #  define luaL_openlib luaQ_openlib

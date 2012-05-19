@@ -22,11 +22,6 @@ Here is the complete list of interfaces that are provided to Lua 5.1:
  *   luaL_optunsigned
  *   luaL_checkunsigned
 
-     lua_number2int
-     lua_number2integer
-     lua_number2unsigned
-     lua_unsigned2number
-
  *   lua_arith
  *   lua_compare
         replacement for lua_equal and lua_lessthan; all three honor metamethods
