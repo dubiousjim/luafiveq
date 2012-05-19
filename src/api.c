@@ -261,7 +261,7 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
       /* luaL_error(L, "couldn't identify the calling function's _ENV"); */
       lua_pushglobaltable(L);
     }
-    /* TODO we retrieved a value but what if it's not a table? */
+    /* else we've retrieved a value but it may not be a table */
 #endif
     lua_remove(L, -2);  /* remove function */
   }
@@ -271,7 +271,7 @@ extern void luaQ_getfenv (lua_State *L, int level, const char *fname) {
 extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
   lua_Debug ar;
   if (lua_getstack(L, level, &ar) == 0 ||
-      lua_getinfo(L, "fS", &ar) == 0 ||  /* get calling function */
+      lua_getinfo(L, "f", &ar) == 0 ||  /* get calling function */
       lua_iscfunction(L, -1))
     luaL_error(L, LUA_QS " not called from a Lua function", fname);
   lua_insert(L, -2); /* move below env table */
@@ -285,30 +285,44 @@ extern void luaQ_setfenv (lua_State *L, int level, const char *fname) {
       var = lua_getlocal(L, &ar, i);
       if (!var || strcmp("_ENV", var)==0)
           break;
-      /* printf("rejecting local #%d: %s\n", i, var); */
       lua_pop(L, 1);
   }
   if (var) {
       lua_pop(L, 1); /* discard existing local value */
       lua_setlocal(L, &ar, i);
   } else {
+      if (lua_getinfo(L, "Su", &ar) == 0)
+          luaL_error(L, LUA_QS " couldn't read upvalues at level %d", fname, level+1);
+      if (strcmp("main", ar.what) == 0) {
+          if (ar.nups != 1)
+              luaL_error(L, LUA_QS " is in main chunk at level %d with %d upvalues", fname, level+1, ar.nups);
+          lua_setupvalue(L, -2, 1);
+      } else {
+        /* explicitly search for _ENV upvalue; will fail if debugging info is stripped */
       for(i=1;;i++) {
           var = lua_getupvalue(L, -2, i);
           if (!var || strcmp("_ENV", var)==0)
               break;
-          /* printf("rejecting upvalue #%d: %s\n", i, var); */
           lua_pop(L, 1);
       }
       if (var) {
           lua_pop(L, 1); /* discard existing upvalue */
-          /* printf(LUA_QS " setting upvalue #%d at level %d\n", fname, i, level); */
-          /* TODO break upvalue */
-          /* TODO what if debugging info has been stripped? */
-          lua_setupvalue(L, -2, i);
-      } else if (strcmp("main", ar.what) == 0) {
-          luaL_error(L, LUA_QS " found no _ENV in main chunk at level %d", fname, level+1);
-      } else {
-          luaL_error(L, LUA_QS " couldn't identify the caller's _ENV at level %d", fname, level+1);
+            // stack[+1]=f, stack[+2]=newenv
+            lua_getfield(L, LUA_REGISTRYINDEX, "_fiveq");
+            lua_getfield(L, -1, "newclosure");
+            // stack[+1]=f, stack[+2]=newenv, stack[+3]=_fiveq, stack[+4]=newclosure
+            lua_replace(L, -2);
+            lua_call(L, 0, 1);
+            // stack[+1]=f, stack[+2]=newenv, stack[+3]=closure
+            /* break upvalue */
+            lua_insert(L, -2);
+            // stack[+1]=f, stack[+2]=closure, stack[+3]=newenv
+            lua_setupvalue(L, -2, 1);
+            // stack[+1]=f, stack[+2]=closure with newenv
+            lua_upvaluejoin(L, -2, i, -1, 1);
+            lua_pop(L, 1); /* pop closure */
+        } else
+            luaL_error(L, LUA_QS " couldn't identify the _ENV at level %d", fname, level+1);
       }
   }
 #endif

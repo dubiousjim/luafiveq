@@ -671,6 +671,8 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_pop(L, 1); /* pop io library */
   lua_getfield(L, -2, "traceback");
   lua_setfield(L, -2, "traceback");
+  luaL_loadstring(L, "local _ENV; return function() return global end");
+  lua_setfield(L, -2, "newclosure");
   lua_setfield(L, LUA_REGISTRYINDEX, "_fiveq");
 
 # ifdef LUA_FIVEQ_PLUS
