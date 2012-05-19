@@ -114,8 +114,11 @@ static int ll_require_plus (lua_State *L) {
     else if (!lua_istable(L, -1))
         luaL_error(L, "module " LUA_QS " doesn't export a table", modname);
     const char *k;
-    if (!lua_istable(L, 2))
+    if (!lua_istable(L, 2)) {
         luaQ_getfenv(L, 1, "require");
+        if (lua_type(L, -1) != LUA_TTABLE)
+            luaL_error(L, "can't merge module " LUA_QS " into a non-table _ENV", modname);
+    }
     else if (top > 2) {
         lua_pushvalue(L, 2);
         lua_remove(L, 2);
@@ -205,6 +208,9 @@ static int ll_module (lua_State *L) {
 #ifdef LUA_FIVEQ_PLUS
   /* temporarily set module[sentinel]=caller's _ENV for use by seeall decorator */
   luaQ_getfenv(L, 1, "module");
+        if (lua_type(L, -1) != LUA_TTABLE)
+            /* FIXME */
+            luaL_error(L, "hey hey 2");
   lua_setfield(L, -2, sentinel);
 #endif
   /* set caller's fenv to module table */
@@ -374,6 +380,9 @@ static int ll_strict (lua_State *L) {
     luaL_checktype(L, 1, LUA_TTABLE);
     lua_settop(L, 1);
     luaQ_getfenv(L, 2, "package.strict");
+        if (lua_type(L, -1) != LUA_TTABLE)
+            /* FIXME */
+            luaL_error(L, "hey hey 3");
     if (!lua_getmetatable(L, 2)) {
         lua_createtable(L, 0, 2); /* create new metatable */
         lua_pushvalue(L, -1);

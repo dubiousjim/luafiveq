@@ -198,6 +198,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 
 
 
+/* FIXME does this need an initial lua_checkstack? */
 #define lua_cpcall(L,f,u)  (lua_pushcfunction(L, (f)), \
         lua_pushlightuserdata(L,(u)), lua_pcall(L,1,0,0))
 
