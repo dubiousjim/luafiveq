@@ -206,7 +206,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 /* 5.2 uses (1), but in 5.1 that's used by the luaL_ref system */
 #define LUA_RIDX_MAINTHREAD (-3)
 
-/* ----------- for 5.2.0 ---------- */
+/* ----------- for 5.2 ---------- */
 #elif LUA_VERSION_NUM == 502
 
 
@@ -253,7 +253,7 @@ extern int luaL_typerror (lua_State *L, int narg, const char *tname);
 
 
 # ifdef LUA_FIVEQ_PLUS
-/* we replace 5.2.0's requiref with a version that will write to stack[gidx]
+/* we replace 5.2's requiref with a version that will write to stack[gidx]
  * when gidx is other than 0 or 1 */
 #  define luaL_requiref luaQ_requiref
 extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction

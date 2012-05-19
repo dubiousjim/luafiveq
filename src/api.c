@@ -312,7 +312,7 @@ extern void luaL_requiref (lua_State *L, const char *libname,
   lua_pop(L, 1);  /* remove _LOADED table */
   if (gidx != 0) {
     if (gidx == 1)
-      /* for compatibility with 5.2.0 version */
+      /* for compatibility with 5.2 version */
       lua_pushglobaltable(L);
     else
       /* when gidx is other than 0 or 1, we write to stack[gidx] */
@@ -653,7 +653,7 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
 
 
 
-/* ----------- for 5.2.0 ---------- */
+/* ----------- for 5.2 ---------- */
 #elif LUA_VERSION_NUM == 502
 
 extern int luaL_typerror (lua_State *L, int narg, const char *tname) {

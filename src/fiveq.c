@@ -553,7 +553,7 @@ extern int luaopen_fiveq (lua_State *L) {
 
 
 
-/* ----------- for 5.2.0 ---------- */
+/* ----------- for 5.2 ---------- */
 #elif LUA_VERSION_NUM == 502
 
 static int table_maxn (lua_State *L) {
