@@ -35,6 +35,7 @@ Here is the complete list of interfaces that are provided to Lua 5.1:
  *   const char *luaL_tolstring(L, idx, size_t *len)
         implements native tostring(), result is both returned and pushed,
         honors __tostring
+ *   luaL_traceback
 
  *   luaL_pushresultsize
 
