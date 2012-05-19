@@ -489,6 +489,8 @@ extern int luaopen_fiveq (lua_State *L) {
   lua_getfield(L, -1, "loaders");  /* get package.loaders */
   lua_setfield(L, -2, "searchers");  /* export to package library */
   set1func(L, "searchpath", ll_searchpath);
+  lua_getfield(L, -1, "preload");
+  lua_setfield(L, LUA_REGISTRYINDEX, "_PRELOAD"); /* write registry[_PRELOAD] */
   lua_pop(L, 1);  /* pop package library */
 
   lua_pop(L, 1);  /* pop registry[_LOADED] */
