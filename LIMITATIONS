@@ -54,6 +54,12 @@ Differences affecting only the Lua API
    14.  in 5.2 only, breaks can appear mid-block
         (so too can gotos, but not returns)
 
+   nn.  in 5.2, debug.getupvalue and debug.setupvalue also have access to
+        upvalues of C functions.
+
+   nn.  in 5.2, coroutines can have C functions as their entry point:
+        for example: coroutine.wrap(print)(...)
+
    15.  in 5.2 only, coroutine.running from main thread returns thread,true
         instead of nil; for both versions, use:
             local thread,ismain = coroutine.running()
@@ -132,6 +138,9 @@ Differences affecting both Lua and C
         lua_register) create light C functions. These behave like light
         userdata with respect to equality and weak tables.
         
+        These still satisfy lua_iscfunction and have a lua_type of
+        LUA_TFUNCTION.
+
    26.  in 5.2, weak-keyed tables are ephemerons
 
    27.  5.2 has emergency garbage collection [patch]
@@ -141,6 +150,8 @@ Differences affecting both Lua and C
         returns two values Similarly, the C function lua_gc also accepts
         LUA_GCISRUNNING, LUA_GCGEN and LUA_GCINC.
 
+   nn.  Requesting a GC step or collection won't restart a stopped GC.
+
    29.  in 5.2, some __gc element needs to be present in a metatable-to-be
         *before* calling lua_setmetatable/luaL_setmetatable (or in Lua,
         setmetatable/debug.setmetatable), else it won't be honored.
@@ -148,6 +159,10 @@ Differences affecting both Lua and C
     
         The version of newproxy we provide in 5.2 fiveq (and also in 5.1
         fiveqplus) will accept a initial __gc argument.
+
+        In 5.2, finalizers are called in the reverse order their objects were
+        seen to have a __gc element, which needn't be the same as 5.1's reverse
+        order of object construction.
 
    30.  in 5.2, tables honor __len [patch] and __gc
 
@@ -190,4 +205,13 @@ Differences affecting both Lua and C
         * istailcall: use "t" in `what` arg to lua_getinfo or debug.getinfo
         * nparams and isvararg: use "u" in `what` arg
         also, field nups is now an unsigned char
+
+
+For more information, see
+-------------------------
+<http://www.lua.org/manual/5.2/manual.html#8>
+<http://www.luafaq.org/#T8>
+<http://lua-users.org/wiki/LuaFiveTwo>
+<http://www.corsix.org/content/look-lua-52-work3>
+<http://www.corsix.org/lua/5.2-beta-annotated/manual.html>
 
