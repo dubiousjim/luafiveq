@@ -8,17 +8,9 @@
 
 #include "fiveq.h"
 
-/* ----- adapted from lua-5.2.0-beta luaconf.h: ----- */
+/* ----- adapted from lua-5.2.0 luaconf.h: ----- */
 
 #if LUA_VERSION_NUM == 501                              /* { */
-
-/* #define LUA_INT32  LUAI_INT32 */
-
-/*
- * @@ LUA_UNSIGNED is the integral type used by lua_pushunsigned/lua_tounsigned.
- * ** It must have at least 32 bits.
- * */
-/* #define LUA_UNSIGNED    unsigned LUA_INT32 */
 
 #if defined(LUA_NUMBER_DOUBLE) && !defined(LUA_ANSI)    /* { */
 
@@ -51,14 +43,9 @@
 
 #endif                  /* } */
 
-
-/* ----- from lua-5.2.0-beta lua.h: ----- */
-
-/* typedef LUA_UNSIGNED lua_Unsigned; */
-
 #endif              /* } */
 
-/* ----- adapted from lua-5.2.0-beta llimits.h: ----- */
+/* ----- adapted from lua-5.2.0 llimits.h: ----- */
 
 /*
 ** lua_number2int is a macro to convert lua_Number to int.

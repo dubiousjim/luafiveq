@@ -1,6 +1,6 @@
 /*
  * fiveq.h: elements of Lua 5.2's API backported to lua 5.1, and vice-versa
- * includes luaconf.h, lua.h, lauxlib.h, [unsigned.h]
+ * includes luaconf.h, lua.h, lauxlib.h
  */
 
 
@@ -50,12 +50,6 @@ extern void luaQ_traceback(lua_State *L, int level, const char *fmt, ...);
 #define api_check(L, cond, msg)	lua_assert((cond) && msg)
 #endif
 
-/* #include "unsigned.h" */
-#define LUA_INT32  LUAI_INT32
-#define LUA_UNSIGNED    unsigned LUA_INT32
-typedef LUA_UNSIGNED lua_Unsigned;
-
-
 /* ----- adapted from lua-5.2.0 lua.h: ----- */
 
 #define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
@@ -86,6 +80,22 @@ typedef LUA_UNSIGNED lua_Unsigned;
 #define lua_rawsetp(L,idx,p) (api_check(L, lua_type(L, (idx)) == LUA_TTABLE, \
     "table expected"), lua_pushlightuserdata(L, (p)), lua_insert(L, -2), \
     lua_rawset(L, ((idx) > 0) ? (idx) : (idx) -1))
+
+
+
+/* #include "unsigned.h" */
+
+/* ----- adapted from lua-5.2.0 luaconf.h: ----- */
+#define LUA_INT32  LUAI_INT32
+/*
+ * @@ LUA_UNSIGNED is the integral type used by lua_pushunsigned/lua_tounsigned.
+ * ** It must have at least 32 bits.
+ * */
+#define LUA_UNSIGNED    unsigned LUA_INT32
+
+/* ----- from lua-5.2.0 lua.h: ----- */
+typedef LUA_UNSIGNED lua_Unsigned;
+
 
 
 extern lua_Number lua_tonumberx (lua_State *L, int idx, int *isnum);
