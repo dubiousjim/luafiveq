@@ -307,6 +307,17 @@ static int str_rep (lua_State *L) {
 }
 
 
+/* --- adapted from lua-5.2.0's lcorolib.c --- */
+static int luaB_corunning (lua_State *L) {
+    int ismain = lua_pushthread(L);
+    if (ismain) {
+        lua_pushnil(L);  /* 5.1's behavior */
+    }
+    lua_pushboolean(L, ismain);
+    return 2;
+}
+
+
 
 /* --- adapted from lua-5.2.0's ldblib.c --- */
 
@@ -440,6 +451,10 @@ extern int luaopen_fiveq (lua_State *L) {
   require(L, LUA_STRLIBNAME, luaopen_string);
   set1func(L, "rep", str_rep);  /* export to string library */
   lua_pop(L, 1);  /* pop string library */
+
+  require(L, LUA_COLIBNAME, luaopen_base);
+  set1func(L, "running", luaB_corunning);  /* export to coroutine library */
+  lua_pop(L, 1);  /* pop coroutine library */
 
   require(L, LUA_TABLIBNAME, luaopen_table);
   set1func(L, "pack", table_pack);  /* export to table library */

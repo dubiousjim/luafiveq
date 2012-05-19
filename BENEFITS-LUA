@@ -71,6 +71,11 @@ When you require "fiveq" in Lua 5.1, the following functions are modified:
     math.log:
         accepts an optional `base` argument, uses efficient algorithm for base 2
 
+    coroutine.running:
+        returns a second boolean result indicating whether the calling thread
+        is the main thread. If it is, the first result is nil in Lua 5.1 but
+        the main thread object in Lua 5.2.
+
 The following functions are added:
 
     rawlen:
