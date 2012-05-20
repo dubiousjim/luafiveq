@@ -20,14 +20,14 @@ Differences affecting only the Lua API
 
     2.  Lua interpreter honors __tostring on error objects [patch]
 
-    3.  string.format's "%s" applies tostring() [patch], and "%q" escapes
-        control chars
+    3.  string.format's "%s" applies tostring() [patch], and "%q" now also
+        escapes control chars
 
     4.  5.2 accepts hex float literals, and "%a" and "%A" options to
         string.format
 
     5.  5.2 permits "\xff" escapes in strings
-        5.1 only permits "\255"
+        5.1 merely permits "\255"
 
     6.  in 5.2 only, "\z" skips any following whitespace in strings
         "\" followed by newline inserts a literal newline, which otherwise
@@ -65,8 +65,8 @@ Differences affecting only the Lua API
    17.  in 5.2, coroutines can have C functions as their entry point:
         for example: coroutine.wrap(print)(...)
 
-   18.  in 5.2, package.loadlib(path, openfuncname) only links when
-        `openfuncname` is "*"
+   18.  in 5.2, package.loadlib(path, openfuncname) restricts itself to only
+        linking when `openfuncname` is "*"
 
 
 
@@ -91,7 +91,7 @@ These functions include:
         *   lua_pushstring(L, nulterminated_string)
         *   lua_pushlstring(L, string, len)
 
-        In Lua 5.2.0 these return a const char *, pointing to Lua's internal
+        In Lua 5.2 these return a const char *, pointing to Lua's internal
         copy of the string, instead of void
         lua_pushfstring always behaved this way
 

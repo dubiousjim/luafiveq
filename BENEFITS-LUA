@@ -80,7 +80,7 @@ The following functions are added:
 
     rawlen:
         returns length of table or string, ignoring any __len metamethods;
-        in unpatched Lua 5.1.4, __len is always ignored anyway for these, so
+        in unpatched Lua 5.1, __len is always ignored anyway for these, so
         this function gives the same result as #tbl or #str
 
     table.pack:
@@ -120,7 +120,7 @@ Finally, package.loaded.fiveq is set to true.
 
 
 The following features were first documented in Lua 5.2, but are already present
-in the basic Lua 5.1.4 implementation:
+in the basic Lua 5.1 implementation:
 
     %f[set] "frontier" patterns:
         %f[%w]word%f[%W] will also match at start/end of string
@@ -304,7 +304,7 @@ changes:
         When called with an argument n > 0, it returns the environment of the
         function at stack level n. The function calling getfenv is at stack
         level 1.
-        Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
+        Note that in 5.1 but not 5.2, tail calls increment the "level".
 
 
     unpack and table.unpack look for the number of elements at key "n", and if
@@ -520,7 +520,7 @@ changes.
             Lua 5.2, a second argument of "/path/to/prefix-a.so")
         If a function was found and invoked, and its return value is non-nil,
         that value is assigned to package.loaded[name].
-        If the return value is nil: (in Lua 5.1.4) if package.loaded[name]
+        If the return value is nil: (in Lua 5.1) if package.loaded[name]
         wasn't written to at all, we write "true" there; (in Lua 5.2) we also
         write "true" *whenever* package.loaded[name] is nil, even if that
         was written there explicitly.

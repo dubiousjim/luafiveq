@@ -4,7 +4,7 @@ BENEFITS-C
 What do I get when I #include "fiveq.h" and link against fiveq.a?
 -----------------------------------------------------------------
 
-Fiveq backports most of Lua 5.2's C API to Lua 5.1.4, and vice-versa. For
+Fiveq backports most of Lua 5.2's C API to Lua 5.1, and vice-versa. For
 missing features, see the accompanying file LIMITATIONS.
 
 Here is the complete list of interfaces that are provided to Lua 5.1:
@@ -234,7 +234,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         Retrieves the environment table of the function at call stack
         level. If caller is NULL, permits the function at that level
         to be a C function.
-        Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
+        Note that in 5.1 but not 5.2, tail calls increment the "level".
         In 5.2, searches locals and upvalues at that stack level for _ENV.
         If level == 0, returns the global table instead.
 
@@ -243,7 +243,7 @@ LUA_FIVEQ_PLUS is #defined before you #include "fiveq.h".
         Pops table from stack and assigns it as environment of function
         at call stack `level`. If caller is NULL, permits the function
         at that level to be a C function.
-        Note that in 5.1.4 but not 5.2.0, tail calls increment the "level".
+        Note that in 5.1 but not 5.2, tail calls increment the "level".
         In 5.2, searches locals and upvalues at that stack level for _ENV.
 
 
