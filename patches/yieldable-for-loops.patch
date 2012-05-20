@@ -4,6 +4,7 @@ Original last posted at http://primero.ricilake.net/lua/ on 1 Sep 2007, no
 longer available
 This version retrieved and updated 17 May 2012 by dubiousjim@gmail.com to
 apply against Lua 5.1.5.
+See also <http://lua-users.org/wiki/ResumableVmPatch> and <http://coco.luajit.org/>.
 
 Description from <http://lua-users.org/wiki/LuaPowerPatches>:
 

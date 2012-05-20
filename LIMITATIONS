@@ -14,7 +14,7 @@ Differences affecting only the Lua API
 
     1.  os.exit honors optional `close` argument [patch]
         this will call lua_close before exiting, so finalizers will run.
-        The Lua interpreter already calls lua_close this when exiting normally,
+        The Lua interpreter already calls lua_close when exiting normally,
         but other applications embedding Lua may not; and you may want this
         behavior when using os.exit (to force non-zero exit statuses).
 

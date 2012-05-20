@@ -39,9 +39,9 @@ are no longer available at their original locations.
 
 3.  Make os.exit close lua_State
     Description:
-        If an optional second argument is true, calls lua_Close before
+        If an optional second argument is true, calls lua_close before
         exiting, so finalizers will be run.
-        The Lua interpreter already calls lua_close this when exiting normally,
+        The Lua interpreter already calls lua_close when exiting normally,
         but other applications embedding Lua may not; and you may want this
         behavior when using os.exit (to force non-zero exit statuses).
 

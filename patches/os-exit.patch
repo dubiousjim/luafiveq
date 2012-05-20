@@ -3,9 +3,10 @@ Author: dubiousjim@gmail.com
 Derived from: Lua 5.2 sources
 Updated: 17 May 2012
 
-If an optional second argument is true, closes the Lua state before exiting (so
-finalizers will be run). The lua interpreter already does this, but
-applications embedding Lua may not.
+If an optional second argument is true, calls lua_close before exiting, so
+finalizers will be run. The Lua interpreter already calls lua_close when
+exiting normally, but other applications embedding Lua may not; and you may
+want this behavior when using os.exit (to force non-zero exit statuses).
 
 This behavior cannot be provided by a library, but only by patching the Lua
 source and rebuilding.
