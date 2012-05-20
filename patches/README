@@ -33,9 +33,8 @@ are no longer available at their original locations.
     This version retrieved and updated 17 May 2012 by dubiousjim@gmail.com to
     apply against Lua 5.1.5.
 
-    See also <http://lua-users.org/wiki/ResumableVmPatch> and
-    <http://coco.luajit.org/>.
-
+    See also <http://lua-users.org/wiki/ResumableVmPatch>,
+    <http://coco.luajit.org/>, and <http://coxpcall.luaforge.net>.
 
 3.  Make os.exit close lua_State
     Description:

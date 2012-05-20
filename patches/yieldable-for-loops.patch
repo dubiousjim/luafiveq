@@ -4,13 +4,14 @@ Original last posted at http://primero.ricilake.net/lua/ on 1 Sep 2007, no
 longer available
 This version retrieved and updated 17 May 2012 by dubiousjim@gmail.com to
 apply against Lua 5.1.5.
-See also <http://lua-users.org/wiki/ResumableVmPatch> and <http://coco.luajit.org/>.
+See also <http://lua-users.org/wiki/ResumableVmPatch>,
+    <http://coco.luajit.org/>, and <http://coxpcall.luaforge.net>.
 
 Description from <http://lua-users.org/wiki/LuaPowerPatches>:
 
 Modifies the code generator so that the iterator in for ... in loops can call
 yield. Details and test code are available at
-<http://lua-users.org/wiki/YieldableForLoops>.
+    <http://lua-users.org/wiki/YieldableForLoops>.
 
 Note that the current version of the patch orders op codes so as to maintain
 binary compatibility with compiled Lua scripts, if LUA_COMPAT_TFORLOOP is
