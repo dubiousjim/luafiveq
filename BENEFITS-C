@@ -14,13 +14,26 @@ Here is the complete list of interfaces that are provided to Lua 5.1:
  *   lua_copy
         like lua_replace but don't pop element from top
 
- *   lua_tonumberx
- *   lua_tointegerx
+ *   lua_tonumberx(L, idx, bool *isnum)
+        returns stack[idx] converted to lua_Number, or 0 if non-convertible
+        if isnum is non-NULL, assigns whether stack[idx] was convertible
+ *   lua_tointegerx(L, idx, bool *isnum)
+        returns stack[idx] converted (and if needed, truncated in undefined
+        way) to the signed type lua_Integer, or 0 if non-convertible
+        if isnum is non-NULL, assigns whether stack[idx] was convertible
  *   typedef lua_Unsigned
+        must be >= 32 bits, by default is unsigned int or unsigned long
  *   lua_tounsigned
- *   lua_tounsignedx
- *   luaL_optunsigned
- *   luaL_checkunsigned
+ *   lua_tounsignedx(L, idx, bool *isnum)
+        returns stack[idx] converted (and if needed, truncated in undefined
+        way) to lua_Unsigned, or 0 if non-convertible
+        if outside the range of representable values, is "modded into" that range
+        if isnum is non-NULL, assigns whether stack[idx] was convertible
+ *   luaL_optunsigned(L, idx, lua_Unsigned default)
+        if stack[idx] isnum, converts to lua_Unsigned
+        elseif nil returns default, else raises error
+ *   luaL_checkunsigned(L, idx)
+        if stack[idx] isnum, converts to lua_Unsigned, else raises error
 
  *   lua_arith
  *   lua_compare
