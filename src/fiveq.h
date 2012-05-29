@@ -117,7 +117,7 @@ extern void lua_arith (lua_State *L, int op);
 /* ----- from lua-5.2.0 lauxlib.c: ----- */
 
 extern lua_Unsigned luaL_checkunsigned (lua_State *L, int arg);
-extern lua_Unsigned luaL_optunsigned (lua_State *L, int narg, lua_Unsigned def);
+extern lua_Unsigned luaL_optunsigned (lua_State *L, int arg, lua_Unsigned def);
 
 extern const char *luaL_tolstring (lua_State *L, int idx, size_t *len);
 
@@ -210,7 +210,7 @@ extern void luaL_requiref (lua_State *L, const char *libname, lua_CFunction
 
 
 
-extern int luaL_typerror (lua_State *L, int narg, const char *tname);
+extern int luaL_typerror (lua_State *L, int arg, const char *tname);
 
 
 /* pre-5.1 stuff */

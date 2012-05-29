@@ -637,9 +637,9 @@ extern lua_Unsigned luaL_checkunsigned (lua_State *L, int arg) {
 }
 
 /* define luaL_opt(L,f,n,d)	(lua_isnoneornil(L,(n)) ? (d) : f(L,(n))) */
-extern lua_Unsigned luaL_optunsigned (lua_State *L, int narg, lua_Unsigned def)
+extern lua_Unsigned luaL_optunsigned (lua_State *L, int arg, lua_Unsigned def)
 {
-  return luaL_opt(L, luaL_checkunsigned, narg, def);
+  return luaL_opt(L, luaL_checkunsigned, arg, def);
 }
 
 
@@ -764,10 +764,10 @@ extern void luaL_setfuncs (lua_State *L, const luaL_Reg *A, int nup) {
 /* ----------- for 5.2 ---------- */
 #elif LUA_VERSION_NUM == 502
 
-extern int luaL_typerror (lua_State *L, int narg, const char *tname) {
+extern int luaL_typerror (lua_State *L, int arg, const char *tname) {
   const char *msg = lua_pushfstring(L, "%s expected, got %s",
-                                    tname, luaL_typename(L, narg));
-  return luaL_argerror(L, narg, msg);
+                                    tname, luaL_typename(L, arg));
+  return luaL_argerror(L, arg, msg);
 }
 
 #endif
