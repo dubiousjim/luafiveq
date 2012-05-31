@@ -54,3 +54,9 @@ WARNINGS+=  -Wconversion -Wmissing-prototypes -Wmissing-declarations \
             -Wunreachable-code -Wunused-function -Wfloat-equal
 endif
 
+# -Wextra formerly known as -W
+
+# -fwrapv: make signed overflow defined to wrap
+# -fstrict-overflow: assume signed overflow is undefined, optimize as though it never occurs (-Wall includes -Wstrict-overflow=2, which only applies when -fstrict-overflow)
+# -fstrict-aliasing: optimize as though only minimal type punning happens, enabled at -O2, some devs disable (-Wall includes -Wstrict-aliasing, which only applies when -fstrict-aliasing)
+
