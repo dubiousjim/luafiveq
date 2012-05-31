@@ -716,8 +716,8 @@ extern int luaL_getsubtable (lua_State *L, int idx, const char *field) {
   lua_getfield(L, idx, field);
   if (lua_istable(L, -1)) return 1;  /* table already there */
   else {
-    idx = lua_absindex(L, idx);
     lua_pop(L, 1);  /* remove previous result */
+    idx = lua_absindex(L, idx); /* in 5.2.0, this erroneously appeared one line earlier */
     lua_newtable(L);
     lua_pushvalue(L, -1);  /* copy to be left at top */
     lua_setfield(L, idx, field);  /* assign new table to field */
